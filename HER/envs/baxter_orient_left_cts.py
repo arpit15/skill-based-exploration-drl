@@ -13,6 +13,8 @@ from trac_ik_python import trac_ik_wrap as tracik
 
 from time import sleep
 
+from ipdb import set_trace
+
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
@@ -82,7 +84,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         self.set_state(qpos, qvel)
 
-        target_pos = np.array([0.63 , 0.2 , 0.15])
+        target_pos = np.array([0.6 , 0.3 , 0.15])
         target_quat = np.array([1.0, 0.0 , 0.0, 0])
         target = np.concatenate((target_pos, target_quat))
         action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
