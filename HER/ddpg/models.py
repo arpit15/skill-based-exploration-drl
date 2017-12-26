@@ -39,9 +39,9 @@ class Actor(Model):
                 x = tf.nn.relu(x)
              
             x = tf.layers.dense(x, self.nb_actions, kernel_initializer=tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3), name='preactivation')
-            print(x)
-            from ipdb import set_trace
-            set_trace()
+            # print(x)
+            # from ipdb import set_trace
+            # set_trace()
             x = tf.nn.tanh(x)
         return x
 
