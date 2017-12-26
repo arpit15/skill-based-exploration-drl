@@ -5,6 +5,7 @@ from gym import spaces
 import os 
 import os.path as osp
 import signal 
+from math import pi, atan2
 
 import mujoco_py
 
@@ -211,7 +212,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #print("new gripper_pose", gripper_pose, "block pose:", box_pose)
         
         ## reward function definition
-        w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1]
+        w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1,-1]
         
         reward_grip_box = - np.linalg.norm(box_pose- gripper_pose)
         reward_box_target = - np.linalg.norm(box_pose- target_pose)
@@ -292,7 +293,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         target_pose = goal
         
         ## reward function definition
-        w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1]
+        w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1, -1]
         reward_grip_box = - np.linalg.norm(box_pose- gripper_pose)
         reward_box_target = - np.linalg.norm(box_pose- target_pose)
         reward_first_contact = (np.linalg.norm(box_pose- gripper_pose) < 0.05) and (not self.contacted)
