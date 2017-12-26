@@ -16,10 +16,11 @@ from time import sleep
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
-    reward function: -eu(gripper, block) -eu(block, target) - out_of_bound - 1e-3action_cost + 1(reaching) + 0.01(first touching)
-    actions: (delta_x, delta_y) 
+    random restarts for block and target on the table
+    reward function: - 1(not reaching)
+    actions: (delta_x, delta_y) 5cm push
     starting state: (0.63, 0.2, 0.59, 0.27, 0.55, 0.3)
-    max_num_steps = 100
+    max_num_steps = 50
     """
     def __init__(self):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
@@ -63,7 +64,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                         "Speed")
 
         self.old_state = np.zeros((6,))
-        self.max_num_steps = 100
+        self.max_num_steps = 50
         print("INIT DONE!")
       
 
@@ -74,6 +75,11 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         print("New Episode!")
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
+        ## random target location
+        qpos[-2:] = qpos[-2:] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+        ## random box location
+        qpos[8:10] = qpos[8:10] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+
         self.set_state(qpos, qvel)
 
         target_pos = np.array([0.63 , 0.2 , 0.15])
@@ -172,15 +178,15 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
         x, y = self.old_state[:2].copy()
         # print("old x:%.4f, y:%.4f"%(x,y))
-        x += delta_x*0.1
-        y += delta_y*0.1
+        x += delta_x*0.05
+        y += delta_y*0.05
         # print("x:%.4f, y:%.4f"%(x,y))
         # print("x:%.4f,y:%.4f"%(0.2*x + 0.6 , 0.3*y + 0.3))
         
         out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6)
 
 
-        if np.abs(delta_x*0.1)>0.0001 or np.abs(delta_y*0.1)>0.0001:
+        if np.abs(delta_x*0.05)>0.0001 or np.abs(delta_y*0.05)>0.0001:
             target_pos = np.array([x , y , 0.15])
             target_quat = np.array([1.0, 0.0 , 0.0, 0])
             target = np.concatenate((target_pos, target_quat))
@@ -225,13 +231,15 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.contacted = True
         reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.02             #assume: my robot has 2cm error
 
-        total_reward = w[1]*reward_box_target \
-                        + w[0]*reward_grip_box   \
-                        + w[6] * out_of_bound \
-                        + w[5] * np.square(action).sum()  \
-                            + w[2]*reward_first_contact \
-                            + w[3]*reward_reaching_goal 
+        # total_reward = w[1]*reward_box_target \
+        #                 + w[0]*reward_grip_box   \
+        #                 + w[6] * out_of_bound \
+        #                 + w[5] * np.square(action).sum()  \
+        #                     + w[2]*reward_first_contact \
+        #                     + w[3]*reward_reaching_goal 
                             # + w[4]*np.square(action_jt_space-old_action_jt_space).sum() \
+
+        total_reward = -1*(not reward_reaching_goal)
 
                                
         box_x, box_y, box_z = self.data.site_xpos[1]
@@ -283,8 +291,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         delta_x, delta_y = action
         
         x, y = self.old_state[:2].copy()
-        x += delta_x*0.1
-        y += delta_y*0.1
+        x += delta_x*0.05
+        y += delta_y*0.05
         
         out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6)
 
@@ -299,12 +307,14 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         reward_first_contact = (np.linalg.norm(box_pose- gripper_pose) < 0.05) and (not self.contacted)
         reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.02             #assume: my robot has 2cm error
         
-        total_reward = w[1]*reward_box_target \
-                        + w[0]*reward_grip_box   \
-                        + w[6] * out_of_bound \
-                        + w[5] * np.square(action).sum()  \
-                            + w[3]*reward_reaching_goal 
+        # total_reward = w[1]*reward_box_target \
+        #                 + w[0]*reward_grip_box   \
+        #                 + w[6] * out_of_bound \
+        #                 + w[5] * np.square(action).sum()  \
+        #                     + w[3]*reward_reaching_goal 
                             # + w[2]*reward_first_contact \
+
+        total_reward = -1*(not reward_reaching_goal)
                             
                             
         return total_reward
