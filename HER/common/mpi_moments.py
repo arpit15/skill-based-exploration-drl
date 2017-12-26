@@ -1,6 +1,7 @@
 from mpi4py import MPI
 import numpy as np
 from HER.common import zipsame
+from HER import logger
 
 def mpi_moments(x, axis=0):
     x = np.asarray(x, dtype='float64')
@@ -11,7 +12,13 @@ def mpi_moments(x, axis=0):
     addvec = np.concatenate([x.sum(axis=axis).ravel(), 
         np.square(x).sum(axis=axis).ravel(), 
         np.array([x.shape[axis]],dtype='float64')])
-    MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
+    try:
+        MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
+    except MPI.Exception:
+        logger.info("error")
+        logger.info(addvec)
+        logger.info("-"*50)
+
     sum = totalvec[:n]
     sumsq = totalvec[n:2*n]
     count = totalvec[2*n]
