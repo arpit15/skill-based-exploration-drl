@@ -61,7 +61,7 @@ class DDPG(object):
         batch_size=128, observation_range=(-5., 5.), action_range=(-1., 1.), return_range=(-np.inf, np.inf),
         adaptive_param_noise=True, adaptive_param_noise_policy_threshold=.1,
         critic_l2_reg=0., actor_lr=1e-4, critic_lr=1e-3, clip_norm=None, reward_scale=1.,
-        inverting_grad = False):
+        inverting_grad = False, actor_reg=True):
         
         logger.info("DDPG params")
         logger.info(str(locals()))
@@ -97,6 +97,7 @@ class DDPG(object):
         self.stats_sample = None
         self.critic_l2_reg = critic_l2_reg
         self.inverting_grad = inverting_grad
+        self.actor_reg = actor_reg
 
         # Observation normalization.
         if self.normalize_observations:
@@ -172,7 +173,14 @@ class DDPG(object):
 
     def setup_actor_optimizer(self):
         logger.info('setting up actor optimizer')
-        self.actor_loss = -tf.reduce_mean(self.critic_with_actor_tf)
+
+        ## as used in Hindsight Experience Replay to stop saturation in tanh
+        if self.actor_reg:
+            preactivation = tf.get_default_graph().get_tensor_by_name('actor/preactivation:0')
+        else:
+            preactivation = tf.no_op()
+        
+        self.actor_loss = -tf.reduce_mean(self.critic_with_actor_tf) + tf.reduce_mean(tf.square(preactivation))
         actor_shapes = [var.get_shape().as_list() for var in self.actor.trainable_vars]
         actor_nb_params = sum([reduce(lambda x, y: x * y, shape) for shape in actor_shapes])
         logger.info('  actor shapes: {}'.format(actor_shapes))
@@ -271,9 +279,10 @@ class DDPG(object):
             q = None
         action = action.flatten()
         if self.action_noise is not None and apply_noise:
-            noise = self.action_noise()
-            assert noise.shape == action.shape
-            action += noise
+            # noise = self.action_noise()
+            # assert noise.shape == action.shape
+            # action += noise
+            action = self.action_noise(action)
         action = np.clip(action, self.action_range[0], self.action_range[1])
         return action, q
 

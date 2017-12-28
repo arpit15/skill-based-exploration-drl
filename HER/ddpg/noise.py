@@ -1,5 +1,5 @@
 import numpy as np
-
+from random import random
 
 class AdaptiveParamNoiseSpec(object):
     def __init__(self, initial_stddev=0.1, desired_action_stddev=0.1, adoption_coefficient=1.01):
@@ -38,11 +38,28 @@ class NormalActionNoise(ActionNoise):
         self.mu = mu
         self.sigma = sigma
 
-    def __call__(self):
-        return np.random.normal(self.mu, self.sigma)
+    def __call__(self, action):
+        return action + np.random.normal(self.mu, self.sigma)
 
     def __repr__(self):
         return 'NormalActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
+
+class EpsilonNormalActionNoise(ActionNoise):
+    ''' Based on Hindsight Experience Replay paper: https://pdfs.semanticscholar.org/9734/9dee55ba13067f467695eecb3a3bb68e43bd.pdf
+    '''
+    def __init__(self, mu, sigma, epsilon):
+        self.mu = mu
+        self.sigma = sigma
+        self.epsilon = epsilon
+
+    def __call__(self, action):
+        if(random()>self.epsilon):
+            return action + np.random.normal(self.mu, self.sigma)
+        else:
+            return np.random.uniform(-1. , 1., size=action.shape)
+
+    def __repr__(self):
+        return 'EpsilonNormalActionNoise(mu={}, sigma={}, epsilon={})'.format(self.mu, self.sigma, self.epsilon)
 
 
 # Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
@@ -55,10 +72,10 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.x0 = x0
         self.reset()
 
-    def __call__(self):
+    def __call__(self, action):
         x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
         self.x_prev = x
-        return x
+        return (action + x)
 
     def reset(self):
         self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)

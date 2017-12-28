@@ -57,6 +57,9 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         elif 'ou' in current_noise_type:
             _, stddev = current_noise_type.split('_')
             action_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
+        elif 'epsnorm' in current_noise_type:
+            _, stddev, epsilon  = current_noise_type.split('_')
+            action_noise = EpsilonNormalActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions), epsilon= float(epsilon))
         else:
             raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
 
@@ -109,7 +112,7 @@ def parse_args():
     parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
     parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
     parser.add_argument('--nb-rollout-steps', type=int, default=800)  # per epoch cycle and MPI worker
-    parser.add_argument('--noise-type', type=str, default='ou_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
+    parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
     parser.add_argument('--num-timesteps', type=int, default=None)
     boolean_flag(parser, 'evaluation', default=True)
 
@@ -120,6 +123,7 @@ def parse_args():
     boolean_flag(parser, 'dologging', default=True)
     boolean_flag(parser, 'invert-grad', default=False)
     boolean_flag(parser, 'her', default=True)
+    boolean_flag(parser, 'actor-reg', default=True)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
