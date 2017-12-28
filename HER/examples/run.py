@@ -117,13 +117,14 @@ def parse_args():
     boolean_flag(parser, 'evaluation', default=True)
 
     ## saving and restoring param parser
-    parser.add_argument('--log-dir', type=str, default='/home/arpit/new_RL3/baseline_results/Baxter-v3/run21')
+    parser.add_argument('--log-dir', type=str, default='/tmp/her')
     parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=True)
     boolean_flag(parser, 'invert-grad', default=False)
     boolean_flag(parser, 'her', default=True)
     boolean_flag(parser, 'actor-reg', default=True)
+    boolean_flag(parser, 'tf-sum-logging', default=True)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
