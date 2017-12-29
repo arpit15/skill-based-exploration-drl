@@ -79,7 +79,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         self.set_state(qpos, qvel)
 
-        target_pos = np.array([0.6 , 0.3 , 0.15])
+        target_pos = np.array([0.6 , 0.2 , 0.15])
         target_quat = np.array([1.0, 0.0 , 0.0, 0])
         target = np.concatenate((target_pos, target_quat))
         action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
@@ -268,16 +268,16 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def apply_hindsight(self, states, actions, goal_state):
         '''generates hindsight rollout based on the goal
         '''
-        goal = goal_state[2:4]
+        goal = np.array([0., 0.])
         her_states, her_rewards = [], []
         for i in range(len(actions)):
             state = states[i]
-            state[-2:] = goal
+            state[-2:] = goal.copy()
             reward = self.calc_reward(state, goal, actions[i])
             her_states.append(state)
             her_rewards.append(reward)
 
-        goal_state[-2:] = goal
+        goal_state[-2:] = goal.copy()
         her_states.append(goal_state)
 
         return her_states, her_rewards
@@ -294,8 +294,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6)
 
         gripper_pose = state[:2]
-        box_pose = state[2:4]
-        target_pose = goal
+        box_pose = state[2:4] + gripper_pose
+        target_pose = goal + box_pose
         
         ## reward function definition
         w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1]

@@ -282,11 +282,11 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def apply_hindsight(self, states, actions, goal_state):
         '''generates hindsight rollout based on the goal
         '''
-        goal = goal_state[3:6]
+        goal = np.array([0., 0., 0.])
         her_states, her_rewards = [], []
         for i in range(len(actions)):
             state = states[i]
-            state[-3:] = goal
+            state[-3:] = goal.copy()
             reward = self.calc_reward(state, goal, actions[i])
             her_states.append(state)
             her_rewards.append(reward)
@@ -309,8 +309,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z >0.5)
 
         gripper_pose = state[:3]
-        box_pose = state[3:6]
-        target_pose = goal
+        box_pose = state[3:6] + gripper_pose
+        target_pose = goal + box_pose
         
         ## reward function definition
         w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1]
@@ -352,8 +352,8 @@ if __name__ == "__main__":
             # env.close_gripper(gap=-1)
             # print(env.data.qpos[8:10])
             
-            action1 = np.array([0., 0., -1., -0.3])
-            action2 = np.array([0., 0., 1., -0.3])
+            action1 = np.array([0., 0., -1., 0])
+            action2 = np.array([0., 0., 1., -0.55])
             print(ob)
             while((not done) and (i<1000)):
                 
@@ -364,7 +364,7 @@ if __name__ == "__main__":
                 action = np.array([0., 0., 0, 1.0])
                 if(i<12 and i>10):
                     action = action1
-                elif(i>12 and i<15):
+                elif(i>12 and i<20):
                     action = action2
                 print(action)
                 ob, reward, done, info = env.step(action)
