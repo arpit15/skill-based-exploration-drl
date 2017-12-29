@@ -111,8 +111,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         box_x, box_y = self.data.site_xpos[1][:2]
         target_x, target_y = self.data.site_xpos[2][:2]
 
-        angle_bw_target_block = atan2(target_pose[1] - box_pose[1], target_pose[0] - box_pose[0])
-        angle_bw_block_gripper = atan2(box_pose[1] - gripper_pose[1], box_pose[0] - gripper_pose[0])
+        angle_bw_target_block = atan2(target_y - box_y, target_x - box_x)
+        angle_bw_block_gripper = atan2(box_y - gripper_y, box_x - gripper_x)
         angle = ((angle_bw_target_block - angle_bw_block_gripper) - pi)
 
         state = np.array([ee_x, ee_y, box_x, box_y, angle, target_x, target_y])
