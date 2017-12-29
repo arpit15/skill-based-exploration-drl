@@ -174,7 +174,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         ## hack for the init of mujoco.env
         if(action.shape[0]>2):
-            return np.zeros((7,1)), 0, False, {}
+            return np.zeros((9,1)), 0, False, {}
         
         self.num_step += 1
         old_action_jt_space = self.data.qpos[1:8].T.copy()
