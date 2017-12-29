@@ -177,10 +177,11 @@ class DDPG(object):
         ## as used in Hindsight Experience Replay to stop saturation in tanh
         if self.actor_reg:
             preactivation = tf.get_default_graph().get_tensor_by_name('actor/preactivation:0')
-        else:
-            preactivation = tf.no_op()
+            self.actor_loss = -tf.reduce_mean(self.critic_with_actor_tf) + tf.reduce_mean(tf.square(preactivation))
         
-        self.actor_loss = -tf.reduce_mean(self.critic_with_actor_tf) + tf.reduce_mean(tf.square(preactivation))
+        else:
+            self.actor_loss = -tf.reduce_mean(self.critic_with_actor_tf)
+        
         actor_shapes = [var.get_shape().as_list() for var in self.actor.trainable_vars]
         actor_nb_params = sum([reduce(lambda x, y: x * y, shape) for shape in actor_shapes])
         logger.info('  actor shapes: {}'.format(actor_shapes))
