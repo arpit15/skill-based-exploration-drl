@@ -10,7 +10,7 @@ import mujoco_py
 
 from trac_ik_python.trac_ik_wrap import TRAC_IK
 from trac_ik_python import trac_ik_wrap as tracik
-from transformation import euler_from_matrix
+from HER.envs.transformation import euler_from_matrix
 
 from time import sleep
 
