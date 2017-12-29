@@ -123,7 +123,7 @@ def parse_args():
     boolean_flag(parser, 'dologging', default=True)
     boolean_flag(parser, 'invert-grad', default=False)
     boolean_flag(parser, 'her', default=True)
-    boolean_flag(parser, 'actor-reg', default=True)
+    boolean_flag(parser, 'actor-reg', default=False)
     boolean_flag(parser, 'tf-sum-logging', default=True)
 
     args = parser.parse_args()
