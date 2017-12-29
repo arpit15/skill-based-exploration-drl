@@ -2,7 +2,7 @@
 
 <mujoco model="baxter(v1.31)">
     <compiler coordinate="local" angle="radian" meshdir="meshes/" texturedir="texture/" strippath="false" />
-    <option gravity="0 0 -1" timestep="0.002"/>
+    <option gravity="0 0 -0.1" timestep="0.002"/>
     <size njmax="795" nconmax="250" nstack="631875" />
    
    <asset>
@@ -172,10 +172,10 @@
                                                             <body name="l_gripper_l_finger_tip" pos="0 0.01725 0.1127">
                                                                 <site name="grip_l" pos="0.0 0.0 0" rgba="0 1 0 1" size="0.01 0.01 0.01"/>
                                                                 <inertial pos="0 0 0" quat="0 0 0 1" mass="0.01" diaginertia="0.01 0.01 0.01" />
-                                                                <!-- <geom class="viz" pos="-.02 -.009 0.003" mesh="paddle_tip" euler="-1.57 0 0"/>
-                                                                <geom size="0.021 0.00325 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="box" /> -->
-                                                                <geom pos="-.007 -.01 0.003" class="viz" mesh="half_round_tip" euler="-1.57 0 0"/>
-                                                                <geom size="0.008 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="cylinder" />
+                                                                <geom class="viz" pos="-.02 -.009 0.003" mesh="paddle_tip" euler="-1.57 0 0"/>
+                                                                <geom size="0.021 0.00325 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="box" />
+                                                                <!-- <geom pos="-.007 -.01 0.003" class="viz" mesh="half_round_tip" euler="-1.57 0 0"/> -->
+                                                                <!-- <geom size="0.008 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="cylinder" /> -->
                                                             </body>
                                                         </body>
                                                          <body name="l_gripper_r_finger" pos="0 0.0015 0.02">
@@ -187,10 +187,10 @@
                                                             <body name="l_gripper_r_finger_tip" pos="0 -0.01725 0.1127">
                                                                 <site name="grip_r" pos="0.0 0.0 0" rgba="0 1 0 1" size="0.01 0.01 0.01"/>
                                                                 <inertial pos="0 0 0" mass="0.01" diaginertia="0.01 0.01 0.01" />
-                                                                <!-- <geom pos=".02 .009 0.003" class="viz" mesh="paddle_tip" euler="-1.57 3.14 0"/>
-                                                                <geom size="0.021 0.00325 0.0185" pos="0 0.0045 -0.015" type="box" /> -->
-                                                                <geom pos=".007 .01 0.003" class="viz" mesh="half_round_tip" euler="-1.57 3.14 0"/>
-                                                                <geom size="0.008 0.0185" pos="0 0.0045 -0.015" type="cylinder" />
+                                                                <geom pos=".02 .009 0.003" class="viz" mesh="paddle_tip" euler="-1.57 3.14 0"/>
+                                                                <geom size="0.021 0.00325 0.0185" pos="0 0.0045 -0.015" type="box" />
+                                                                <!-- <geom pos=".007 .01 0.003" class="viz" mesh="half_round_tip" euler="-1.57 3.14 0"/> -->
+                                                                <!-- <geom size="0.008 0.0185" pos="0 0.0045 -0.015" type="cylinder" /> -->
                                                             </body>
                                                         </body> 
                                                     </body>
@@ -236,10 +236,10 @@
         <!-- box -->
         <!-- <body name="box" pos="0.59 0.27 0.0" euler="0 0 0.785398"> -->
         <body name="box" pos="0.59 0.27 0.0">
-            <geom name="box" type="box"  rgba="1.0 0.0 0.0 1" size="0.03 0.03 0.03" contype="3" conaffinity="3" friction="1 0.005 0.0001"/>
-            <site name="box" pos="0.0 0.0 0" rgba="0 0 1 1" size="0.035 0.035 0.035"/>
+            <geom name="box" type="box"  rgba="1.0 0.0 0.0 1" size="0.02 0.02 0.02" contype="3" conaffinity="3" friction="1 0.005 0.0001"/>
+            <site name="box" pos="0.0 0.0 0" rgba="0 0 1 1" size="0.025 0.025 0.025"/>
             <joint name="box" type="free" limited="false"/>
-             <inertial pos="0 0 0" mass="10" diaginertia="1 1 1"/>
+             <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
         </body>
 
         <body name="target" pos="0.55 0.3 0.0">

@@ -37,3 +37,9 @@ register(
     entry_point='HER.envs.baxter_orient_left_cts_anglebw:BaxterEnv',
     # More arguments here
 )
+
+register(
+    id='Baxter-v7',
+    entry_point='HER.envs.baxter_orient_left_cts_onetarget:BaxterEnv',
+    # More arguments here
+)
