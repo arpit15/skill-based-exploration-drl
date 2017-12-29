@@ -19,3 +19,21 @@ register(
     entry_point='HER.envs.baxter_orient_left_cts_bounds:BaxterEnv',
     # More arguments here
 )
+
+register(
+    id='Baxter-v4',
+    entry_point='HER.envs.baxter_orient_left_cts_azimuth:BaxterEnv',
+    # More arguments here
+)
+
+register(
+    id='Baxter-v5',
+    entry_point='HER.envs.baxter_orient_left_cts_euler:BaxterEnv',
+    # More arguments here
+)
+
+register(
+    id='Baxter-v6',
+    entry_point='HER.envs.baxter_orient_left_cts_3d:BaxterEnv',
+    # More arguments here
+)
