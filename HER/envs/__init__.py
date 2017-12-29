@@ -34,6 +34,6 @@ register(
 
 register(
     id='Baxter-v6',
-    entry_point='HER.envs.baxter_orient_left_cts_3d:BaxterEnv',
+    entry_point='HER.envs.baxter_orient_left_cts_anglebw:BaxterEnv',
     # More arguments here
 )
