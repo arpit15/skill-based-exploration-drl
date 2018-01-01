@@ -36,17 +36,21 @@ class RunningMeanStd(object):
 
 
     def update(self, x):
+        '''updates the running stats in a single thread to avoid conflict
+        TODO: make running av sync across threads'''
         x = x.astype('float64')
         n = int(np.prod(self.shape))
         totalvec = np.zeros(n*2+1, 'float64')
         addvec = np.concatenate([x.sum(axis=0).ravel(), np.square(x).sum(axis=0).ravel(), np.array([len(x)],dtype='float64')])
         
-        try:
-            MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
-        except MPI.Exception:
-            logger.info("Error!")
-            logger.info(addvec)
-            logger.info("-"*50)
+        # try:
+        #     MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
+        # except MPI.Exception:
+        #     logger.info("Error!")
+        #     logger.info(addvec)
+        #     logger.info("-"*50)
+
+        totalvec = addvec.copy()
 
         self.incfiltparams(totalvec[0:n].reshape(self.shape), totalvec[n:2*n].reshape(self.shape), totalvec[2*n])
 

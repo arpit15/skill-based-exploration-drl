@@ -228,6 +228,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # Evaluate.
                 eval_episode_rewards = []
                 eval_qs = []
+                eval_episode_success = []
                 
                 if (eval_env is not None) and rank==0:
                     eval_episode_reward = 0.
@@ -247,6 +248,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         
                     eval_episode_rewards.append(eval_episode_reward)
                     eval_episode_rewards_history.append(eval_episode_reward)
+                    eval_episode_success.append(eval_info["done"]=="goal reached")
                     
             if dologging and rank==0: 
                 print("Logging!")
@@ -278,12 +280,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # Evaluation statistics.
                 if eval_env is not None:
                     combined_stats['eval/return'] = normal_mean(eval_episode_rewards)
+                    combined_stats['eval/success'] = normal_mean(eval_episode_success)
                     if len(eval_episode_rewards_history) > 0:
                         combined_stats['eval/return_history'] = normal_mean( np.mean(eval_episode_rewards_history) )
                     else:
                         combined_stats['eval/return_history'] = 0.
                     combined_stats['eval/Q'] = normal_mean(eval_qs)
                     combined_stats['eval/episodes'] = normal_mean(len(eval_episode_rewards))
+
 
                 # Total statistics.
                 combined_stats['total/duration'] = normal_mean(duration)
