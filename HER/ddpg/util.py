@@ -42,3 +42,18 @@ def mpi_sum(value):
     local_sum = np.sum(np.array(value)).astype('float64')
     MPI.COMM_WORLD.Reduce(local_sum, global_sum, op=MPI.SUM)
     return global_sum[0]
+
+def normal_mean(value):
+    if value == []:
+        value = [0.]
+    if not isinstance(value, list):
+        value = [value]
+    return np.mean(np.array(value))
+
+
+def normal_std(value):
+    if value == []:
+        value = [0.]
+    if not isinstance(value, list):
+        value = [value]
+    return np.stsd(np.array(value))
