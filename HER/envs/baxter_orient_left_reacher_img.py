@@ -5,6 +5,7 @@ from gym import spaces
 import os 
 import os.path as osp
 import signal 
+import matplotlib.pyplot as plt
 
 import mujoco_py
 
@@ -18,6 +19,7 @@ from ipdb import set_trace
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
+    info contains img
     random restarts for target on the table
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y) 5cm push
@@ -208,7 +210,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.02             #assume: my robot has 2cm error
         total_reward = -1*(not reward_reaching_goal)
 
-        info = {}
+        info = {"img":self.render(mode='rgb_array')}
 
         if reward_reaching_goal == 1:
             done = True
@@ -283,15 +285,14 @@ if __name__ == "__main__":
                 
                 ee_x, ee_y = env.data.site_xpos[0][:2]
                 box_x, box_y = env.data.site_xpos[1][:2]
-                # action = np.array([(box_x - ee_x), (box_y - ee_y)])
+                
                 action = env.action_space.sample()
                 ob, reward, done, info = env.step(action)
-                # print(i, action, ob, reward)
-                # print(i, ob, reward, info)
-                # print( i, done)    
+                print(info["img"].shape)   
+                set_trace()
                 i+=1
                 sleep(.01)
-                env.render()
+                
                 random_r += reward
 
 

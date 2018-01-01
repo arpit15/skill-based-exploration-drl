@@ -1,5 +1,6 @@
 from mpi4py import MPI
 import tensorflow as tf, baselines.common.tf_util as U, numpy as np
+from HER import logger 
 
 class RunningMeanStd(object):
     # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
@@ -39,7 +40,14 @@ class RunningMeanStd(object):
         n = int(np.prod(self.shape))
         totalvec = np.zeros(n*2+1, 'float64')
         addvec = np.concatenate([x.sum(axis=0).ravel(), np.square(x).sum(axis=0).ravel(), np.array([len(x)],dtype='float64')])
-        MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
+        
+        try:
+            MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
+        except MPI.Exception:
+            logger.info("Error!")
+            logger.info(addvec)
+            logger.info("-"*50)
+
         self.incfiltparams(totalvec[0:n].reshape(self.shape), totalvec[n:2*n].reshape(self.shape), totalvec[2*n])
 
 @U.in_session

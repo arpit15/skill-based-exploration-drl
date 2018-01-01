@@ -76,7 +76,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     with U.single_threaded_session() as sess:
         
         # Set summary saver
-        if dologging and tf_sum_logging: 
+        if dologging and tf_sum_logging and rank==0: 
             tf.summary.histogram("actor_grads", agent.actor_grads)
             tf.summary.histogram("critic_grads", agent.critic_grads)
             actor_trainable_vars = actor.trainable_vars
@@ -85,6 +85,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             critic_trainable_vars = critic.trainable_vars
             for var in critic_trainable_vars:
                 tf.summary.histogram(var.name, var)
+
+            tf.summary.histogram("actions", agent.actor_tf)
 
             summary_var = tf.summary.merge_all()
             writer_t = tf.summary.FileWriter(osp.join(logger.get_dir(), 'train'), sess.graph)
@@ -136,11 +138,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             # logger.info("-"*50 +'\nWill create HER\n' + "-"*50)
             states, actions = [], []
 
-        print("Training!")
+        print("Ready to go!")
         for epoch in range(global_t, nb_epochs):
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
                 for t_rollout in range(nb_rollout_steps):
+                    # print(rank, t_rollout)
                     # Predict next action.
                     action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
                     assert action.shape == env.action_space.shape
@@ -200,11 +203,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         obs = env.reset()
                         #print(obs)
 
+                # print(rank, "Training!")
                 # Train.
                 epoch_actor_losses = []
                 epoch_critic_losses = []
                 epoch_adaptive_distances = []
                 for t_train in range(nb_train_steps):
+                    # print(rank, t_train)
                     # Adapt param noise, if necessary.
                     if memory.nb_entries >= batch_size and t % param_noise_adaption_interval == 0:
                         distance = agent.adapt_param_noise()
@@ -215,15 +220,16 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     epoch_actor_losses.append(al)
                     agent.update_target_net()
 
-                    if dologging and tf_sum_logging:
+                    if dologging and tf_sum_logging and rank==0:
                         
                         writer_t.add_summary(current_summary, epoch*nb_epoch_cycles*nb_train_steps + cycle*nb_train_steps + t_train)
 
+                # print("Evaluating!")
                 # Evaluate.
                 eval_episode_rewards = []
                 eval_qs = []
                 
-                if eval_env is not None:
+                if (eval_env is not None):
                     eval_episode_reward = 0.
                     eval_obs = eval_env.reset()
                     eval_done = False
@@ -266,6 +272,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     #     eval_episode_reward = 0.
 
             if dologging: 
+                print("Logging!")
                 # Log stats.
                 epoch_train_duration = time.time() - epoch_start_time
                 duration = time.time() - start_time
@@ -314,6 +321,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 logger.info('')
                 logdir = logger.get_dir()
                 if rank == 0 and logdir:
+                    print("Dumping progress!")
                     if hasattr(env, 'get_state'):
                         with open(os.path.join(logdir, 'env_state.pkl'), 'wb') as f:
                             pickle.dump(env.get_state(), f)
@@ -323,7 +331,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
 
                 ## save tf model
-                if (epoch+1)%save_freq == 0 and rank==0:
+                if rank==0  and (epoch+1)%save_freq == 0 :
+                    print("Saving the model!")
                     os.makedirs(osp.join(logdir, "model"), exist_ok=True)
                     saver.save(U.get_session(), logdir+"/model/ddpg", global_step = epoch)
 

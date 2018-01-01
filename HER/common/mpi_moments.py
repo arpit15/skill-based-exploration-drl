@@ -14,9 +14,15 @@ def mpi_moments(x, axis=0):
         np.array([x.shape[axis]],dtype='float64')])
     try:
         MPI.COMM_WORLD.Allreduce(addvec, totalvec, op=MPI.SUM)
-    except MPI.Exception:
-        logger.info("error")
+        # logger.info("moment without error")
+        # logger.info(addvec)
+        # logger.info(type(addvec))
+        # logger.info("-"*50)
+    except MPI.Exception as err:
+        logger.info("moment error")
+        logger.info(err)
         logger.info(addvec)
+        logger.info(type(addvec))
         logger.info("-"*50)
 
     sum = totalvec[:n]
