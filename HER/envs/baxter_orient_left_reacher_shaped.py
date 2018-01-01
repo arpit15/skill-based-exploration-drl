@@ -205,8 +205,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         target_pose = ob[2:4]
         
         ## reward function definition
+        reward_gripper_target = np.linalg.norm(gripper_pose - target_pose)
         reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.05            #assume: my robot has 2cm error
-        total_reward = -1*(not reward_reaching_goal)
+        total_reward = -1*reward_gripper_target + 1*reward_reaching_goal
 
         info = {}
 

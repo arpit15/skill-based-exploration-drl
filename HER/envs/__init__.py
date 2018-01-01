@@ -49,3 +49,10 @@ register(
     entry_point='HER.envs.baxter_orient_left_reacher:BaxterEnv',
     # More arguments here
 )
+
+
+register(
+    id='BaxterReacher-v2',
+    entry_point='HER.envs.baxter_orient_left_reacher_shaped:BaxterEnv',
+    # More arguments here
+)
