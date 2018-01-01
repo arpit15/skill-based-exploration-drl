@@ -56,4 +56,4 @@ def normal_std(value):
         value = [0.]
     if not isinstance(value, list):
         value = [value]
-    return np.stsd(np.array(value))
+    return np.std(np.array(value))
