@@ -73,8 +73,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     ## gym methods
 
     def reset_model(self):
-        print("last state:",self.old_state)
-        print("New Episode!")
+        # print("last state:",self.old_state)
+        # print("New Episode!")
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
         ## random target location
@@ -96,7 +96,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.out_of_bound = 0
         self.num_step = 0
         curr_state = self._get_obs()
-        print("start state:",curr_state)
+        # print("start state:",curr_state)
         return self._get_obs()
 
     def viewer_setup(self):
@@ -324,8 +324,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     
     from ipdb import set_trace
+    import HER.envs
+    import gym
 
-    env = BaxterEnv()
+    env = gym.make('Baxter-v8')
     EVAL_EPISODE = 10
     reward_mat = []
 
