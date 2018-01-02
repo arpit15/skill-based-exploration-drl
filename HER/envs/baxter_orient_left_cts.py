@@ -24,7 +24,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     starting state: (0.63, 0.2, 0.59, 0.27, 0.55, 0.3)
     max_num_steps = 50
     """
-    def __init__(self):
+    def __init__(self, max_len=50):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
         mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts.xml") , 1)
         utils.EzPickle.__init__(self)
@@ -66,7 +66,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                         "Speed")
 
         self.old_state = np.zeros((6,))
-        self.max_num_steps = 50
+        self.max_num_steps = max_len
         print("INIT DONE!")
       
 

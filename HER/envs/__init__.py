@@ -5,7 +5,13 @@ import HER
 register(
     id='Baxter-v1',
     entry_point='HER.envs.baxter_orient_left_cts:BaxterEnv',
-    # More arguments here
+    kwargs={'max_len':50}
+)
+
+register(
+    id='Baxter-v8',
+    entry_point='HER.envs.baxter_orient_left_cts:BaxterEnv',
+    kwargs={'max_len':20}
 )
 
 register(
