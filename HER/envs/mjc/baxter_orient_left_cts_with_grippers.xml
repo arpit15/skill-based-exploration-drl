@@ -40,7 +40,8 @@
 
    <default>
 		<geom margin="0.001" solimp="0.95 0.95 0.01"/>
-        <joint limited="true" damping="10000" armature=".01"/>
+        <joint limited="true" damping="10000" armature="2" stiffness="0" frictionloss="0"/>
+
 		<default class="viz">
 			<geom contype="0" conaffinity="0" group="1" type="mesh"/>
 		</default>
@@ -166,33 +167,33 @@
                                                             
                                                             <inertial pos="0 0 0" quat="0 0 0 -1" mass="0.02" diaginertia="0.01 0.01 0.01" />
                                                             <!-- <joint name="l_gripper_l_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="0 0.020833" /> -->
-                                                            <joint name="l_gripper_l_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="0 0.04" />
-                                                            <geom class="viz" mesh="extended_narrow" euler="1.57 1.57 0" rgba="0.1 0.1 0.1 1"/>
-                                                            <geom size="0.005 0.00675 0.05635" pos="0 0.01725 0.0615" quat="0 0 0 -1" type="box" rgba="0.1 0.1 0.1 1"/>
-                                                            <geom size="0.005 0.025 0.0085" pos="-0.005 -0.003 0.0083" quat="0 0 0 -1" type="box" rgba="0.1 0.1 0.1 1"/>
+                                                            <joint name="l_gripper_l_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="0 0.04" damping="1000" armature="100"/>
+                                                            <!-- <geom class="viz" mesh="extended_narrow" euler="1.57 1.57 0" rgba="0.1 0.1 0.1 1"/> -->
+                                                            <geom size="0.005 0.00675 0.05635" pos="0 0.01725 0.0615" quat="0 0 0 -1" type="box" rgba="0.1 0.1 0.1 1" condim="4" friction="1 0.05 0.01"/>
+                                                            <geom size="0.005 0.025 0.0085" pos="-0.005 -0.003 0.0083" quat="0 0 0 -1" type="box" rgba="0.1 0.1 0.1 1" condim="4" friction="1 0.05 0.01"/>
                                                             <body name="l_gripper_l_finger_tip" pos="0 0.01725 0.1127">
                                                                 <site name="grip_l" pos="0.0 0.0 0" rgba="0 1 0 1" size="0.01 0.01 0.01"/>
                                                                 <inertial pos="0 0 0" quat="0 0 0 1" mass="0.01" diaginertia="0.01 0.01 0.01" />
-                                                                <geom class="viz" pos="-.02 -.009 0.003" mesh="paddle_tip" euler="-1.57 0 0"/>
-                                                                <geom size="0.021 0.00325 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="box" />
+                                                                <!-- <geom class="viz" pos="-.02 -.009 0.003" mesh="paddle_tip" euler="-1.57 0 0"/>
+                                                                <geom size="0.021 0.00325 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="box" /> -->
                                                                 <!-- <geom pos="-.007 -.01 0.003" class="viz" mesh="half_round_tip" euler="-1.57 0 0"/> -->
-                                                                <!-- <geom size="0.008 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="cylinder" /> -->
+                                                                <geom size="0.008 0.0185" pos="0 -0.0045 -0.015" quat="0 0 0 1" type="cylinder" condim="4" friction="50 0.05 0.01"/>
                                                             </body>
                                                         </body>
                                                          <body name="l_gripper_r_finger" pos="0 0.0015 0.02">
                                                             <inertial pos="0 0 0" mass="0.02" diaginertia="0.01 0.01 0.01" />
                                                             <!-- <joint name="l_gripper_r_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="-0.020833 0" /> -->
-                                                            <joint name="l_gripper_r_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="-0.04 0" />
-                                                            <geom class="viz" mesh="extended_narrow" euler="1.57 -1.57 0" rgba="0.1 0.1 0.1 1"/>
-                                                            <geom size="0.005 0.00675 0.05635" pos="0 -0.01725 0.0615" type="box" rgba="0.1 0.1 0.1 1"/>
-                                                            <geom size="0.005 0.025 0.0085" pos="0.005 0.003 0.0083" type="box" rgba="0.1 0.1 0.1 1"/>
+                                                            <joint name="l_gripper_r_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="-0.04 0" damping="1000" armature="100"/>
+                                                            <!-- <geom class="viz" mesh="extended_narrow" euler="1.57 -1.57 0" rgba="0.1 0.1 0.1 1"/> -->
+                                                            <geom size="0.005 0.00675 0.05635" pos="0 -0.01725 0.0615" type="box" rgba="0.1 0.1 0.1 1" condim="4" friction="1 0.05 0.01"/>
+                                                            <geom size="0.005 0.025 0.0085" pos="0.005 0.003 0.0083" type="box" rgba="0.1 0.1 0.1 1" condim="4" friction="1 0.05 0.01"/>
                                                             <body name="l_gripper_r_finger_tip" pos="0 -0.01725 0.1127">
                                                                 <site name="grip_r" pos="0.0 0.0 0" rgba="0 1 0 1" size="0.01 0.01 0.01"/>
                                                                 <inertial pos="0 0 0" mass="0.01" diaginertia="0.01 0.01 0.01" />
-                                                                <geom pos=".02 .009 0.003" class="viz" mesh="paddle_tip" euler="-1.57 3.14 0"/>
-                                                                <geom size="0.021 0.00325 0.0185" pos="0 0.0045 -0.015" type="box" />
+                                                                <!-- <geom pos=".02 .009 0.003" class="viz" mesh="paddle_tip" euler="-1.57 3.14 0"/>
+                                                                <geom size="0.021 0.00325 0.0185" pos="0 0.0045 -0.015" type="box" /> -->
                                                                 <!-- <geom pos=".007 .01 0.003" class="viz" mesh="half_round_tip" euler="-1.57 3.14 0"/> -->
-                                                                <!-- <geom size="0.008 0.0185" pos="0 0.0045 -0.015" type="cylinder" /> -->
+                                                                <geom size="0.008 0.0185" pos="0 0.0045 -0.015" type="cylinder" condim="4" friction="50 0.05 0.01" />
                                                             </body>
                                                         </body> 
                                                     </body>
@@ -211,7 +212,7 @@
         
         <!-- Table -->
         <body name="top" pos="0.6 0.0 -0.05">
-            <geom name="top" rgba="0.8 0.8 0.8 1" material="tabletop1" type="box" size="0.4 0.8 0.02" contype="1" conaffinity="1" friction="2 0.005 0.0001"/>
+            <geom name="top" rgba="0.8 0.8 0.8 1" material="tabletop1" type="box" size="0.4 0.8 0.02" contype="1" conaffinity="1" friction="2 0.005 1"/>
             
             <!-- leg 1 -->
             <body name="leg1" pos="0.19 0.49 -0.35">
@@ -238,10 +239,10 @@
         <!-- box -->
         <!-- <body name="box" pos="0.59 0.27 0.0" euler="0 0 0.785398"> -->
         <body name="box" pos="0.59 0.27 0.0">
-            <geom name="box" type="box"  rgba="1.0 0.0 0.0 1" size="0.03 0.03 0.03" contype="3" conaffinity="3" friction="1 0.005 0.0001"/>
+            <geom name="box" type="box"  rgba="1.0 0.0 0.0 1" size="0.03 0.03 0.03" contype="3" conaffinity="3" condim="4" friction="50 0.05 0.001" />
             <site name="box" pos="0.0 0.0 0" rgba="0 0 1 1" size="0.02 0.02 0.025"/>
             <joint name="box" type="free" limited="false" damping="10"/>
-            <inertial pos="0 0 0" mass=".1" diaginertia="1 1 1"/>
+            <inertial pos="0 0 0" mass=".001" diaginertia="1 1 1"/>
         </body>
 
         <body name="target" pos="0.55 0.3 0.0">
@@ -269,8 +270,8 @@
         <!-- <position joint="l_gripper_l_finger_joint" ctrlrange="0 0.020833" ctrllimited="true" kp="10000"/>
         <position joint="l_gripper_r_finger_joint" ctrlrange="-0.020833 0" ctrllimited="true" kp="10000"/> -->
 
-        <position joint="l_gripper_l_finger_joint" ctrlrange="0 0.04" ctrllimited="true" kp="500"/>
-        <position joint="l_gripper_r_finger_joint" ctrlrange="-0.04 0" ctrllimited="true" kp="500"/>
+        <position joint="l_gripper_l_finger_joint" ctrlrange="0 0.04" ctrllimited="true" kp="10000"/>
+        <position joint="l_gripper_r_finger_joint" ctrlrange="-0.04 0" ctrllimited="true" kp="10000"/>
 
         <!-- spring -->
         <!-- <motor joint="axle" ctrlrange="-100.0 100.0" ctrllimited="true" /> -->

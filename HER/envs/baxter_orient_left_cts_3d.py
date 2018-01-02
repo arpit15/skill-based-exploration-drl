@@ -66,7 +66,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                         "Speed")
 
         self.old_state = np.zeros((9,))
-        self.max_num_steps = 50
+        self.max_num_steps = 100
         print("INIT DONE!")
       
 
@@ -320,9 +320,10 @@ if __name__ == "__main__":
             # env.close_gripper(gap=-1)
             # print(env.data.qpos[8:10])
             
-            action1 = np.array([0., 0., -1., 0.])
-            action2 = np.array([0., 0.4, 0., 0.])
-            action3 = np.array([0., 0., 1., -0.5])
+            action1 = np.array([-0.1, 0., -1., 1.0])
+            action2 = np.array([0., 0.4, 0., 0.4])
+            action3 = np.array([0., 0., 0., -0.4])
+            action4 = np.array([0,0,1,-0.4])
             print(ob)
             while((not done) and (i<1000)):
                 
@@ -331,19 +332,21 @@ if __name__ == "__main__":
                 # action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z), 1.0])
                 # action = env.action_space.sample()
                 action = np.array([0., 0., 0, 1.0])
-                if(i<=15 and i>10):
+                if(i<=20 and i>5):
                     action = action1
-                elif(i>15 and i<22):
+                elif(i>20 and i<22):
                     action = action2
-                elif(i>22 and i<30):
+                elif(i>=22 and i<30):
                     action = action3
+                elif(i>=30 and i<90):
+                    action = action4
                 print(action)
                 ob, reward, done, info = env.step(action)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
                 # print( i, done)    
                 i+=1
-                sleep(.1)
+                # sleep(.001)
                 env.render()
                 random_r += reward
 

@@ -5,12 +5,14 @@ from gym import spaces
 import os 
 import os.path as osp
 import signal 
+import gym
 
 import mujoco_py
 
 from trac_ik_python.trac_ik_wrap import TRAC_IK
 from trac_ik_python import trac_ik_wrap as tracik
 
+import HER.envs
 from time import sleep
 
 from ipdb import set_trace
@@ -24,7 +26,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     starting state: (0.63, 0.2, 0.55, 0.3)
     max_num_steps = 50
     """
-    def __init__(self):
+    def __init__(self, max_len=50):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
         mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_reacher.xml") , 1)
         utils.EzPickle.__init__(self)
@@ -66,7 +68,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                         "Speed")
 
         self.old_state = np.zeros((4,))
-        self.max_num_steps = 50
+        self.max_num_steps = max_len
         print("INIT DONE!")
       
 
@@ -266,7 +268,8 @@ if __name__ == "__main__":
     
     from ipdb import set_trace
 
-    env = BaxterEnv()
+    # env = BaxterEnv(max_len=10)
+    env = gym.make("BaxterReacher-v3")
     EVAL_EPISODE = 10
     reward_mat = []
 

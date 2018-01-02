@@ -47,7 +47,13 @@ register(
 register(
     id='BaxterReacher-v1',
     entry_point='HER.envs.baxter_orient_left_reacher:BaxterEnv',
-    # More arguments here
+    kwargs={"max_len":50}
+)
+
+register(
+    id='BaxterReacher-v3',
+    entry_point='HER.envs.baxter_orient_left_reacher:BaxterEnv',
+    kwargs={"max_len":10}
 )
 
 
