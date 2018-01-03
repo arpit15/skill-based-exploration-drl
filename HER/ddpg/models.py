@@ -25,15 +25,15 @@ class Actor(Model):
         self.nb_actions = nb_actions
         self.layer_norm = layer_norm
 
-    def __call__(self, obs, reuse=False, numLayers=3):
+    def __call__(self, obs, reuse=False, num_layers=3, hidden_units=512):
         with tf.variable_scope(self.name) as scope:
             if reuse:
                 scope.reuse_variables()
 
             x = obs
 
-            for _ in range(numLayers):
-                x = tf.layers.dense(x, 64)
+            for _ in range(num_layers):
+                x = tf.layers.dense(x, hidden_units)
                 if self.layer_norm:
                     x = tc.layers.layer_norm(x, center=True, scale=True)
                 x = tf.nn.relu(x)
@@ -52,20 +52,20 @@ class Critic(Model):
         super(Critic, self).__init__(name=name)
         self.layer_norm = layer_norm
 
-    def __call__(self, obs, action, reuse=False, numLayers=3):
+    def __call__(self, obs, action, reuse=False, num_layers=3, hidden_units=512):
         with tf.variable_scope(self.name) as scope:
             if reuse:
                 scope.reuse_variables()
 
             x = obs
-            x = tf.layers.dense(x, 64)
+            x = tf.layers.dense(x, hidden_units)
             if self.layer_norm:
                 x = tc.layers.layer_norm(x, center=True, scale=True)
             x = tf.nn.relu(x)
 
             x = tf.concat([x, action], axis=-1)
 
-            for _ in range(numLayers-1):
+            for _ in range(num_layers-1):
                 x = tf.layers.dense(x, 64)
                 if self.layer_norm:
                     x = tc.layers.layer_norm(x, center=True, scale=True)
