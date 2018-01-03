@@ -14,6 +14,13 @@ register(
     kwargs={'max_len':20}
 )
 
+
+register(
+    id='Baxter-v9',
+    entry_point='HER.envs.baxter_orient_left_cts:BaxterEnv',
+    kwargs={'max_len':30}
+)
+
 register(
     id='Baxter-v2',
     entry_point='HER.envs.baxter_orient_left_cts_angle_reward:BaxterEnv',
