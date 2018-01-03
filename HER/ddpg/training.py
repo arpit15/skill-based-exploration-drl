@@ -140,6 +140,16 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
         print("Ready to go!")
         for epoch in range(global_t, nb_epochs):
+            
+            # stat containers
+            epoch_actor_losses = []
+            epoch_critic_losses = []
+            epoch_adaptive_distances = []
+
+            eval_episode_rewards = []
+            eval_qs = []
+            eval_episode_success = []
+
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
                 for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
@@ -205,9 +215,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                 # print(rank, "Training!")
                 # Train.
-                epoch_actor_losses = []
-                epoch_critic_losses = []
-                epoch_adaptive_distances = []
+                
                 for t_train in range(nb_train_steps):
                     # print(rank, t_train)
                     # Adapt param noise, if necessary.
@@ -226,9 +234,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                 # print("Evaluating!")
                 # Evaluate.
-                eval_episode_rewards = []
-                eval_qs = []
-                eval_episode_success = []
+                
                 
                 if (eval_env is not None) and rank==0:
                     eval_episode_reward = 0.
