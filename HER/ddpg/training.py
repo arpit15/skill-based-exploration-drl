@@ -142,7 +142,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         for epoch in range(global_t, nb_epochs):
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
-                for t_rollout in range(nb_rollout_steps):
+                for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
                     # Predict next action.
                     action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
