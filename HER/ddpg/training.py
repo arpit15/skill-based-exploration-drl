@@ -86,7 +86,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             for var in critic_trainable_vars:
                 tf.summary.histogram(var.name, var)
 
-            tf.summary.histogram("actions", agent.actor_tf)
+            tf.summary.histogram("actions_out", agent.actor_tf)
+            tf.summary.histogram("critic_out", agent.critic_tf)
 
             summary_var = tf.summary.merge_all()
             writer_t = tf.summary.FileWriter(osp.join(logger.get_dir(), 'train'), sess.graph)

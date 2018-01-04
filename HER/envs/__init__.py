@@ -7,6 +7,12 @@ register(
     kwargs={'max_len':30}
 )
 
+register(
+    id='Baxter-v11',
+    entry_point='HER.envs.baxter_orient_left_cts_near:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
 # Baxter envs
 register(
     id='Baxter-v1',
