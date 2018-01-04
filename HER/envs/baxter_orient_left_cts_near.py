@@ -110,7 +110,14 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.num_step = 0
         curr_state = self._get_obs()
         print("start state:",curr_state)
-        return self._get_obs()
+        
+        ob = self._get_obs()
+        gripper_pose = ob[:2]
+        box_pose = ob[2:4]
+        target_pose = ob[4:6]
+
+        relative_ob = np.concatenate([gripper_pose, box_pose - gripper_pose, target_pose - box_pose ])
+        return relative_ob
 
     def viewer_setup(self):
         # cam_pos = np.array([0.1, 0.0, 0.7, 0.01, -45., 0.])
