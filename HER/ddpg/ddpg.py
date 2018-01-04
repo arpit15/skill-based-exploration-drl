@@ -131,9 +131,10 @@ class DDPG(object):
         Q_obs1 = denormalize(target_critic(normalized_obs1, target_actor(normalized_obs1)), self.ret_rms)
         self.target_Q = self.rewards + (1. - self.terminals1) * gamma * Q_obs1
 
-        ## clip the target_Q
-        self.target_Q = tf.clip_by_value(self.target_Q, -1/(1-gamma), 0)
 
+        # clip the target Q value
+        self.target_Q = tf.clip_by_value(self.target_Q, -1/(1- gamma), 0)
+        
         self.actor_tf = actor(normalized_obs0)
         if inverting_grad:
             actor_tf_clone_with_invert_grad = my_op.py_func(my_op.my_identity_func, [self.actor_tf, -1., 1.], self.actor_tf.dtype, name="MyIdentity", grad=my_op._custom_identity_grad)
@@ -329,15 +330,21 @@ class DDPG(object):
             })
 
         # Get all gradients and perform a synced update.
-        ops = [summary_var, self.actor_grads, self.actor_loss, self.critic_grads, self.critic_loss]
-        current_summary, actor_grads, actor_loss, critic_grads, critic_loss = self.sess.run(ops, feed_dict={
+        ops = [summary_var, self.actor_grads, self.actor_loss, self.critic_grads, self.critic_loss, self.target_Q]
+        current_summary, actor_grads, actor_loss, critic_grads, critic_loss, _ = self.sess.run(ops, feed_dict={
             self.obs0: batch['obs0'],
             self.actions: batch['actions'],
             self.critic_target: target_Q,
+            ## just for summary_var
+            self.obs1: batch['obs1'],
+            self.rewards: batch['rewards'],
+            self.terminals1: batch['terminals1'].astype('float32'),
         })
         self.actor_optimizer.update(actor_grads, stepsize=self.actor_lr)
         self.critic_optimizer.update(critic_grads, stepsize=self.critic_lr)
 
+        # from ipdb import set_trace
+        # set_trace()
         return critic_loss, actor_loss, current_summary
 
     def initialize(self, sess):
