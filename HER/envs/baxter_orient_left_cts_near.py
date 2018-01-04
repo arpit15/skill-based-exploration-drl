@@ -316,7 +316,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         gripper_pose = state[:2]
         box_pose = state[2:4] + gripper_pose
-        target_pose = goal + box_pose 
+        target_pose = state[-2:] + box_pose 
         
         ## reward function definition
         w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1]
