@@ -1,3 +1,0 @@
-Mon Jan  1 19:23:28 2018
-ERROR: Too many contacts returned by collision function
-

@@ -25,7 +25,7 @@ class Actor(Model):
         self.nb_actions = nb_actions
         self.layer_norm = layer_norm
 
-    def __call__(self, obs, reuse=False, num_layers=3, hidden_units=512):
+    def __call__(self, obs, reuse=False, num_layers=3, hidden_units=64):
         with tf.variable_scope(self.name) as scope:
             if reuse:
                 scope.reuse_variables()
@@ -52,7 +52,7 @@ class Critic(Model):
         super(Critic, self).__init__(name=name)
         self.layer_norm = layer_norm
 
-    def __call__(self, obs, action, reuse=False, num_layers=3, hidden_units=512):
+    def __call__(self, obs, action, reuse=False, num_layers=3, hidden_units=64):
         with tf.variable_scope(self.name) as scope:
             if reuse:
                 scope.reuse_variables()

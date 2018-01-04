@@ -1,6 +1,12 @@
 from gym.envs.registration import register
 import HER
 
+register(
+    id='Baxter-v10',
+    entry_point='HER.envs.baxter_orient_left_cts_near:BaxterEnv',
+    kwargs={'max_len':30}
+)
+
 # Baxter envs
 register(
     id='Baxter-v1',
