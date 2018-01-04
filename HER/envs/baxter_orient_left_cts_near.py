@@ -284,7 +284,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def apply_hindsight(self, states, actions, goal_state):
         '''generates hindsight rollout based on the goal
         '''
-        goal = states[-1][2:4]      ## this is the absolute goal location
+        goal = states[-1][2:4]  + states[-1][:2]    ## this is the absolute goal location
         her_states, her_rewards = [], []
         for i in range(len(actions)):
             state = states[i]
