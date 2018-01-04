@@ -131,6 +131,9 @@ class DDPG(object):
         Q_obs1 = denormalize(target_critic(normalized_obs1, target_actor(normalized_obs1)), self.ret_rms)
         self.target_Q = self.rewards + (1. - self.terminals1) * gamma * Q_obs1
 
+        ## clip the target_Q
+        self.target_Q = tf.clip_by_value(self.target_Q, -1/(1-gamma), 0)
+
         self.actor_tf = actor(normalized_obs0)
         if inverting_grad:
             actor_tf_clone_with_invert_grad = my_op.py_func(my_op.my_identity_func, [self.actor_tf, -1., 1.], self.actor_tf.dtype, name="MyIdentity", grad=my_op._custom_identity_grad)

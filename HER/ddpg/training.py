@@ -240,6 +240,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 if (eval_env is not None) and rank==0:
                     eval_episode_reward = 0.
                     eval_obs = eval_env.reset()
+                    eval_obs_start = eval_obs.copy()
                     eval_done = False
                     while(not eval_done):
                         eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
@@ -256,6 +257,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     eval_episode_rewards.append(eval_episode_reward)
                     eval_episode_rewards_history.append(eval_episode_reward)
                     eval_episode_success.append(eval_info["done"]=="goal reached")
+                    if(eval_info["done"]=="goal reached"):
+                        logger.info("success, training epoch:%d,starting config:"%epoch, eval_obs_start)
                     
             if dologging and rank==0: 
                 print("Logging!")
