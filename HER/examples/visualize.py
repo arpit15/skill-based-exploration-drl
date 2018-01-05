@@ -95,7 +95,7 @@ def parse_args():
 
     parser.add_argument('--env-id', type=str, default='Baxter-v1')
     boolean_flag(parser, 'render-eval', default=True)
-    boolean_flag(parser, 'layer-norm', default=False)
+    boolean_flag(parser, 'layer-norm', default=True)
     boolean_flag(parser, 'normalize-returns', default=False)
     boolean_flag(parser, 'normalize-observations', default=True)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)

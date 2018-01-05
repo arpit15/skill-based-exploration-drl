@@ -239,15 +239,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         reward_first_contact = (np.linalg.norm(box_pose- gripper_pose) < 0.05) and (not self.contacted)
         
 
-        penalty = 0.
-        if out_of_bound:
-            self.out_of_bound += 1
-            if(x<0.4): penalty += (x-0.4)**2
-            elif (x>0.8): penalty += (x-0.8)**2
-
-            if(y<0.): penalty += (y-0.)**2
-            elif (y>0.6): penalty += (y-0.6)**2
-
+        
 
         if(reward_first_contact==1):
             self.contacted = True
@@ -329,6 +321,26 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                             
                             
         return total_reward
+
+
+    def set_start_state(self, relative_ob):
+        gripper_pose = relative_ob[:2]
+        box_pose = relative_ob[2:4] + gripper_pose
+        target_pose = relative_ob[-2:] + box_pose
+
+        qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
+        qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
+        
+        qpos[-2:] = target_pose - np.array([0.55, 0.3])
+        qpos[8:10] = box_pose
+        self.set_state(qpos, qvel)
+
+        target_pos = np.array([float(gripper_pose[0]) , float(gripper_pose[1]) , 0.15])
+        target_quat = np.array([1.0, 0.0 , 0.0, 0])
+        target = np.concatenate((target_pos, target_quat))
+        action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
+        if action_jt_space is not None:
+            self.apply_action(action_jt_space)
 
 
 

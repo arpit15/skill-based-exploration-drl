@@ -259,7 +259,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     eval_episode_rewards_history.append(eval_episode_reward)
                     eval_episode_success.append(eval_info["done"]=="goal reached")
                     if(eval_info["done"]=="goal reached"):
-                        logger.info("success, training epoch:%d,starting config:"%epoch, eval_obs_start)
+                        logger.info("success, training epoch:%d,starting config:"%epoch, eval_obs_start, 'final state', eval_obs)
                     
             if dologging and rank==0: 
                 print("Logging!")
