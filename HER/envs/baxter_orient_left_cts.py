@@ -216,52 +216,20 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #print("new gripper_pose", gripper_pose, "block pose:", box_pose)
         
         ## reward function definition
-        w = [0.1, 1., 0.01, 1., -1e-1, -1e-3, -1]
-        # reward_grip_box = np.linalg.norm(old_box_pose- old_gripper_pose) - np.linalg.norm(box_pose- gripper_pose)
-        # reward_box_target = np.linalg.norm(old_box_pose- old_target_pose) - np.linalg.norm(box_pose- target_pose)
-        reward_grip_box = - np.linalg.norm(box_pose- gripper_pose)
-        reward_box_target = - np.linalg.norm(box_pose- target_pose)
-        reward_first_contact = (np.linalg.norm(box_pose- gripper_pose) < 0.05) and (not self.contacted)
-        
-
-        penalty = 0.
-        if out_of_bound:
-            self.out_of_bound += 1
-            if(x<0.4): penalty += (x-0.4)**2
-            elif (x>0.8): penalty += (x-0.8)**2
-
-            if(y<0.): penalty += (y-0.)**2
-            elif (y>0.6): penalty += (y-0.6)**2
-
-
-        if(reward_first_contact==1):
-            self.contacted = True
-        reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.02             #assume: my robot has 2cm error
-
-        # total_reward = w[1]*reward_box_target \
-        #                 + w[0]*reward_grip_box   \
-        #                 + w[6] * out_of_bound \
-        #                 + w[5] * np.square(action).sum()  \
-        #                     + w[2]*reward_first_contact \
-        #                     + w[3]*reward_reaching_goal 
-                            # + w[4]*np.square(action_jt_space-old_action_jt_space).sum() \
-
+        reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.05             #assume: my robot has 5cm error
         total_reward = -1*(not reward_reaching_goal)
 
                                
         box_x, box_y, box_z = self.data.site_xpos[1]
-        info = {   
-                "r_grip_box": reward_grip_box, \
-                "r_box_target" :  reward_box_target, \
-                "r_contact" : reward_first_contact, 
-                # "r_reached" : reward_reaching_goal  \
-                }
+        
+        info = {}
         if reward_reaching_goal == 1:
             done = True
             info["done"] = "goal reached"
         elif box_z < -0.02 or box_x<0.4 or box_x >0.8 or box_y <0.0 or box_y >0.6 :
             done = True
             info["done"] = "box out of bounds"
+            total_reward -= (self.max_num_steps - self.num_step) + 5
         elif (self.num_step > self.max_num_steps):
             done = True
             info["done"] = "max_steps_reached"
