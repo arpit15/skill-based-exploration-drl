@@ -273,10 +273,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         elif box_z < -0.02 or box_x<0.4 or box_x >0.8 or box_y <0.0 or box_y >0.6 :
             done = True
             info["done"] = "box out of bounds"
+            total_reward -= (self.max_num_steps - self.num_step) + 5
         elif (self.num_step > self.max_num_steps):
             done = True
             info["done"] = "max_steps_reached"
-            total_reward -= (self.max_num_steps - self.num_step) + 5
         else: 
             done = False
 
