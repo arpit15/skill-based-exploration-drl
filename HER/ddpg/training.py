@@ -58,7 +58,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     if dologging: logger.info(str(agent.__dict__.items()))
 
     # Set up logging stuff only for a single worker.
-    if rank == 0:
+    if rank != -1:
         saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5)
         save_freq = kwargs["save_freq"]
     else:
@@ -102,7 +102,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         ## restore
         if kwargs["restore_dir"] is not None:
             restore_dir = osp.join(kwargs["restore_dir"], "model")
-            if (restore_dir is not None) and rank==0:
+            if (restore_dir is not None):
                 print('Restore path : ',restore_dir)
                 checkpoint = tf.train.get_checkpoint_state(restore_dir)
                 if checkpoint and checkpoint.model_checkpoint_path:
