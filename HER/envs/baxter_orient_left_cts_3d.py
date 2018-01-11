@@ -76,7 +76,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("last state:",self.old_state)
         # print("New Episode!")
         
-        reset_state = self.np_random.uniform(1)>0.5
+        reset_state = self.np_random.uniform()>0.5
         if reset_state:
             grasped_qpos = np.array([  0. ,  1.85833336e-01 ,  1.13869066e-01 , -1.57743078e+00,
         1.87249089e+00 ,  1.67964818e+00 ,  1.57880024e+00 ,  2.23699321e+00,
@@ -96,7 +96,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             qvel = self.init_qvel + self.np_random.uniform(low=-.002, high=.002, size=self.model.nv)
             ## random target location
             qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
-            grasped_qpos[-1] = grasped_qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
+            qpos[-1] = qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
 
             ## random box location
             qpos[10:12] = qpos[10:12] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
@@ -273,10 +273,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         elif box_z < -0.02 or box_x<0.4 or box_x >0.8 or box_y <0.0 or box_y >0.6 :
             done = True
             info["done"] = "box out of bounds"
+            total_reward -= (self.max_num_steps - self.num_step) + 5
         elif (self.num_step > self.max_num_steps):
             done = True
             info["done"] = "max_steps_reached"
-            total_reward -= (self.max_num_steps - self.num_step) + 5
         else: 
             done = False
 

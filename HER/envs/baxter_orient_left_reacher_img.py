@@ -97,10 +97,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.num_step = 0
         ob = self._get_obs()
         gripper_pose = ob[:2]
-        box_pose = ob[2:4]
-        target_pose = ob[4:6]
+        target_pose = ob[-2:]
 
-        relative_ob = np.concatenate([gripper_pose, box_pose - gripper_pose, target_pose - box_pose ])
+        relative_ob = np.concatenate([gripper_pose, target_pose - gripper_pose ])
         return relative_ob
 
     def viewer_setup(self):
@@ -271,7 +270,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     
     from ipdb import set_trace
-
+    import matplotlib.pyplot as plt
     env = BaxterEnv()
     EVAL_EPISODE = 10
     reward_mat = []
@@ -292,8 +291,11 @@ if __name__ == "__main__":
                 
                 action = env.action_space.sample()
                 ob, reward, done, info = env.step(action)
-                print(info["img"].shape)   
-                set_trace()
+                print(info["img"].shape)
+                #if(i==10):
+                #    plt.imshow(info["img"])
+                #    plt.savefig("/tmp/%d.png"%l)
+                #set_trace()
                 i+=1
                 sleep(.01)
                 
