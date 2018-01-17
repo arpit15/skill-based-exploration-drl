@@ -181,21 +181,21 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def close_gripper(self, gap=0):
         # print("before grip location", self.data.site_xpos[0])
-        qpos = self.data.qpos.copy().flatten()
-        qpos[8] = (gap+1)*0.020833
-        qpos[9] = -(gap+1)*0.020833
-        qvel = self.data.qvel.copy().flatten()
+        # qpos = self.data.qpos.copy().flatten()
+        # qpos[8] = (gap+1)*0.020833
+        # qpos[9] = -(gap+1)*0.020833
+        # qvel = self.data.qvel.copy().flatten()
         # print(qpos.shape, qvel.shape)
-        self.set_state(qpos, qvel)
+        # self.set_state(qpos, qvel)
         # print("after grip location", self.data.site_xpos[0])
         # print("before grip", self.data.ctrl)
-        # ctrl = self.data.ctrl.copy()
-        # ctrl[:7,0] = self.data.qpos[1:8].flatten()
-        # ctrl[7,0] = (gap+1)*0.020833
-        # ctrl[8,0] = -(gap+1)*0.020833
-        # self.data.ctrl = ctrl
+        ctrl = self.data.ctrl.copy()
+        ctrl[:7,0] = self.data.qpos[1:8].flatten()
+        ctrl[7,0] = (gap+1)*0.020833
+        ctrl[8,0] = -(gap+1)*0.020833
+        self.data.ctrl = ctrl
 
-        # self.do_simulation(ctrl, 1000)
+        self.do_simulation(ctrl, 1000)
         # print("qpos", self.data.qpos[1:8].T)
         # print("before grip", self.data.ctrl)
 

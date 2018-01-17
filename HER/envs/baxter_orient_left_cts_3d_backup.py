@@ -26,7 +26,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """
     def __init__(self):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers_pen.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things
@@ -348,7 +348,8 @@ if __name__ == "__main__":
                 ob, reward, done, info = env.step(action)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, done)    
+                # print( i, done)   
+                print(env.data.qpos.T) 
                 i+=1
                 # sleep(.001)
                 env.render()
