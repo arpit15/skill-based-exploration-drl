@@ -85,7 +85,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
    -8.83612920e-04  , 0.02  , 1.24023392e-02])
 
             ## random target location
-            grasped_qpos[-2:] = grasped_qpos[-2:] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
+            # grasped_qpos[-2:] = grasped_qpos[-2:] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
+            grasped_qpos[-2:] = np.array([0.,0.])
             
 
             qvel = self.init_qvel
@@ -95,9 +96,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             qpos = self.init_qpos + self.np_random.uniform(low=-.002, high=.002, size=self.model.nq)
             qvel = self.init_qvel + self.np_random.uniform(low=-.002, high=.002, size=self.model.nv)
             ## random target location
-            qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
-            qpos[-1] = qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
-
+            qpos[-2:] = qpos[-2:] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
+            
             ## random box location
             qpos[10:12] = qpos[10:12] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
             
@@ -368,10 +368,10 @@ if __name__ == "__main__":
                 action = np.array([0., 0., 1, 1.0])
                 # if(i<=20 ):
                 #     action = action1
-                if(i<30):
-                    action = action2
-                elif(i>=31 and i<60):
-                    action = action3
+                # if(i<30):
+                #     action = action2
+                # elif(i>=31 and i<60):
+                #     action = action3
                 # elif(i>=30 and i<90):
                 #     action = action4
                 print(action)
@@ -386,6 +386,9 @@ if __name__ == "__main__":
                 sleep(.001)
                 env.render()
                 random_r += reward
+
+            for k in range(10000):
+                env.render()
 
 
                 # set_trace()
