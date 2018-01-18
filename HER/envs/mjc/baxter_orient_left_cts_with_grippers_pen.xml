@@ -2,7 +2,7 @@
 
 <mujoco model="baxter(v1.31)">
     <compiler coordinate="local" angle="radian" meshdir="meshes/" texturedir="texture/" strippath="false" />
-    <option gravity="0 0 -9.8" timestep="0.002" o_solimp="0.95 0.95 0.01" o_solref="0.01 1" solver="elliptic"/>
+    <option gravity="0 0 -1" timestep="0.002" o_solimp="0.95 0.95 0.01" o_solref="0.01 1" solver="elliptic"/>
     <size njmax="795" nconmax="250" nstack="631875" />
    
    <asset>
@@ -248,22 +248,14 @@
 
         <!-- Table -->
         <body name="container" pos="0.6 0.3 0.0">
-<<<<<<< HEAD
             <geom name="side1" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" pos="0.1 0. 0."/>
             <geom name="side2" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" pos="-0.1 0. 0."/>
             <geom name="side3" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" pos="0 0.1 0."/>
             <geom name="side4" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" pos="0. -0.1 0."/>
-=======
-            <geom name="side1" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="0.1 0. 0."/>
-            <!-- <geom name="side2" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="-0.1 0. 0."/> -->
-            <!-- <geom name="side3" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="0 0.1 0."/> -->
-            <!-- <geom name="side4" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="0. -0.1 0."/> -->
->>>>>>> 4df98bdbeb4a3f9c3d1bdd0fff3b380b88b02529
-
             <site name="target" pos="0.0 0.0 0" rgba="0 1 0 0.5" size="0.02 0.02 0.02"/>
             <joint name="target_x" pos="0 0 0" axis="1 0 0" type="slide" range="-0.15 0.15" />
             <joint name="target_y" pos="0 0 0" axis="0 1 0" type="slide" range="-0.2 0.2" />
-            <inertial pos="0 0 0" mass="10" diaginertia="1 1 1"/>
+            <inertial pos="0 0 0" mass="0.1" diaginertia="1 1 1"/>
            
         </body> 
 

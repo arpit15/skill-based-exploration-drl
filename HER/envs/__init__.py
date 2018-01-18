@@ -1,6 +1,14 @@
 from gym.envs.registration import register
 import HER
 
+
+register(
+    id='Baxter3dpen-v1',
+    entry_point='HER.envs.baxter_orient_left_cts_3d_pen:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
+
 register(
     id='Baxter3d-v1',
     entry_point='HER.envs.baxter_orient_left_cts_3d:BaxterEnv',

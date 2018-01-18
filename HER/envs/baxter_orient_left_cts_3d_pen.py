@@ -18,10 +18,10 @@ from ipdb import set_trace
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
-    random restarts for block and target on the table
+    random restarts for target on the table
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y, delta_z, gap) 5cm push
-    starting state: (0.63, 0.2, 0.59, 0.27, 0.55, 0.3)
+    starting state: (0.59 , 0.27 , 0.2) of the gripper
     max_num_steps = 50
     """
     def __init__(self, max_len=50):
@@ -85,8 +85,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
    -8.83612920e-04  , 0.1  , -0.1])
 
             ## random target location
-            # grasped_qpos[-2:] = grasped_qpos[-2:] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
-            grasped_qpos[-2:] = np.array([0.,0.])
+            grasped_qpos[-2:] = grasped_qpos[-2:] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
+            # grasped_qpos[-2:] = np.array([0.,0.])
             
 
             qvel = self.init_qvel
@@ -228,11 +228,11 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.close_gripper(gap)
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
         x, y, z = self.old_state[:3].copy()
-        print("old x:%.4f, y:%.4f"%(x,y))
+        # print("old x:%.4f, y:%.4f"%(x,y))
         x += delta_x*0.05
         y += delta_y*0.05
         z += delta_z*0.05
-        print("x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
+        # print("x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
         # print("prev controller:",self.data.qpos[1:8].T)
         # print("x:%.4f,y:%.4f"%(0.2*x + 0.6 , 0.3*y + 0.3))
         
@@ -262,7 +262,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #print("new gripper_pose", gripper_pose, "block pose:", box_pose)
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.05             #assume: my robot has 5cm error
+        # print(np.abs(target_pos[0]-box_pose[0]), np.abs(target_pos[1]-box_pose[1]), np.abs(target_pose[2]-box_pose[2]))
+        reward_reaching_goal = (np.abs(target_pose[0]-box_pose[0])<0.07) and (np.abs(target_pose[1]-box_pose[1])<0.07) and (np.abs(target_pose[2]-box_pose[2])<0.02)
         total_reward = -1*(not reward_reaching_goal)
 
                                
@@ -335,7 +336,7 @@ if __name__ == "__main__":
     
     from ipdb import set_trace
     np.set_printoptions(precision=4)
-    env = BaxterEnv(max_len=100)
+    env = BaxterEnv(max_len=10)
     EVAL_EPISODE = 10
     reward_mat = []
 
@@ -356,16 +357,16 @@ if __name__ == "__main__":
             action4 = np.array([0,0,-1,-0.4])
             print(ob)
 
-            for k in range(10000):
-                env.render()
+            # for k in range(10000):
+            #     env.render()
 
             while((not done) and (i<1000)):
                 
                 # ee_x, ee_y, ee_z = env.data.site_xpos[0][:3]
                 # box_x, box_y, box_z = env.data.site_xpos[3][:3]
                 # action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z), 1.0])
-                # action = env.action_space.sample()
-                action = np.array([0., 0., 1, 1.0])
+                action = env.action_space.sample()
+                # action = np.array([0., 0., 1, 1.0])
                 # if(i<=20 ):
                 #     action = action1
                 # if(i<30):
@@ -374,21 +375,23 @@ if __name__ == "__main__":
                 #     action = action3
                 # elif(i>=30 and i<90):
                 #     action = action4
-                print(action)
+                # print(action)
                 ob, reward, done, info = env.step(action)
                 # print(env.data.qpos.T)
                 # if(i==22):
                 #     print(env.data.qpos.T)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, done)    
+                print( i, ob)    
                 i+=1
-                sleep(.001)
+                sleep(.0001)
                 env.render()
                 random_r += reward
 
-            for k in range(10000):
+            for k in range(100):
                 env.render()
+
+            print(np.linalg.norm(ob[-3:]))
 
 
                 # set_trace()
