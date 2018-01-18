@@ -243,15 +243,22 @@
             <geom name="pen" euler="0.0 1.5 0.0" type="capsule" rgba="1 0 0 1" size=".025 .04" contype="3" conaffinity="3" friction="50 0.05 0.001" />
             <site name="box" pos="0.0 0.0 0" rgba="0 0 1 1" size="0.03 0.03 0.03"/>
             <joint name="box" type="free" limited="false" damping="10"/>
-            <inertial pos="0 0 0" mass="0.1" diaginertia="1 1 1"/>
+            <inertial pos="0 0 0" mass="10" diaginertia="1 0.5 0.5"/>
         </body>
 
         <!-- Table -->
         <body name="container" pos="0.6 0.3 0.0">
+<<<<<<< HEAD
             <geom name="side1" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" pos="0.1 0. 0."/>
             <geom name="side2" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" pos="-0.1 0. 0."/>
             <geom name="side3" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" pos="0 0.1 0."/>
             <geom name="side4" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" pos="0. -0.1 0."/>
+=======
+            <geom name="side1" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="0.1 0. 0."/>
+            <!-- <geom name="side2" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="-0.1 0. 0."/> -->
+            <!-- <geom name="side3" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="0 0.1 0."/> -->
+            <!-- <geom name="side4" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" friction="50 0.05 0.001" pos="0. -0.1 0."/> -->
+>>>>>>> 4df98bdbeb4a3f9c3d1bdd0fff3b380b88b02529
 
             <site name="target" pos="0.0 0.0 0" rgba="0 1 0 0.5" size="0.02 0.02 0.02"/>
             <joint name="target_x" pos="0 0 0" axis="1 0 0" type="slide" range="-0.15 0.15" />
