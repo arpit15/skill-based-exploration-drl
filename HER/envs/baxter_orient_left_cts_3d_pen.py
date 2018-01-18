@@ -82,7 +82,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     1.81990859e+00  , 1.52498330e+00 ,  1.67368520e+00  , 2.24731158e+00,
     2.15280063e-02 , -2.15324444e-02  , 6.12439823e-01  , 2.67881861e-01,
     9.32253779e-02  , 9.97366416e-01 , -6.57958521e-02   ,3.05017486e-02,
-   -8.83612920e-04  , 0.02  , 1.24023392e-02])
+   -8.83612920e-04  , 0.1  , -0.1])
 
             ## random target location
             grasped_qpos[-2:] = grasped_qpos[-2:] + self.np_random.uniform(low=-0.05, high=0.05, size=2)
@@ -181,7 +181,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def close_gripper(self, gap=0):
         # print("before grip location", self.data.site_xpos[0])
-        print("gap requested:%.4f"%gap)
+        # print("gap requested:%.4f"%gap)
         # qpos = self.data.qpos.copy().flatten()
         # qpos[8] = (gap+1)*0.020833
         # qpos[9] = -(gap+1)*0.020833
@@ -223,16 +223,16 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         ## parsing of primitive actions
         delta_x, delta_y, delta_z, gap = action
 
-        print("gap:%.4f"%gap)
+        # print("gap:%.4f"%gap)
         # print("grip prev controller:",self.data.qpos[1:8].T)
         self.close_gripper(gap)
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
         x, y, z = self.old_state[:3].copy()
-        # print("old x:%.4f, y:%.4f"%(x,y))
+        print("old x:%.4f, y:%.4f"%(x,y))
         x += delta_x*0.05
         y += delta_y*0.05
         z += delta_z*0.05
-        # print("x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
+        print("x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
         # print("prev controller:",self.data.qpos[1:8].T)
         # print("x:%.4f,y:%.4f"%(0.2*x + 0.6 , 0.3*y + 0.3))
         
@@ -356,7 +356,7 @@ if __name__ == "__main__":
             action4 = np.array([0,0,-1,-0.4])
             print(ob)
 
-            for k in range(10):
+            for k in range(10000):
                 env.render()
 
             while((not done) and (i<1000)):
@@ -368,10 +368,10 @@ if __name__ == "__main__":
                 action = np.array([0., 0., 1, 1.0])
                 # if(i<=20 ):
                 #     action = action1
-                if(i<30):
-                    action = action2
-                elif(i>=31 and i<60):
-                    action = action3
+                # if(i<30):
+                #     action = action2
+                # elif(i>=31 and i<60):
+                #     action = action3
                 # elif(i>=30 and i<90):
                 #     action = action4
                 print(action)
