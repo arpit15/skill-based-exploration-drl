@@ -295,6 +295,7 @@ if __name__ == "__main__":
     EVAL_EPISODE = 10
     reward_mat = []
 
+    set_trace()
     try:
 
         for l in range(EVAL_EPISODE):
