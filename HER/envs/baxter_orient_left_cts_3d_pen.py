@@ -94,11 +94,11 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         else:
             grasped_qpos = np.array([ -1.1937e-03 ,  2.3933e-01 , -2.0445e-02 , -1.5192e+00,   1.5246e+00,
-    1.5489e+00  , 1.5099e+00  , 2.6392e+00 ,  2.0560e-02,  -2.0560e-02,
-    6.5746e-01 ,  4.1344e-01  , 4.9806e-03 ,  9.9898e-01 , -1.3736e-02,
-    4.3098e-02  , 1.6292e-03  , 1.0000e-01 , -1.0000e-01])
-        ## for calculating velocities
-        # self.old_state = np.zeros((6,))
+                                1.5489e+00  , 1.5099e+00  , 2.6392e+00 ,  2.0560e-02,  -2.0560e-02,
+                                6.5746e-01 ,  4.1344e-01  , 4.9806e-03 ,  9.9898e-01 , -1.3736e-02,
+                                4.3098e-02  , 1.6292e-03  , 1.0000e-01 , -1.0000e-01])
+            qvel = self.init_qvel
+            self.set_state(grasped_qpos, qvel)
         
         self.num_step = 0
         ob = self._get_obs()
@@ -249,7 +249,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         ## reward function definition
         # print(np.abs(target_pos[0]-box_pose[0]), np.abs(target_pos[1]-box_pose[1]), np.abs(target_pose[2]-box_pose[2]))
-        reward_reaching_goal = (np.abs(target_pose[0]-box_pose[0])<0.07) and (np.abs(target_pose[1]-box_pose[1])<0.07) and (np.abs(target_pose[2]-box_pose[2])<0.02)
+        reward_reaching_goal = (np.abs(target_pose[0]-box_pose[0])<0.07) and (np.abs(target_pose[1]-box_pose[1])<0.07) and (np.abs(target_pose[2]-box_pose[2])<0.07)
         total_reward = -1*(not reward_reaching_goal)
 
                                
@@ -351,35 +351,35 @@ if __name__ == "__main__":
                 # ee_x, ee_y, ee_z = env.data.site_xpos[0][:3]
                 # box_x, box_y, box_z = env.data.site_xpos[3][:3]
                 # action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z), 1.0])
-                # action = env.action_space.sample()
+                action = env.action_space.sample()
                 # action = action2
-                action = np.array([0., 0., 1, 1.0])
-                if(i<=8 ):
-                    action = action2
-                elif(i>8 and i<=30):
-                    action = action1
-                elif(i>=31 and i<=40):
-                    action = action3
-                    # for k in range(100):
-                    #     env.render()
-                elif(i>=41 and i<60):
-                    action = action4
+                # action = np.array([0., 0., 1, 1.0])
+                # if(i<=8 ):
+                #     action = action2
+                # elif(i>8 and i<=30):
+                #     action = action1
+                # elif(i>=31 and i<=40):
+                #     action = action3
+                #     # for k in range(100):
+                #     #     env.render()
+                # elif(i>=41 and i<60):
+                #     action = action4
                 print(i,action)
                 ob, reward, done, info = env.step(action)
                 
-                if i==42:
-                    print(env.data.qpos.T)
-                    for k in range(1000):
-                        env.render()
-                # print(env.get_body_com("container"))
+                # if i==42:
+                #     print(env.data.qpos.T)
+                #     for k in range(1000):
+                #         env.render()
+                print(env.get_body_com("container"), env.get_body_com("pen"))
                 # if(i==22):
                 #     print(env.data.qpos.T)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
                 # print( i, ob)    
                 i+=1
-                # sleep(.0001)
-                # env.render()
+                sleep(.0001)
+                env.render()
                 random_r += reward
 
             for k in range(100):
