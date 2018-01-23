@@ -76,7 +76,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("last state:",self.old_state)
         # print("New Episode!")
         
-        reset_state = self.np_random.uniform()>0.5
+        reset_state = 0#self.np_random.uniform()>0.5
         if reset_state:
             grasped_qpos = np.array([ -1.19372488e-03,   1.51011795e-01,  -1.81284525e-02 , -1.73151950e+00,
     1.81990859e+00  , 1.52498330e+00 ,  1.67368520e+00  , 2.24731158e+00,
@@ -97,8 +97,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     1.5489e+00  , 1.5099e+00  , 2.6392e+00 ,  2.0560e-02,  -2.0560e-02,
     6.5746e-01 ,  4.1344e-01  , 4.9806e-03 ,  9.9898e-01 , -1.3736e-02,
     4.3098e-02  , 1.6292e-03  , 1.0000e-01 , -1.0000e-01])
-        ## for calculating velocities
-        # self.old_state = np.zeros((6,))
+            qvel = self.init_qvel
+            self.set_state(grasped_qpos, qvel)
         
         self.num_step = 0
         ob = self._get_obs()
@@ -343,34 +343,34 @@ if __name__ == "__main__":
             action4 = np.array([0,0,0.1,-1.0])
             print(ob)
 
-            for k in range(100):
-                env.render()
+            # for k in range(100):
+            #     env.render()
 
             while((not done) and (i<1000)):
                 
                 # ee_x, ee_y, ee_z = env.data.site_xpos[0][:3]
                 # box_x, box_y, box_z = env.data.site_xpos[3][:3]
                 # action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z), 1.0])
-                # action = env.action_space.sample()
+                action = env.action_space.sample()
                 # action = action2
-                action = np.array([0., 0., 1, 1.0])
-                if(i<=8 ):
-                    action = action2
-                elif(i>8 and i<=30):
-                    action = action1
-                elif(i>=31 and i<=40):
-                    action = action3
-                    # for k in range(100):
-                    #     env.render()
-                elif(i>=41 and i<60):
-                    action = action4
+                # action = np.array([0., 0., 1, 1.0])
+                # if(i<=8 ):
+                #     action = action2
+                # elif(i>8 and i<=30):
+                #     action = action1
+                # elif(i>=31 and i<=40):
+                #     action = action3
+                #     # for k in range(100):
+                #     #     env.render()
+                # elif(i>=41 and i<60):
+                #     action = action4
                 print(i,action)
                 ob, reward, done, info = env.step(action)
                 
-                if i==42:
-                    print(env.data.qpos.T)
-                    for k in range(1000):
-                        env.render()
+                # if i==42:
+                #     print(env.data.qpos.T)
+                #     for k in range(1000):
+                #         env.render()
                 # print(env.get_body_com("container"))
                 # if(i==22):
                 #     print(env.data.qpos.T)
@@ -379,7 +379,7 @@ if __name__ == "__main__":
                 # print( i, ob)    
                 i+=1
                 # sleep(.0001)
-                # env.render()
+                env.render()
                 random_r += reward
 
             for k in range(100):
