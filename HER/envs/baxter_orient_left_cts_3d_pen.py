@@ -18,11 +18,10 @@ from ipdb import set_trace
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
-    random restarts for target on the table
+    2 restarts for the gripper with pen in hand
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y, delta_z, gap) 5cm push
-    starting state: (0.59 , 0.27 , 0.2) of the gripper
-    max_num_steps = 50
+    max_num_steps = 20
     """
     def __init__(self, max_len=50):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
