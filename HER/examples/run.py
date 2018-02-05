@@ -124,7 +124,7 @@ def parse_args():
     boolean_flag(parser, 'invert-grad', default=False)
     boolean_flag(parser, 'her', default=True)
     boolean_flag(parser, 'actor-reg', default=True)
-    boolean_flag(parser, 'tf-sum-logging', default=True)
+    boolean_flag(parser, 'tf-sum-logging', default=False)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them

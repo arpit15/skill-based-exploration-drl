@@ -47,9 +47,10 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
             checkpoint = tf.train.get_checkpoint_state(restore_dir)
             if checkpoint and checkpoint.model_checkpoint_path:
                 
-                saver.restore(U.get_session(), checkpoint.model_checkpoint_path)
-                print( "checkpoint loaded:" , checkpoint.model_checkpoint_path)
-                tokens = checkpoint.model_checkpoint_path.split("-")[-1]
+                model_checkpoint_path = osp.join(restore_dir, osp.basename(checkpoint.model_checkpoint_path))
+                saver.restore(U.get_session(), model_checkpoint_path)
+                print( "checkpoint loaded:" , model_checkpoint_path)
+                tokens = model_checkpoint_path.split("-")[-1]
                 # set global step
                 global_t = int(tokens)
                 print( ">>> global step set:", global_t)
