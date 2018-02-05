@@ -3,9 +3,15 @@ import HER
 
 
 register(
+    id='Baxter3dpen-v0',
+    entry_point='HER.envs.baxter_orient_left_cts_3d_pen_simple:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
+register(
     id='Baxter3dpen-v1',
     entry_point='HER.envs.baxter_orient_left_cts_3d_pen:BaxterEnv',
-    kwargs={'max_len':20}
+    kwargs={'max_len':50}
 )
 
 
