@@ -40,6 +40,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         agent.initialize(sess)
         sess.graph.finalize()
 
+        set_trace()
         ## restore
         restore_dir = osp.join(kwargs["restore_dir"], "model")
         if (restore_dir is not None):

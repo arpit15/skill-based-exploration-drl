@@ -99,6 +99,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         agent.initialize(sess)
         sess.graph.finalize()
 
+        set_trace()
         ## restore
         if kwargs["restore_dir"] is not None:
             restore_dir = osp.join(kwargs["restore_dir"], "model")
