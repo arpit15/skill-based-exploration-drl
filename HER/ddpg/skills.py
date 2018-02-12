@@ -5,14 +5,19 @@ from HER.common.mpi_running_mean_std import RunningMeanStd
 from HER.ddpg.ddpg import normalize
 import HER.common.tf_util as U
 import os.path as osp
-
-from ipdb import set_trace
+import numpy as np
 
 class SkillSet:
     def __init__(self, skills):
         self.skillset = []
         for skill in skills:
             self.skillset.append(DDPGSkill(**skill))
+
+        logger.info("Skill set init!\n" + "#"*50)
+
+    @property
+    def len(self):
+        return len(self.skillset)
 
     def restore_skillset(self, sess):
         for skill in self.skillset:
@@ -26,10 +31,6 @@ class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
         action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None):
         
-        # Debug info log
-        # logger.info("skill params")
-        # logger.info(str(locals()))
-        # logger.info("-"*20)
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
         
@@ -43,7 +44,7 @@ class DDPGSkill(object):
         
         # Observation normalization.
         if self.normalize_observations:
-            with tf.variable_scope('obs_rms'):
+            with tf.variable_scope('%s/obs_rms'%skill_name):
                 self.obs_rms = RunningMeanStd(shape=observation_shape)
         else:
             self.obs_rms = None
@@ -51,26 +52,45 @@ class DDPGSkill(object):
             self.observation_range[0], self.observation_range[1])
         
         self.actor_tf = self.actor(normalized_obs0)
+
+        ## loader and saver
+        self.loader = tf.train.Saver(self.create_restore_var_dict())
+        
     
-    def restore_skill(self, path, sess):
-        self.sess = sess
-        train_vars = self.actor.trainable_vars
+    def create_restore_var_dict(self):
+        train_vars = self.actor.trainable_vars + tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='%s/obs_rms'%self.skill_name)
+
         var_restore_dict={}
         for var in train_vars:
             name = var.name
-            name = name.replace(self.skill_name, "actor")
+            
+            ## takes care of obs normalization var
+            if("obs_rms" in name):
+                name = name.replace("%s/"%self.skill_name,"")
+            ## takes care of actor weights 
+            elif(self.skill_name in name):
+                name = name.replace(self.skill_name, "actor")
+            
             var_restore_dict[name[:-2]] = var
 
-        # print("restoring following vars\n"+"-"*20)
-        # print(var_restore_dict)
-        # print("-"*50)
-        loader = tf.train.Saver(var_restore_dict)
+        
+        logger.info("restoring following vars\n"+"-"*20)
+        logger.info("num of vars to restore:%d"%len(train_vars))
+        logger.info(str(var_restore_dict))
+        logger.info("-"*50)
+
+        return var_restore_dict
+
+    def restore_skill(self, path, sess):
+        self.sess = sess
+        
+        
         print('Restore path : ',path)
         checkpoint = tf.train.get_checkpoint_state(path)
         if checkpoint and checkpoint.model_checkpoint_path:
             model_checkpoint_path = osp.join(path, osp.basename(checkpoint.model_checkpoint_path))
-            loader.restore(U.get_session(), model_checkpoint_path)
-            print("Successfully loaded %s skill"%self.skill_name)
+            self.loader.restore(U.get_session(), model_checkpoint_path)
+            logger.info("Successfully loaded %s skill"%self.skill_name)
 
     def pi(self, obs, compute_Q=False):
         

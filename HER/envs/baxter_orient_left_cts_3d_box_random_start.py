@@ -18,7 +18,7 @@ from ipdb import set_trace
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 9dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
-    4 restarts for the gripper with pen in hand and 1 without grasping
+    4 restarts for the gripper with box in hand and 1 without grasping
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y, delta_z, gap) 5cm push
     max_num_steps = 20
@@ -385,7 +385,7 @@ if __name__ == "__main__":
                 #     print(env.data.qpos.T)
                 #     for k in range(1000):
                 #         env.render()
-                print(env.get_body_com("container"), env.get_body_com("pen"))
+                print(env.get_body_com("container"), env.get_body_com("box"))
                 # if(i==22):
                 #     print(env.data.qpos.T)
                 # print(i, action, ob, reward)

@@ -9,7 +9,7 @@ pnpBox = {
 	"nb_actions":4,
 	"skill_name": "pnpBox",
 	"observation_shape":(9,),
-	"restore_path":"/home/arpit/new_RL3/baseline_results_new/HER/Baxter-v1/run3/model"
+	"restore_path":"/home/arpit/new_RL3/baseline_results_new/HER/Baxter3d-v1/run2/model"
 }
 
 skillset = [putAinB, pnpBox]
