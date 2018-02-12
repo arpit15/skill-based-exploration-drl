@@ -18,14 +18,14 @@ from ipdb import set_trace
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 9dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
-    4 restarts for the gripper with pen in hand and 1 without grasped pen
+    4 restarts for the gripper with pen in hand and 1 without grasping
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y, delta_z, gap) 5cm push
     max_num_steps = 20
     """
     def __init__(self, max_len=50):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers_pen.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers_box.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things

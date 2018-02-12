@@ -2,6 +2,12 @@ from gym.envs.registration import register
 import HER
 
 register(
+    id='Baxter3dbox-v0',
+    entry_point='HER.envs.baxter_orient_left_cts_3d_box_random_start:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
+register(
     id='Baxter3dpen-v3',
     entry_point='HER.envs.baxter_orient_left_cts_3d_pen_random_start:BaxterEnv',
     kwargs={'max_len':20}
