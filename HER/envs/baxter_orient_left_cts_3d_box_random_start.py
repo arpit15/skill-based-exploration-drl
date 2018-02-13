@@ -82,7 +82,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                                     6.5746e-01 ,  4.1344e-01  , 4.9806e-03 ,  9.9898e-01 , -1.3736e-02,
                                     4.3098e-02  , 1.6292e-03  , 1.0000e-01 , -1.0000e-01])
 
-            reset_state = self.np_random.choice(4)
+            reset_state = self.np_random.choice(5)
             if reset_state==0:
                 pass
             elif reset_state==1:
