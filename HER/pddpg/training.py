@@ -4,8 +4,8 @@ from collections import deque
 import pickle
 import math 
 
-from HER.ddpg.ddpg import DDPG
-from HER.ddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
+from HER.pddpg.ddpg import DDPG
+from HER.pddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
 import HER.common.tf_util as U
 
 from HER import logger
@@ -80,8 +80,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     
    
     with U.single_threaded_session() as sess:
-        
-
         # Set summary saver
         if dologging and tf_sum_logging and rank==0: 
             tf.summary.histogram("actor_grads", agent.actor_grads)
@@ -148,7 +146,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         ## containers for hindsight
         if kwargs["her"]: 
             # logger.info("-"*50 +'\nWill create HER\n' + "-"*50)
-            states, actions = [], []
+            states, pactions, actions = [], [], []
 
         print("Ready to go!")
         for epoch in range(global_t, nb_epochs):
@@ -167,7 +165,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
                     # Predict next action.
-                    paction, q = agent.pi(obs, apply_noise=True, compute_Q=True)
+                    paction, pq = agent.pi(obs, apply_noise=True, compute_Q=True)
                     
                     if(kwargs['skillset']):
                         ## break actions into primitives and their params    
@@ -196,11 +194,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                     # Book-keeping.
                     epoch_actions.append(action)
-                    epoch_qs.append(q)
-                    agent.store_transition(obs, action, r, new_obs, done)
+                    epoch_qs.append(pq)
+                    agent.store_transition(obs, paction, r, new_obs, done)
 
                     ## storing info for hindsight
                     states.append(obs.copy())
+                    pactions.append(paction.copy())
                     actions.append(action.copy())
 
                     obs = new_obs
@@ -223,14 +222,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             
                             ## store her transitions: her_states: n+1, her_rewards: n
                             for her_i in range(len(her_states)-2):
-                                agent.store_transition(her_states[her_i], actions[her_i], her_rewards[her_i], her_states[her_i+1],False)
+                                agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
                             #store last transition
-                            agent.store_transition(her_states[-2],actions[-1], her_rewards[-1], her_states[-1], True)
+                            agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
 
 
                             ## refresh the storage containers
-                            del states, actions
-                            states, actions = [], []
+                            del states, pactions, actions
+                            states, pactions, actions = [], [], []
 
                         agent.reset()
                         obs = env.reset()
@@ -265,7 +264,19 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     eval_obs_start = eval_obs.copy()
                     eval_done = False
                     while(not eval_done):
-                        eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
+                        eval_paction, eval_pq = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
+                        
+                        if(kwargs['skillset']):
+                            ## break actions into primitives and their params    
+                            eval_primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
+                            eval_primitive_id = np.argmax(eval_primitives_prob)
+                            eval_primitive_obs = eval_obs.copy()
+                            ## HACK. TODO: make it more general
+                            eval_primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
+
+                            eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_primitive_obs)
+
+
                         eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                         if render_eval:
                             print("Render!")
@@ -274,7 +285,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             print("rendered!")
                         eval_episode_reward += eval_r
 
-                        eval_qs.append(eval_q)
+                        eval_qs.append(eval_pq)
                         
                     eval_episode_rewards.append(eval_episode_reward)
                     eval_episode_rewards_history.append(eval_episode_reward)

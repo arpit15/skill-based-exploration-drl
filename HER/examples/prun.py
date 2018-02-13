@@ -45,6 +45,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     action_noise = None
     param_noise = None
 
+    tf.reset_default_graph()
     ## this is a HACK
     if kwargs['skillset']:
         import HER.skills.set2 as skillset_file
@@ -75,7 +76,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
             raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
 
     # Configure components.
-    memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
+    memory = Memory(limit=int(1e6), action_shape=(nb_actions,), observation_shape=env.observation_space.shape)
     critic = Critic(layer_norm=layer_norm)
     
     if kwargs['skillset'] is None:
@@ -89,7 +90,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
     logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
-    # tf.reset_default_graph()
+    
     set_global_seeds(seed)
     env.seed(seed)
     if eval_env is not None:
@@ -144,7 +145,7 @@ def parse_args():
     boolean_flag(parser, 'invert-grad', default=False)
     boolean_flag(parser, 'her', default=True)
     boolean_flag(parser, 'actor-reg', default=True)
-    boolean_flag(parser, 'tf-sum-logging', default=True)
+    boolean_flag(parser, 'tf-sum-logging', default=False)
 
     parser.add_argument('--skillset', type=str, default=None)
 
