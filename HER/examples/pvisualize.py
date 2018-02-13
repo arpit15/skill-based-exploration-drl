@@ -7,6 +7,8 @@ from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
+
+from HER.ddpg.skills import SkillSet
 import HER.pddpg.testing as testing
 from HER.pddpg.models import Actor, Critic
 from HER.pddpg.memory import Memory
@@ -44,7 +46,18 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Parse noise_type
     action_noise = None
     param_noise = None
-    nb_actions = env.action_space.shape[-1]
+
+    tf.reset_default_graph()
+    ## this is a HACK
+    if kwargs['skillset']:
+        import HER.skills.set2 as skillset_file
+        # skillset_file = __import__("HER.skills.%s"%kwargs['skillset'])
+        my_skill_set = SkillSet(skillset_file.skillset)
+        nb_actions = 3 +  my_skill_set.len
+
+    else:
+        nb_actions = env.action_space.shape[-1]
+
     for current_noise_type in noise_type.split(','):
         current_noise_type = current_noise_type.strip()
         if current_noise_type == 'none':
@@ -64,12 +77,19 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Configure components.
     memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
     critic = Critic(layer_norm=layer_norm)
-    actor = Actor(discrete_action_size = env.discrete_action_size, cts_action_size = nb_actions - env.discrete_action_size, layer_norm=layer_norm)
+    
+    if kwargs['skillset'] is None:
+        actor = Actor(discrete_action_size = env.env.discrete_action_size, cts_action_size = nb_actions - env.env.discrete_action_size, layer_norm=layer_norm)
+        my_skill_set = None
+    else:
+        # pass
+        # get the skillset and make actor accordingly
+        actor = Actor(discrete_action_size = my_skill_set.len , cts_action_size = nb_actions - my_skill_set.len, layer_norm=layer_norm)
 
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
     logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
-    tf.reset_default_graph()
+    
     set_global_seeds(seed)
     env.seed(seed)
     if eval_env is not None:
@@ -82,7 +102,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
 
     testing.test(env=env, eval_env=eval_env, param_noise=param_noise,
-        action_noise=action_noise, actor=actor, critic=critic, memory=memory, **kwargs)
+        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, **kwargs)
     env.close()
     if eval_env is not None:
         eval_env.close()
@@ -116,6 +136,8 @@ def parse_args():
     parser.add_argument('--save-freq', type=int, default=100000)
     parser.add_argument('--restore-dir', type=str, default="/home/arpit/new_RL3/baseline_results/Baxter-v3/run19")
     boolean_flag(parser, 'dologging', default=False)    
+
+    parser.add_argument('--skillset', type=str, default=None)
 
     args = parser.parse_args()
     dict_args = vars(args)

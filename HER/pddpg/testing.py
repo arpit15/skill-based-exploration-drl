@@ -26,7 +26,12 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
     max_action = env.action_space.high
     
-    agent = DDPG(actor, critic, memory, env.observation_space.shape, env.action_space.shape,
+    if kwargs['skillset']:
+        action_shape = (kwargs['my_skill_set'].len + 3,)
+    else:
+        action_shape = env.action_space.shape
+
+    agent = DDPG(actor, critic, memory, env.observation_space.shape, action_shape,
         gamma=gamma, tau=tau, normalize_returns=normalize_returns, normalize_observations=normalize_observations,
         batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
         actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
@@ -41,6 +46,11 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         sess.graph.finalize()
 
         ## restore
+        if kwargs['skillset']:
+            ## restore skills
+            kwargs['my_skill_set'].restore_skillset(sess=sess)
+
+        ## restore meta controller weights
         restore_dir = osp.join(kwargs["restore_dir"], "model")
         if (restore_dir is not None):
             print('Restore path : ',restore_dir)
@@ -70,7 +80,20 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
             eval_done = False
             
             while(not eval_done):
-                eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
+                eval_paction, eval_pq = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
+
+                if(kwargs['skillset']):
+                    ## break actions into primitives and their params    
+                    primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
+                    primitive_id = np.argmax(primitives_prob)
+                    primitive_obs = eval_obs.copy()
+                    ## HACK. TODO: make it more general
+                    primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
+
+                    # print(primitive_id)
+                    eval_action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
+
+
                 eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                 
                 # print(eval_obs, max_action*eval_action, eval_info)

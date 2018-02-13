@@ -105,8 +105,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         sess.graph.finalize()
 
         ## restore
-        ## restore skills
-        kwargs['my_skill_set'].restore_skillset(sess=sess)
+        if kwargs['skillset']:
+            ## restore skills
+            kwargs['my_skill_set'].restore_skillset(sess=sess)
         ## restore current controller
         if kwargs["restore_dir"] is not None:
             restore_dir = osp.join(kwargs["restore_dir"], "model")
