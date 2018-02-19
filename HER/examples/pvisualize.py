@@ -50,8 +50,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     tf.reset_default_graph()
     ## this is a HACK
     if kwargs['skillset']:
-        import HER.skills.set2 as skillset_file
-        # skillset_file = __import__("HER.skills.%s"%kwargs['skillset'])
+        skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
         my_skill_set = SkillSet(skillset_file.skillset)
         nb_actions = 3 +  my_skill_set.len
 
@@ -134,10 +133,10 @@ def parse_args():
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/run1')
     parser.add_argument('--save-freq', type=int, default=100000)
-    parser.add_argument('--restore-dir', type=str, default="/home/arpit/new_RL3/baseline_results/Baxter-v3/run19")
+    parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=False)    
 
-    parser.add_argument('--skillset', type=str, default=None)
+    parser.add_argument('--skillset', type=str, default='run2')
 
     args = parser.parse_args()
     dict_args = vars(args)

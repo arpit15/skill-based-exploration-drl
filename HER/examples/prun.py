@@ -48,8 +48,8 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     tf.reset_default_graph()
     ## this is a HACK
     if kwargs['skillset']:
-        import HER.skills.set2 as skillset_file
-        # skillset_file = __import__("HER.skills.%s"%kwargs['skillset'])
+        # import HER.skills.set2 as skillset_file
+        skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
         my_skill_set = SkillSet(skillset_file.skillset)
         nb_actions = 3 +  my_skill_set.len
 
@@ -147,7 +147,7 @@ def parse_args():
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
-    parser.add_argument('--skillset', type=str, default=None)
+    parser.add_argument('--skillset', type=str, default='set2')
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
