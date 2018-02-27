@@ -136,7 +136,7 @@ def parse_args():
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=False)    
 
-    parser.add_argument('--skillset', type=str, default='run2')
+    parser.add_argument('--skillset', type=str, default='set2')
 
     args = parser.parse_args()
     dict_args = vars(args)

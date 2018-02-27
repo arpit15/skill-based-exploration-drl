@@ -115,8 +115,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 print('Restore path : ',restore_dir)
                 checkpoint = tf.train.get_checkpoint_state(restore_dir)
                 if checkpoint and checkpoint.model_checkpoint_path:
-                    saver.restore(U.get_session(), checkpoint.model_checkpoint_path)
-                    print( "checkpoint loaded:" , checkpoint.model_checkpoint_path)
+                    basemodel = osp.basename(checkpoint.model_checkpoint_path)
+                    print( "checkpoint loaded:" , osp.join(restore_dir, basemodel))
+                    
+                    saver.restore(U.get_session(), osp.join(restore_dir, basemodel))
                     logger.info("checkpoint loaded:" + str(checkpoint.model_checkpoint_path))
                     tokens = checkpoint.model_checkpoint_path.split("-")[-1]
                     # set global step

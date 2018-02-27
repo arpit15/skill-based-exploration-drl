@@ -308,16 +308,6 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     
     def calc_reward(self, state, goal, action):
         
-        ## parsing of primitive actions
-        delta_x, delta_y, delta_z, gap = action
-        
-        x, y, z = self.old_state[:3].copy()
-        x += delta_x*0.05
-        y += delta_y*0.05
-        z += delta_z*0.05
-
-        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z >0.5)
-
         gripper_pose = state[:3]
         box_pose = state[3:6] + gripper_pose
         target_pose = goal + box_pose

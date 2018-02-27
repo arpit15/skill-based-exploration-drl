@@ -18,14 +18,15 @@ from ipdb import set_trace
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
     state space: relative state space position of gripper, (block-gripper) and (target-block)
-    2 restarts for the gripper with pen in hand
+    random restarts for block and target on the table
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y, delta_z, gap) 5cm push
-    max_num_steps = 20
+    starting state: (0.63, 0.2, 0.59, 0.27, 0.55, 0.3)
+    max_num_steps = 50
     """
-    def __init__(self, max_len=50):
+    def __init__(self, max_len=10):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers_pen.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things
@@ -74,27 +75,49 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def reset_model(self):
         # print("last state:",self.old_state)
         # print("New Episode!")
-        grasped_qpos = np.array([ -1.1937e-03 ,  2.3933e-01 , -2.0445e-02 , -1.5192e+00,   1.5246e+00,
-                                1.5489e+00  , 1.5099e+00  , 2.6392e+00 ,  2.0560e-02,  -2.0560e-02,
-                                6.5746e-01 ,  4.1344e-01  , 4.9806e-03 ,  9.9898e-01 , -1.3736e-02,
-                                4.3098e-02  , 1.6292e-03  , 1.0000e-01 , -1.0000e-01])
-
-        reset_state = self.np_random.choice(4)
-        if reset_state==0:
-            pass
-        elif reset_state==1:
-            grasped_qpos[-2:] = np.array([0.0, -0.1])
-        elif reset_state==2:
-            grasped_qpos[-2:] = np.array([-0.1, 0.2])
-        elif reset_state ==3:
-            grasped_qpos[-2:] = np.array([0.1, 0.3])
         
+        reset_state = 0#self.np_random.uniform()>0.5
+
+        if reset_state:
+            grasped_qpos = np.array([  0. ,  1.85833336e-01 ,  1.13869066e-01 , -1.57743078e+00,
+        1.87249089e+00 ,  1.67964818e+00 ,  1.57880024e+00 ,  2.23699321e+00,
+        2.68245581e-02  ,-2.46668516e-02  , 6.09046750e-01  , 2.73356216e-01,
+        2.50803949e-03  , 9.99880925e-01  ,-1.19302114e-02   ,9.78048682e-03,
+        3.85171977e-04, 6.09046750e-01 - 0.55, 2.73356216e-01 - 0.3])
+        # 3.85171977e-04  ,-1.21567676e-01  , 2.00143005e-01])
+
+            ## random target location
+            # grasped_qpos[-3:-1] = grasped_qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+            # grasped_qpos[-1] = grasped_qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
+
+            qvel = self.init_qvel
+            self.set_state(grasped_qpos, qvel)
+
+        else:
+            qpos = self.init_qpos + self.np_random.uniform(low=-.002, high=.002, size=self.model.nq)
+            qvel = self.init_qvel + self.np_random.uniform(low=-.002, high=.002, size=self.model.nv)
             
+            ## random box location
+            qpos[10:12] = qpos[10:12] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+            
+            ## random target location
+            qpos[-2:] = qpos[10:12] - np.array([0.55, 0.3])
+            # qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+            # qpos[-1] = qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
 
-        qvel = self.init_qvel
-        self.set_state(grasped_qpos, qvel)
+            self.set_state(qpos, qvel)
+
+            target_pos = np.array(list(qpos[10:12] +  self.np_random.uniform(low=-0.05, high=0.05, size=2)) + [0.2]) 
+            target_quat = np.array([1.0, 0.0 , 0.0, 0])
+            target = np.concatenate((target_pos, target_quat))
+            action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
+            if action_jt_space is not None:
+                self.apply_action(action_jt_space)
+
+            self.close_gripper(gap=1)
+        ## for calculating velocities
+        # self.old_state = np.zeros((6,))
         
-
         self.num_step = 0
         ob = self._get_obs()
         gripper_pose = ob[:3]
@@ -106,7 +129,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def viewer_setup(self):
         # cam_pos = np.array([0.1, 0.0, 0.7, 0.01, -45., 0.])
-        cam_pos = np.array([1.0, 0.0, 0.7, 1.5, -45, 180])
+        cam_pos = np.array([1.0, 0.0, 0.7, 0.5, -45, 180])
         self.set_cam_position(self.viewer, cam_pos)
 
     def _get_obs(self):
@@ -125,7 +148,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
         self.model.data.qpos = qpos
         self.model.data.qvel = qvel
-        # self.model._compute_subtree() #pylint: disable=W0212
+        self.model._compute_subtree() #pylint: disable=W0212
         self.model.forward()
 
     ## my methods
@@ -162,12 +185,11 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def close_gripper(self, gap=0):
         # print("before grip location", self.data.site_xpos[0])
-        # print("gap requested:%.4f"%gap)
         # qpos = self.data.qpos.copy().flatten()
         # qpos[8] = (gap+1)*0.020833
         # qpos[9] = -(gap+1)*0.020833
         # qvel = self.data.qvel.copy().flatten()
-        # # print(qpos.shape, qvel.shape)
+        # print(qpos.shape, qvel.shape)
         # self.set_state(qpos, qvel)
         # print("after grip location", self.data.site_xpos[0])
         # print("before grip", self.data.ctrl)
@@ -175,10 +197,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         ctrl[:7,0] = self.data.qpos[1:8].flatten()
         ctrl[7,0] = (gap+1)*0.020833
         ctrl[8,0] = -(gap+1)*0.020833
-        self.data.ctrl = ctrl.copy()
+        self.data.ctrl = ctrl
 
-        # self.do_simulation(ctrl, 1000)
-        # print("qpos gripper", self.data.qpos[8:10].T)
+        self.do_simulation(ctrl, 1000)
+        # print("qpos", self.data.qpos[1:8].T)
         # print("before grip", self.data.ctrl)
 
     def set_cam_position(self, viewer, cam_pos):
@@ -204,12 +226,14 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         ## parsing of primitive actions
         delta_x, delta_y, delta_z, gap = action
 
-        # print("gap:%.4f"%gap)
         # print("grip prev controller:",self.data.qpos[1:8].T)
         self.close_gripper(gap)
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
         x, y, z = self.old_state[:3].copy()
         # print("old x:%.4f, y:%.4f"%(x,y))
+
+        curr_out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+
         x += delta_x*0.05
         y += delta_y*0.05
         z += delta_z*0.05
@@ -243,8 +267,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #print("new gripper_pose", gripper_pose, "block pose:", box_pose)
         
         ## reward function definition
-        # print(np.abs(target_pos[0]-box_pose[0]), np.abs(target_pos[1]-box_pose[1]), np.abs(target_pose[2]-box_pose[2]))
-        reward_reaching_goal = (np.abs(target_pose[0]-box_pose[0])<0.07) and (np.abs(target_pose[1]-box_pose[1])<0.07) and (np.abs(target_pose[2]-box_pose[2])<0.07)
+        reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.05             #assume: my robot has 5cm error
         total_reward = -1*(not reward_reaching_goal)
 
                                
@@ -257,6 +280,11 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         elif box_z < -0.02 or box_x<0.4 or box_x >0.8 or box_y <0.0 or box_y >0.6 :
             done = True
             info["done"] = "box out of bounds"
+            total_reward -= (self.max_num_steps - self.num_step) + 5
+        elif curr_out_of_bound:
+            ## simulation got weird
+            done = True
+            info["done"] = "simulation unstable"
             total_reward -= (self.max_num_steps - self.num_step) + 5
         elif (self.num_step > self.max_num_steps):
             done = True
@@ -306,8 +334,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     
     from ipdb import set_trace
-    np.set_printoptions(precision=4)
-    env = BaxterEnv(max_len=5)
+
+    env = BaxterEnv()
     EVAL_EPISODE = 10
     reward_mat = []
 
@@ -322,13 +350,13 @@ if __name__ == "__main__":
             # env.close_gripper(gap=-1)
             # print(env.data.qpos[8:10])
             
-            action1 = np.array([0.0, 0., 0., 1.0])
-            action2 = np.array([0., 0.4, 0., -0.4])
-            action3 = np.array([0., 0., -1.0, 1.0])
-            action4 = np.array([0,0,0.1,-1.0])
+            action1 = np.array([-0.1, 0., -1., 1.0])
+            action2 = np.array([0., 0.4, 0., 0.4])
+            action3 = np.array([0., 0., 0., -0.4])
+            action4 = np.array([0,0,1,-0.4])
             print(ob)
 
-            for k in range(100):
+            for k in range(10):
                 env.render()
 
             while((not done) and (i<1000)):
@@ -337,40 +365,26 @@ if __name__ == "__main__":
                 # box_x, box_y, box_z = env.data.site_xpos[3][:3]
                 # action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z), 1.0])
                 action = env.action_space.sample()
-                # action = action2
-                # action = np.array([0., 0., 1, 1.0])
-                # if(i<=8 ):
-                #     action = action2
-                # elif(i>8 and i<=30):
+                # action = np.array([0., 0., 0, 1.0])
+                # if(i<=20 and i>5):
                 #     action = action1
-                # elif(i>=31 and i<=40):
+                # elif(i>20 and i<22):
+                #     action = action2
+                # elif(i>=22 and i<30):
                 #     action = action3
-                #     # for k in range(100):
-                #     #     env.render()
-                # elif(i>=41 and i<60):
+                # elif(i>=30 and i<90):
                 #     action = action4
-                print(i,action)
+                print(action)
                 ob, reward, done, info = env.step(action)
-                
-                # if i==42:
-                #     print(env.data.qpos.T)
-                #     for k in range(1000):
-                #         env.render()
-                print(env.get_body_com("container"), env.get_body_com("pen"))
                 # if(i==22):
                 #     print(env.data.qpos.T)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, ob)    
+                # print( i, done)    
                 i+=1
-                sleep(.0001)
+                sleep(.001)
                 env.render()
                 random_r += reward
-
-            for k in range(100):
-                env.render()
-
-            print(np.linalg.norm(ob[-3:]))
 
 
                 # set_trace()

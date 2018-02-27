@@ -18,13 +18,12 @@ from time import sleep
 from ipdb import set_trace
 
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
-    """cts env, 6dim
-    state space: relative state space position of gripper, (block-gripper) and (target-block)
+    """cts env, 4dim
+    state space: relative state space position of gripper and (target-gripper)
     random restarts for target on the table
     reward function: - 1(not reaching)
     actions: (delta_x, delta_y) 5cm push
     starting state: (0.63, 0.2, 0.55, 0.3)
-    max_num_steps = 50
     """
     def __init__(self, max_len=50):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
@@ -97,10 +96,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.num_step = 0
         ob = self._get_obs()
         gripper_pose = ob[:2]
-        box_pose = ob[2:4]
-        target_pose = ob[4:6]
+        target_pose = ob[-2:]
 
-        relative_ob = np.concatenate([gripper_pose, box_pose - gripper_pose, target_pose - box_pose ])
+        relative_ob = np.concatenate([gripper_pose, target_pose - gripper_pose])
         return relative_ob
 
     def viewer_setup(self):
@@ -123,7 +121,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
         self.model.data.qpos = qpos
         self.model.data.qvel = qvel
-        self.model._compute_subtree() #pylint: disable=W0212
+        # self.model._compute_subtree() #pylint: disable=W0212
         self.model.forward()
 
     ## my methods
@@ -153,10 +151,6 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         else:
             print("!no result found")
             return None
-        
-
-    def close_gripper(self, left_gap=0):
-        pass
 
     def set_cam_position(self, viewer, cam_pos):
         for i in range(3):
@@ -211,7 +205,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         target_pose = ob[2:4]
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.05            #assume: my robot has 2cm error
+        reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.03            #assume: my robot has 2cm error
         total_reward = -1*(not reward_reaching_goal)
 
         info = {}
@@ -233,36 +227,27 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def apply_hindsight(self, states, actions, goal_state):
         '''generates hindsight rollout based on the goal
         '''
-        goal = np.array([0., 0.])
+        goal = states[-1][:2]    ## this is the absolute goal location
         her_states, her_rewards = [], []
         for i in range(len(actions)):
             state = states[i]
-            state[-2:] = goal.copy()
+            state[-2:] = goal.copy() - state[:2]
             reward = self.calc_reward(state, goal, actions[i])
             her_states.append(state)
             her_rewards.append(reward)
 
-        goal_state[-2:] = goal
+        goal_state[-2:] = np.array([0., 0.])
         her_states.append(goal_state)
 
         return her_states, her_rewards
     
     def calc_reward(self, state, goal, action):
         
-        ## parsing of primitive actions
-        delta_x, delta_y = action
-        
-        x, y = self.old_state[:2].copy()
-        x += delta_x*0.05
-        y += delta_y*0.05
-        
-        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6)
-
         gripper_pose = state[:2]
-        target_pose = state[2:4] + gripper_pose
+        target_pose = state[-2:] + gripper_pose
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(gripper_pose- target_pose) < 0.02             #assume: my robot has 2cm error
+        reward_reaching_goal = np.linalg.norm(gripper_pose- target_pose) < 0.03             #assume: my robot has 2cm error
         total_reward = -1*(not reward_reaching_goal)
         return total_reward
 
