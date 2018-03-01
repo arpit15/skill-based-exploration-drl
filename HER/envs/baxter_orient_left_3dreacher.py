@@ -167,7 +167,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         ## hack for the init of mujoco.env
         if(action.shape[0]>3):
-            return np.zeros((5,1)), 0, False, {}
+            return np.zeros((6,1)), 0, False, {}
         
         self.num_step += 1
         old_action_jt_space = self.data.qpos[1:8].T.copy()
@@ -237,7 +237,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             her_states.append(state)
             her_rewards.append(reward)
 
-        goal_state[-3:] = np.array([0., 0.])
+        goal_state[-3:] = np.array([0., 0., 0.])
         her_states.append(goal_state)
 
         return her_states, her_rewards
