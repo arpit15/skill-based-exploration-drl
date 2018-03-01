@@ -45,6 +45,12 @@ register(
 
 
 register(
+    id='Baxter3d-v2',
+    entry_point='HER.envs.baxter_orient_left_cts_3d:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
+register(
     id='Baxter3d-v1',
     entry_point='HER.envs.baxter_orient_left_cts_3d:BaxterEnv',
     kwargs={'max_len':50}
