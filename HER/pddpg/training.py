@@ -279,11 +279,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             ## break actions into primitives and their params    
                             eval_primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
                             eval_primitive_id = np.argmax(eval_primitives_prob)
-                            eval_primitive_obs = eval_obs.copy()
+                            # eval_primitive_obs = eval_obs.copy()
                             ## HACK. TODO: make it more general
-                            eval_primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
+                            # eval_primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
 
-                            eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_primitive_obs)
+                            # eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_primitive_obs)
+                            
+                            eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_obs.copy(), primitive_params=eval_paction[kwargs['my_skill_set'].len:])
+                    
                         else:
                             eval_action, eval_q = eval_paction, eval_pq
 
