@@ -92,6 +92,8 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
 
                     # print(primitive_id)
                     eval_action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
+                else:
+                    eval_action, q = eval_paction, eval_pq
 
 
                 eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])

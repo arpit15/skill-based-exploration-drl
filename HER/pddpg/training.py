@@ -48,7 +48,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     if dologging: logger.info('scaling actions by {} before executing in env'.format(max_action))
     
     if kwargs['skillset']:
-        action_shape = (kwargs['my_skill_set'].len + 3,)
+        action_shape = (kwargs['my_skill_set'].len + kwargs['my_skill_set'].params,)
     else:
         action_shape = env.action_space.shape
 
@@ -174,11 +174,17 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         ## break actions into primitives and their params    
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
-                        primitive_obs = obs.copy()
-                        ## HACK. TODO: make it more general
-                        primitive_obs[-3:] = paction[kwargs['my_skill_set'].len:]
 
-                        action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
+                        ## how about sending state seen by meta controller + cts params
+                        # primitive_obs = obs.copy()
+                        # ## HACK. TODO: make it more general
+                        # primitive_obs[-3:] = paction[kwargs['my_skill_set'].len:]
+                        # primitive_obs = np.concatenate((obs.copy(), paction[kwargs['my_skill_set'].len:]))
+
+                        action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[kwargs['my_skill_set'].len:])
+                    else:
+                        action, q = paction, pq
+
 
                     assert action.shape == env.action_space.shape
 
@@ -278,6 +284,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             eval_primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
 
                             eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_primitive_obs)
+                        else:
+                            eval_action, eval_q = eval_paction, eval_pq
 
 
                         eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])

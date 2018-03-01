@@ -6,12 +6,22 @@ from HER.ddpg.ddpg import normalize
 import HER.common.tf_util as U
 import os.path as osp
 import numpy as np
+import os
+
+def get_home_path(path):
+    curr_home_path = os.getenv("HOME")
+    return path.replace("$HOME",curr_home_path)
 
 class SkillSet:
     def __init__(self, skills):
         self.skillset = []
+        self.params_start_idx = []
+        param_idx = 0
         for skill in skills:
+            self.params_start_idx.append(param_idx)
             self.skillset.append(DDPGSkill(**skill))
+            param_idx += self.skillset[-1].num_params
+
 
         logger.info("Skill set init!\n" + "#"*50)
 
@@ -19,17 +29,29 @@ class SkillSet:
     def len(self):
         return len(self.skillset)
 
+    @property
+    def params(self):
+        num_params = 0
+        for skill in self.skillset:
+            num_params += skill.num_params
+
+        return num_params
+
     def restore_skillset(self, sess):
         for skill in self.skillset:
-            skill.restore_skill(path = skill.restore_path, sess = sess)
+            skill.restore_skill(path = get_home_path(skill.restore_path), sess = sess)
 
-    def pi(self, obs, primitive_id=0):
-        return self.skillset[primitive_id].pi(obs)
+    def pi(self, obs, primitive_params=None, primitive_id=0):
+        ## make obs for the skill
+        starting_idx = self.params_start_idx[primitive_id]
+        curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
+        return self.skillset[primitive_id].pi(obs=obs, primitive_params=curr_skill_params)
 
 
 class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
-        action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None):
+        action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None,
+        action_func = None, obs_func = None, num_params=None):
         
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
@@ -41,6 +63,11 @@ class DDPGSkill(object):
         self.action_range = action_range
         self.observation_range = observation_range
         self.actor = Actor(nb_actions=nb_actions, name=skill_name, layer_norm=layer_norm)
+        self.num_params = num_params
+
+        # funcs
+        self.get_action = action_func
+        self.get_obs = obs_func
         
         # Observation normalization.
         if self.normalize_observations:
@@ -92,16 +119,16 @@ class DDPGSkill(object):
             self.loader.restore(U.get_session(), model_checkpoint_path)
             logger.info("Successfully loaded %s skill"%self.skill_name)
 
-    def pi(self, obs, compute_Q=False):
+    def pi(self, obs, primitive_params,compute_Q=False):
         
         actor_tf = self.actor_tf
-        feed_dict = {self.obs0: [obs]}
+        feed_dict = {self.obs0: [self.get_obs(obs=obs, params=primitive_params)]}
         
         action = self.sess.run(actor_tf, feed_dict=feed_dict)
         q = None
         action = action.flatten()
         action = np.clip(action, -1, 1)
-        return action, q
+        return self.get_action(action), q
 
 
 if __name__ == "__main__":
