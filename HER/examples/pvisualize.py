@@ -52,7 +52,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     if kwargs['skillset']:
         skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
         my_skill_set = SkillSet(skillset_file.skillset)
-        nb_actions = 3 +  my_skill_set.len
+        nb_actions = my_skill_set.params +  my_skill_set.len
 
     else:
         nb_actions = env.action_space.shape[-1]
@@ -136,7 +136,7 @@ def parse_args():
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=False)    
 
-    parser.add_argument('--skillset', type=str, default='set2')
+    parser.add_argument('--skillset', type=str, default='set3')
 
     args = parser.parse_args()
     dict_args = vars(args)

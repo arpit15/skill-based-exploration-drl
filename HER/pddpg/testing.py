@@ -27,7 +27,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
     max_action = env.action_space.high
     
     if kwargs['skillset']:
-        action_shape = (kwargs['my_skill_set'].len + 3,)
+        action_shape = (kwargs['my_skill_set'].len + kwargs['my_skill_set'].params,)
     else:
         action_shape = env.action_space.shape
 
@@ -84,14 +84,16 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
 
                 if(kwargs['skillset']):
                     ## break actions into primitives and their params    
-                    primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
-                    primitive_id = np.argmax(primitives_prob)
-                    primitive_obs = eval_obs.copy()
+                    eval_primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
+                    eval_primitive_id = np.argmax(eval_primitives_prob)
+                    # primitive_obs = eval_obs.copy()
                     ## HACK. TODO: make it more general
-                    primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
+                    # primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
 
                     # print(primitive_id)
-                    eval_action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
+                    # eval_action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
+                    eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_obs.copy(), primitive_params=eval_paction[kwargs['my_skill_set'].len:])
+                    
                 else:
                     eval_action, q = eval_paction, eval_pq
 
