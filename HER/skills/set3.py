@@ -2,7 +2,7 @@
 # action: [delta_x, delta_y, delta_z, gap]
 # obs: [gripper_xyz, block_xyz_wrt_gripper, target_xyz_wrt_block]
 import numpy as np
-dim = 2
+dim = 3
 def move_act(skill_action):
 	actual_action = [0.]*4
 	actual_action[:dim] = skill_action
