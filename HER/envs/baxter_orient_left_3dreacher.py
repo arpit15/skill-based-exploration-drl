@@ -27,7 +27,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """
     def __init__(self, max_len=10):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_reacher.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_3dreacher.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things
@@ -79,7 +79,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
         ## random target location
-        qpos[-3:] = qpos[-3:] + self.np_random.uniform(low=-0.15, high=0.15, size=3)
+        qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+        qpos[-1] = qpos[-1] + self.np_random.uniform(low=-0.1, high=0.1, size=1)
         
         self.set_state(qpos, qvel)
 
@@ -176,13 +177,14 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         delta_x, delta_y, delta_z = action
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
         x, y,z = self.old_state[:3].copy()
-        # print("old x:%.4f, y:%.4f"%(x,y))
+        # print("old x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
+        # print("delta x:%.4f, y:%.4f, z:%.4f"%(delta_x, delta_y,delta_z))
         x += delta_x*0.05
         y += delta_y*0.05
         z += delta_z*0.05
-        # print("x:%.4f, y:%.4f"%(x,y))
+        # print("x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
         
-        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.08 or z>0.5)
 
 
         if np.abs(delta_x*0.05)>0.0001 or np.abs(delta_y*0.05)>0.0001 or np.abs(delta_z*0.05)>0.0001:
@@ -206,7 +208,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         target_pose = ob[3:6]
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.03            #assume: my robot has 2cm error
+        reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.05           
         total_reward = -1*(not reward_reaching_goal)
 
         info = {}
@@ -257,9 +259,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     
     from ipdb import set_trace
-
-    env = BaxterEnv(max_len=10)
-    # env = gym.make("BaxterReacher-v3")
+    np.set_printoptions(precision=4)
+    env = BaxterEnv(max_len=50)
+    # env = gym.make("Baxter3dReacher-v1")
     EVAL_EPISODE = 10
     reward_mat = []
 
@@ -272,25 +274,30 @@ if __name__ == "__main__":
             random_r = 0
             ob = env.reset()
             print(ob)
+
+            for _ in range(10):
+                env.render()
             while((not done) and (i<1000)):
                 
-                ee_x, ee_y = env.data.site_xpos[0][:2]
-                box_x, box_y = env.data.site_xpos[1][:2]
-                # action = np.array([(box_x - ee_x), (box_y - ee_y)])
-                action = env.action_space.sample()
+                ee_x, ee_y, ee_z = env.data.site_xpos[0][:3]
+                box_x, box_y, box_z = env.data.site_xpos[1][:3]
+                action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z)])
+                action /= np.linalg.norm(action)
+                # action = env.action_space.sample()
                 ob, reward, done, info = env.step(action)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, done)    
+                print( i, reward,ob, action)    
+
                 i+=1
                 sleep(.01)
                 env.render()
                 random_r += reward
 
-
-                # set_trace()
-
             print("num steps:%d, total_reward:%.4f"%(i+1, random_r))
+
+            for _ in range(100):
+                env.render()
             reward_mat += [random_r]
         print("reward - mean:%f, var:%f"%(np.mean(reward_mat), np.var(reward_mat)))
     except KeyboardInterrupt:

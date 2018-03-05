@@ -233,11 +233,11 @@
 
         </body>
 
-        <body name="target" pos="0.55 0.3 0.25">
-            <site name="target" pos="0.0 0.0 0" rgba="1 0 0 0.1" size="0.02 0.02 0.02"/>
+        <body name="target" pos="0.55 0.3 0.2">
+            <site name="target" pos="0.0 0.0 0" rgba="1 0 0 1.0" size="0.02 0.02 0.02"/>
             <joint name="target_x" pos="0 0 0" axis="1 0 0" type="slide" range="-0.15 0.15" />
             <joint name="target_y" pos="0 0 0" axis="0 1 0" type="slide" range="-0.2 0.2" />
-            <joint name="target_z" pos="0 0 0" axis="0 0 1" type="slide" range="-0.2 0.2" />
+            <joint name="target_z" pos="0 0 0" axis="0 0 1" type="slide" range="-0.1 0.1" />
             <inertial pos="0 0 0" mass="10" diaginertia="1 1 1"/>
            
         </body>
