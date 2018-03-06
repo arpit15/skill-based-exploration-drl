@@ -5,35 +5,36 @@ from gym import spaces
 import os 
 import os.path as osp
 import signal 
+import gym
 
 import mujoco_py
 
 from trac_ik_python.trac_ik_wrap import TRAC_IK
 from trac_ik_python import trac_ik_wrap as tracik
 
+import HER.envs
 from time import sleep
 
-from ipdb import set_trace
+# from ipdb import set_trace
 
 class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """cts env, 6dim
-    state space: relative state space position of gripper, (block-gripper) and (target-block)
-    random restarts for block and target on the table
+    state space: relative state space position of gripper and (target-gripper)
+    random restarts for target on the table
     reward function: - 1(not reaching)
-    actions: (delta_x, delta_y, delta_z, gap) 5cm push
-    starting state: (0.63, 0.2, 0.59, 0.27, 0.55, 0.3)
-    max_num_steps = 50
+    actions: (delta_x, delta_y, delta_z) 5cm push
+    starting state: (0.63, 0.2, 0.55, 0.3)
     """
-    def __init__(self, max_len=50):
+    def __init__(self, max_len=10):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_3dreacher_modified.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things
         # task space action space
 
-        low = np.array([-1., -1., -1., -1.])
-        high = np.array([1., 1., 1., 1.])
+        low = np.array([-1., -1., -1])
+        high = np.array([1., 1., 1])
 
         self.action_space = spaces.Box(low, high)
 
@@ -52,7 +53,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         
         ## ik setup
-        urdf_filename = osp.join(dirname, "urdf", "baxter.urdf")
+        urdf_filename = osp.join(dirname, "urdf", "baxter_modified.urdf")
                 
         with open(urdf_filename) as f:
             urdf = f.read()
@@ -65,7 +66,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                         1e-5,  # default epsilon
                         "Speed")
 
-        self.old_state = np.zeros((9,))
+        self.old_state = np.zeros((6,))
         self.max_num_steps = max_len
         print("INIT DONE!")
       
@@ -73,54 +74,32 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     ## gym methods
 
     def reset_model(self):
-        # print("last state:",self.old_state)
-        # print("New Episode!")
+        print("last state:",self.old_state)
+        print("New Episode!")
+        qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
+        qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
+        ## random target location
+        qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+        qpos[-1] = qpos[-1] + self.np_random.uniform(low=-0.1, high=0.1, size=1)
         
-        reset_state = self.np_random.uniform()>0.5
-        if reset_state:
-            grasped_qpos = np.array([  0. ,  1.85833336e-01 ,  1.13869066e-01 , -1.57743078e+00,
-        1.87249089e+00 ,  1.67964818e+00 ,  1.57880024e+00 ,  2.23699321e+00,
-        2.68245581e-02  ,-2.46668516e-02  , 6.09046750e-01  , 2.73356216e-01,
-        2.50803949e-03  , 9.99880925e-01  ,-1.19302114e-02   ,9.78048682e-03,
-        3.85171977e-04  ,-1.21567676e-01  , 2.00143005e-01])
+        self.set_state(qpos, qvel)
 
-            ## random target location
-            grasped_qpos[-3:-1] = grasped_qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
-            grasped_qpos[-1] = grasped_qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
-
-            qvel = self.init_qvel
-            self.set_state(grasped_qpos, qvel)
-
-        else:
-            qpos = self.init_qpos + self.np_random.uniform(low=-.002, high=.002, size=self.model.nq)
-            qvel = self.init_qvel + self.np_random.uniform(low=-.002, high=.002, size=self.model.nv)
-            ## random target location
-            qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
-            qpos[-1] = qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
-
-            ## random box location
-            qpos[10:12] = qpos[10:12] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
-            
-            self.set_state(qpos, qvel)
-
-            target_pos = np.array([0.59 , 0.27 , 0.2])
-            target_quat = np.array([1.0, 0.0 , 0.0, 0])
-            target = np.concatenate((target_pos, target_quat))
-            action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
-            if action_jt_space is not None:
-                self.apply_action(action_jt_space)
-
-            self.close_gripper(gap=1)
+        target_pos = np.array([0.6 , 0.3 , 0.2])
+        target_quat = np.array([1.0, 0.0 , 0.0, 0])
+        target = np.concatenate((target_pos, target_quat))
+        action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
+        if action_jt_space is not None:
+            self.apply_action(action_jt_space)
         ## for calculating velocities
         # self.old_state = np.zeros((6,))
-        
+        self.contacted = False
+        self.out_of_bound = 0
         self.num_step = 0
         ob = self._get_obs()
         gripper_pose = ob[:3]
-        box_pose = ob[3:6]
-        target_pose = ob[6:9]
+        target_pose = ob[-3:]
 
-        relative_ob = np.concatenate([gripper_pose, box_pose - gripper_pose, target_pose - box_pose ])
+        relative_ob = np.concatenate([gripper_pose, target_pose - gripper_pose])
         return relative_ob
 
     def viewer_setup(self):
@@ -130,10 +109,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _get_obs(self):
         ee_x, ee_y, ee_z = self.data.site_xpos[0][:3]
-        box_x, box_y, box_z = self.data.site_xpos[3][:3]
-        target_x, target_y, target_z = self.data.site_xpos[4][:3]
+        target_x, target_y, target_z = self.data.site_xpos[1][:3]
 
-        state = np.array([ee_x, ee_y, ee_z, box_x, box_y, box_z, target_x, target_y, target_z])
+        state = np.array([ee_x, ee_y, ee_z, target_x, target_y, target_z])
         vel = (state - self.old_state)/self.dt
 
         self.old_state = state.copy()
@@ -144,19 +122,16 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
         self.model.data.qpos = qpos
         self.model.data.qvel = qvel
-        self.model._compute_subtree() #pylint: disable=W0212
+        # self.model._compute_subtree() #pylint: disable=W0212
         self.model.forward()
 
     ## my methods
     def apply_action(self, action):  
-        # print("cmd",action)
-        # print("curr jt pos", self.data.qpos[1:8].T)
         ctrl = self.data.ctrl.copy()
         # print(ctrl.shape)
         ctrl[:7,0] = np.array(action)
         self.data.ctrl = ctrl
         self.do_simulation(ctrl, 1000)
-        # print("next jt pos", self.data.qpos[1:8].T)
     
     def do_ik(self, ee_target, jt_pos):
         
@@ -177,27 +152,6 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         else:
             print("!no result found")
             return None
-        
-
-    def close_gripper(self, gap=0):
-        # print("before grip location", self.data.site_xpos[0])
-        # qpos = self.data.qpos.copy().flatten()
-        # qpos[8] = (gap+1)*0.020833
-        # qpos[9] = -(gap+1)*0.020833
-        # qvel = self.data.qvel.copy().flatten()
-        # print(qpos.shape, qvel.shape)
-        # self.set_state(qpos, qvel)
-        # print("after grip location", self.data.site_xpos[0])
-        # print("before grip", self.data.ctrl)
-        ctrl = self.data.ctrl.copy()
-        ctrl[:7,0] = self.data.qpos[1:8].flatten()
-        ctrl[7,0] = (gap+1)*0.020833
-        ctrl[8,0] = -(gap+1)*0.020833
-        self.data.ctrl = ctrl
-
-        self.do_simulation(ctrl, 1000)
-        # print("qpos", self.data.qpos[1:8].T)
-        # print("before grip", self.data.ctrl)
 
     def set_cam_position(self, viewer, cam_pos):
         for i in range(3):
@@ -213,28 +167,26 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
 
         ## hack for the init of mujoco.env
-        if(action.shape[0]>4):
-            return np.zeros((9,1)), 0, False, {}
+        if(action.shape[0]>3):
+            return np.zeros((6,1)), 0, False, {}
         
         self.num_step += 1
         old_action_jt_space = self.data.qpos[1:8].T.copy()
 
         ## parsing of primitive actions
-        delta_x, delta_y, delta_z, gap = action
-
-        # print("grip prev controller:",self.data.qpos[1:8].T)
-        self.close_gripper(gap)
+        delta_x, delta_y, delta_z = action
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
-        x, y, z = self.old_state[:3].copy()
-        # print("old x:%.4f, y:%.4f"%(x,y))
+        x, y,z = self.old_state[:3].copy()
+        # print("old x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
+        # print("delta x:%.4f, y:%.4f, z:%.4f"%(delta_x, delta_y,delta_z))
         x += delta_x*0.05
         y += delta_y*0.05
         z += delta_z*0.05
         # print("x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
-        # print("prev controller:",self.data.qpos[1:8].T)
-        # print("x:%.4f,y:%.4f"%(0.2*x + 0.6 , 0.3*y + 0.3))
         
-        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+        ## after checking out of bound, we should push the actions close to the boundary. 
+        ## this will correct if the old action are of bound and some motion to reach a new state
+        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.0 or z>0.5)
 
 
         if np.abs(delta_x*0.05)>0.0001 or np.abs(delta_y*0.05)>0.0001 or np.abs(delta_z*0.05)>0.0001:
@@ -255,25 +207,17 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         ## getting state
         ob = self._get_obs()
         gripper_pose = ob[:3]
-        box_pose = ob[3:6]
-        target_pose = ob[6:9]
-        #print("new gripper_pose", gripper_pose, "block pose:", box_pose)
+        target_pose = ob[3:6]
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.05             #assume: my robot has 5cm error
+        reward_reaching_goal = np.linalg.norm(gripper_pose - target_pose) < 0.05           
         total_reward = -1*(not reward_reaching_goal)
 
-                               
-        box_x, box_y, box_z = self.data.site_xpos[3]
-        
         info = {}
+
         if reward_reaching_goal == 1:
             done = True
             info["done"] = "goal reached"
-        elif box_z < -0.02 or box_x<0.4 or box_x >0.8 or box_y <0.0 or box_y >0.6 :
-            done = True
-            info["done"] = "box out of bounds"
-            total_reward -= (self.max_num_steps - self.num_step) + 5
         elif (self.num_step > self.max_num_steps):
             done = True
             info["done"] = "max_steps_reached"
@@ -281,22 +225,18 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             done = False
 
         info['absolute_ob'] = ob.copy()
-        relative_ob = np.concatenate([gripper_pose, box_pose - gripper_pose, target_pose - box_pose ])
+        
+        relative_ob = np.concatenate([gripper_pose, target_pose - gripper_pose ])
         return relative_ob, total_reward, done, info
                                         
     def apply_hindsight(self, states, actions, goal_state):
         '''generates hindsight rollout based on the goal
         '''
-        goal = states[-1][3:6]  + states[-1][:3]    ## this is the absolute goal location
+        goal = states[-1][:3]    ## this is the absolute goal location
         her_states, her_rewards = [], []
         for i in range(len(actions)):
             state = states[i]
-
-            gripper_pose = state[:3]
-            box_pose = state[3:6] + gripper_pose
-            target_pose = state[6:9] + box_pose
-
-            state[-3:] = goal.copy() - box_pose
+            state[-3:] = goal.copy() - state[:3]
             reward = self.calc_reward(state, goal, actions[i])
             her_states.append(state)
             her_rewards.append(reward)
@@ -309,11 +249,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def calc_reward(self, state, goal, action):
         
         gripper_pose = state[:3]
-        box_pose = state[3:6] + gripper_pose
-        target_pose = goal + box_pose
+        target_pose = state[-3:] + gripper_pose
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(box_pose- target_pose) < 0.05
+        reward_reaching_goal = np.linalg.norm(gripper_pose- target_pose) < 0.03             #assume: my robot has 2cm error
         total_reward = -1*(not reward_reaching_goal)
         return total_reward
 
@@ -322,8 +261,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     
     from ipdb import set_trace
-
-    env = BaxterEnv()
+    np.set_printoptions(precision=4)
+    env = BaxterEnv(max_len=50)
+    # env = gym.make("Baxter3dReacher-v1")
     EVAL_EPISODE = 10
     reward_mat = []
 
@@ -335,49 +275,31 @@ if __name__ == "__main__":
             i =0
             random_r = 0
             ob = env.reset()
-            # env.close_gripper(gap=-1)
-            # print(env.data.qpos[8:10])
-            
-            action1 = np.array([-0.1, 0., -1., 1.0])
-            action2 = np.array([0., 0.4, 0., 0.4])
-            action3 = np.array([0., 0., 0., -0.4])
-            action4 = np.array([0,0,1,-0.4])
             print(ob)
 
-            for k in range(10):
+            for _ in range(10):
                 env.render()
-
             while((not done) and (i<1000)):
                 
-                # ee_x, ee_y, ee_z = env.data.site_xpos[0][:3]
-                # box_x, box_y, box_z = env.data.site_xpos[3][:3]
-                # action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z), 1.0])
-                action = env.action_space.sample()
-                # action = np.array([0., 0., 0, 1.0])
-                # if(i<=20 and i>5):
-                #     action = action1
-                # elif(i>20 and i<22):
-                #     action = action2
-                # elif(i>=22 and i<30):
-                #     action = action3
-                # elif(i>=30 and i<90):
-                #     action = action4
-                print(action)
+                ee_x, ee_y, ee_z = env.data.site_xpos[0][:3]
+                box_x, box_y, box_z = env.data.site_xpos[1][:3]
+                action = np.array([(box_x - ee_x), (box_y - ee_y), (box_z - ee_z)])
+                action /= np.linalg.norm(action)
+                # action = env.action_space.sample()
                 ob, reward, done, info = env.step(action)
-                # if(i==22):
-                #     print(env.data.qpos.T)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, done)    
+                print( i, reward,ob, action)    
+                # set_trace()
                 i+=1
-                sleep(.001)
+                sleep(.01)
                 env.render()
                 random_r += reward
 
-
-                # print(env.data.site_xpos)
-
             print("num steps:%d, total_reward:%.4f"%(i+1, random_r))
+
+            for _ in range(100):
+                env.render()
             reward_mat += [random_r]
         print("reward - mean:%f, var:%f"%(np.mean(reward_mat), np.var(reward_mat)))
     except KeyboardInterrupt:

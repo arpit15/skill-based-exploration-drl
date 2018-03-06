@@ -288,7 +288,7 @@ if __name__ == "__main__":
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
                 print( i, reward,ob, action)    
-
+                set_trace()
                 i+=1
                 sleep(.01)
                 env.render()
