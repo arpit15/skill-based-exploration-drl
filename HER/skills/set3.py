@@ -25,7 +25,7 @@ move = {
 	"observation_shape":(dim*2,),
 	"obs_func":move_obs,
 	"num_params": dim,
-	"restore_path":"$HOME/new_RL3/baseline_results_new/HER/Baxter3dReacher-v1/run1/model"
+	"restore_path":"$HOME/new_RL3/baseline_results_new/HER/Baxter3dReachermod-v1/run1/model"
 }
 
 grasp = {
@@ -35,7 +35,7 @@ grasp = {
 	"observation_shape":(9,),
 	"obs_func":grasp_obs,
 	"num_params": 3,
-	"restore_path":"$HOME/new_RL3/baseline_results_new/clusters/Baxter3dgrasp-v1/run1/model"
+	"restore_path":"$HOME/new_RL3/baseline_results_new/HER/Baxter3dgraspmod-v1/run1/model"
 }
 
 skillset = [move, grasp]
