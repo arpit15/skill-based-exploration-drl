@@ -25,7 +25,7 @@ move = {
 	"observation_shape":(dim*2,),
 	"obs_func":move_obs,
 	"num_params": dim,
-	"restore_path":"$HOME/new_RL3/baseline_results_new/HER/Baxter3dReacher-v1/run1/model"
+	"restore_path":"$HOME/new_RL3/baseline_results_new/HER/Baxter3dReachermod-v1/run2/model"
 }
 
 grasp = {

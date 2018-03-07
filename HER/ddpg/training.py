@@ -59,7 +59,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
     # Set up logging stuff only for a single worker.
     if rank != -1:
-        saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5)
+        saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5, save_relative_paths=True)
         save_freq = kwargs["save_freq"]
     else:
         saver = None
