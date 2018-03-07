@@ -76,7 +76,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("last state:",self.old_state)
         # print("New Episode!")
         
-        reset_state = 0#self.np_random.uniform()>0.5
+        reset_state = self.np_random.uniform()>0.5
 
         if reset_state:
             grasped_qpos = np.array([  0. ,  1.85833336e-01 ,  1.13869066e-01 , -1.57743078e+00,
@@ -354,7 +354,7 @@ if __name__ == "__main__":
             action2 = np.array([0., 0.4, 0., 0.4])
             action3 = np.array([0., 0., 0., -0.4])
             action4 = np.array([0,0,1,-0.4])
-            print(ob)
+            # print(ob)
 
             for k in range(10):
                 env.render()
