@@ -8,6 +8,7 @@ from HER.ddpg.ddpg import DDPG
 from HER.ddpg.util import mpi_mean, mpi_std, mpi_max, mpi_sum
 import HER.common.tf_util as U
 
+from HER.ddpg.util import read_checkpoint_local
 from HER import logger
 import numpy as np
 import tensorflow as tf
@@ -17,6 +18,7 @@ import os.path as osp
 from time import sleep
 
 from ipdb import set_trace
+
 
 def test(env, render_eval, reward_scale, param_noise, actor, critic,
     normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
@@ -45,10 +47,13 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         restore_dir = osp.join(kwargs["restore_dir"], "model")
         if (restore_dir is not None):
             print('Restore path : ',restore_dir)
-            checkpoint = tf.train.get_checkpoint_state(restore_dir)
-            if checkpoint and checkpoint.model_checkpoint_path:
+            # checkpoint = tf.train.get_checkpoint_state(restore_dir)
+            model_checkpoint_path = read_checkpoint_local(restore_dir)
+            if model_checkpoint_path:
+            # if checkpoint and checkpoint.model_checkpoint_path:
+            
                 
-                model_checkpoint_path = osp.join(restore_dir, osp.basename(checkpoint.model_checkpoint_path))
+                # model_checkpoint_path = osp.join(restore_dir, osp.basename(checkpoint.model_checkpoint_path))
                 saver.restore(U.get_session(), model_checkpoint_path)
                 print( "checkpoint loaded:" , model_checkpoint_path)
                 tokens = model_checkpoint_path.split("-")[-1]

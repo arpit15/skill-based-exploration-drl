@@ -8,6 +8,12 @@ register(
 )
 
 register(
+    id='Baxter3dgraspmod-v1',
+    entry_point='HER.envs.baxter_orient_left_cts_3d_graspmod:BaxterEnv',
+    kwargs={'max_len':10}
+)
+
+register(
     id='Baxter3dReacher-v1',
     entry_point='HER.envs.baxter_orient_left_3dreacher:BaxterEnv',
     kwargs={"max_len":10}
