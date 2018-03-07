@@ -7,6 +7,7 @@ import math
 from HER.ddpg.ddpg import DDPG
 from HER.ddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
 import HER.common.tf_util as U
+from HER.ddpg.util import read_checkpoint_local
 
 from HER import logger
 import numpy as np
@@ -59,7 +60,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
     # Set up logging stuff only for a single worker.
     if rank != -1:
-        saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5)
+        saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5, save_relative_paths=True)
         save_freq = kwargs["save_freq"]
     else:
         saver = None
@@ -105,12 +106,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             restore_dir = osp.join(kwargs["restore_dir"], "model")
             if (restore_dir is not None):
                 print('Restore path : ',restore_dir)
-                checkpoint = tf.train.get_checkpoint_state(restore_dir)
-                if checkpoint and checkpoint.model_checkpoint_path:
-                    saver.restore(U.get_session(), checkpoint.model_checkpoint_path)
-                    print( "checkpoint loaded:" , checkpoint.model_checkpoint_path)
-                    logger.info("checkpoint loaded:" + str(checkpoint.model_checkpoint_path))
-                    tokens = checkpoint.model_checkpoint_path.split("-")[-1]
+                # checkpoint = tf.train.get_checkpoint_state(restore_dir)
+                # if checkpoint and checkpoint.model_checkpoint_path:
+                model_checkpoint_path = read_checkpoint_local(restore_dir)
+                if model_checkpoint_path:
+                    saver.restore(U.get_session(), model_checkpoint_path)
+                    print( "checkpoint loaded:" , model_checkpoint_path)
+                    logger.info("checkpoint loaded:" + str(model_checkpoint_path))
+                    tokens = model_checkpoint_path.split("-")[-1]
                     # set global step
                     global_t = int(tokens)
                     print( ">>> global step set:", global_t)

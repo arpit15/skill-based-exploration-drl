@@ -4,6 +4,7 @@ from HER import logger
 from HER.common.mpi_running_mean_std import RunningMeanStd
 from HER.ddpg.ddpg import normalize
 import HER.common.tf_util as U
+from HER.ddpg.util import read_checkpoint_local
 import os.path as osp
 import numpy as np
 import os
@@ -113,9 +114,11 @@ class DDPGSkill(object):
         
         
         print('Restore path : ',path)
-        checkpoint = tf.train.get_checkpoint_state(path)
-        if checkpoint and checkpoint.model_checkpoint_path:
-            model_checkpoint_path = osp.join(path, osp.basename(checkpoint.model_checkpoint_path))
+        # checkpoint = tf.train.get_checkpoint_state(path)
+        # if checkpoint and checkpoint.model_checkpoint_path:
+        model_checkpoint_path = read_checkpoint_local(restore_dir)
+        if model_checkpoint_path:
+            # model_checkpoint_path = osp.join(path, osp.basename(checkpoint.model_checkpoint_path))
             self.loader.restore(U.get_session(), model_checkpoint_path)
             logger.info("Successfully loaded %s skill"%self.skill_name)
 
