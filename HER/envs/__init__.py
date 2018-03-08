@@ -2,6 +2,12 @@ from gym.envs.registration import register
 import HER
 
 register(
+    id='Baxter3dmod-v1',
+    entry_point='HER.envs.baxter_orient_left_cts_3d_modified:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
+register(
     id='Baxter3dReachermod-v1',
     entry_point='HER.envs.baxter_orient_left_3dreacher_urdfmodified:BaxterEnv',
     kwargs={"max_len":20}
