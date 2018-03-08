@@ -2,7 +2,7 @@
 # action: [delta_x, delta_y, delta_z, gap]
 # obs: [gripper_xyz, block_xyz_wrt_gripper, target_xyz_wrt_block]
 import numpy as np
-from utils import mirror
+from HER.skills.utils import mirror
 
 dim = 3
 def move_act(skill_action):

@@ -1,5 +1,5 @@
 import numpy as np
-from utils import mirror
+from HER.skills.utils import mirror
 
 putAinB = {
 	"nb_actions":4,
