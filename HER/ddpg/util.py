@@ -1,7 +1,26 @@
+import os.path as osp
 import numpy as np
 import tensorflow as tf
 from mpi4py import MPI
 from HER.common.mpi_moments import mpi_moments
+
+
+def read_checkpoint_local(restore_dir):
+    if(osp.exists(osp.join(restore_dir, 'checkpoint'))):
+        with open(osp.join(restore_dir, 'checkpoint'), 'r') as f:
+            firstline = f.readline().split('"')[1]
+            # get the basename 
+            model_name = osp.basename(firstline)
+            # check existence
+            filename = osp.join(restore_dir,model_name)
+            if(osp.exists(filename + '.meta')):
+                return filename
+            else:
+                return None 
+
+    else:
+        print('No checkpoint file found!')
+        return None
 
 
 def reduce_var(x, axis=None, keepdims=False):

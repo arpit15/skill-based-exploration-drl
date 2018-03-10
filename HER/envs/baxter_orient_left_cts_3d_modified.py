@@ -24,9 +24,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     starting state: (0.63, 0.2, 0.59, 0.27, 0.55, 0.3)
     max_num_steps = 50
     """
-    def __init__(self, max_len=10):
+    def __init__(self, max_len=50):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers_modified.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things
@@ -52,7 +52,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         
         ## ik setup
-        urdf_filename = osp.join(dirname, "urdf", "baxter.urdf")
+        urdf_filename = osp.join(dirname, "urdf", "baxter_modified.urdf")
                 
         with open(urdf_filename) as f:
             urdf = f.read()
@@ -77,18 +77,16 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("New Episode!")
         
         reset_state = self.np_random.uniform()>0.5
-
         if reset_state:
             grasped_qpos = np.array([  0. ,  1.85833336e-01 ,  1.13869066e-01 , -1.57743078e+00,
         1.87249089e+00 ,  1.67964818e+00 ,  1.57880024e+00 ,  2.23699321e+00,
         2.68245581e-02  ,-2.46668516e-02  , 6.09046750e-01  , 2.73356216e-01,
         2.50803949e-03  , 9.99880925e-01  ,-1.19302114e-02   ,9.78048682e-03,
-        3.85171977e-04, 6.09046750e-01 - 0.55, 2.73356216e-01 - 0.3])
-        # 3.85171977e-04  ,-1.21567676e-01  , 2.00143005e-01])
+        3.85171977e-04  ,-1.21567676e-01  , 2.00143005e-01])
 
             ## random target location
-            # grasped_qpos[-3:-1] = grasped_qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
-            # grasped_qpos[-1] = grasped_qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
+            grasped_qpos[-3:-1] = grasped_qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+            grasped_qpos[-1] = grasped_qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
 
             qvel = self.init_qvel
             self.set_state(grasped_qpos, qvel)
@@ -96,18 +94,16 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         else:
             qpos = self.init_qpos + self.np_random.uniform(low=-.002, high=.002, size=self.model.nq)
             qvel = self.init_qvel + self.np_random.uniform(low=-.002, high=.002, size=self.model.nv)
-            
+            ## random target location
+            qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
+            qpos[-1] = qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
+
             ## random box location
             qpos[10:12] = qpos[10:12] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
             
-            ## random target location
-            qpos[-2:] = qpos[10:12] - np.array([0.55, 0.3])
-            # qpos[-3:-1] = qpos[-3:-1] + self.np_random.uniform(low=-0.15, high=0.15, size=2)
-            # qpos[-1] = qpos[-1] + self.np_random.uniform(low=0.1, high=0.3, size=1)
-
             self.set_state(qpos, qvel)
 
-            target_pos = np.array(list(qpos[10:12] +  self.np_random.uniform(low=-0.05, high=0.05, size=2)) + [0.20]) 
+            target_pos = np.array([0.59 , 0.27 , 0.2])
             target_quat = np.array([1.0, 0.0 , 0.0, 0])
             target = np.concatenate((target_pos, target_quat))
             action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
@@ -232,7 +228,8 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         x, y, z = self.old_state[:3].copy()
         # print("old x:%.4f, y:%.4f"%(x,y))
 
-        curr_out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+        curr_out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<-0.05 or z>0.5)
+
 
         x += delta_x*0.05
         y += delta_y*0.05
@@ -241,7 +238,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("prev controller:",self.data.qpos[1:8].T)
         # print("x:%.4f,y:%.4f"%(0.2*x + 0.6 , 0.3*y + 0.3))
         
-        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<-0.05 or z>0.5)
 
 
         if np.abs(delta_x*0.05)>0.0001 or np.abs(delta_y*0.05)>0.0001 or np.abs(delta_z*0.05)>0.0001:
@@ -334,8 +331,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     
     from ipdb import set_trace
-
-    env = BaxterEnv()
+    import HER.envs
+    import gym
+    # env = BaxterEnv()
+    env = gym.make("Baxter3dmod-v1")
     EVAL_EPISODE = 10
     reward_mat = []
 
@@ -356,7 +355,7 @@ if __name__ == "__main__":
             action4 = np.array([0,0,1,-0.4])
             print(ob)
 
-            for k in range(1000):
+            for k in range(10):
                 env.render()
 
             while((not done) and (i<1000)):
@@ -387,7 +386,7 @@ if __name__ == "__main__":
                 random_r += reward
 
 
-                # set_trace()
+                # print(env.data.site_xpos)
 
             print("num steps:%d, total_reward:%.4f"%(i+1, random_r))
             reward_mat += [random_r]

@@ -1,0 +1,1 @@
+def mirror(x): return x

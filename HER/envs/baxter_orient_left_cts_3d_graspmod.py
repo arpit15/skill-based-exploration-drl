@@ -26,7 +26,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     """
     def __init__(self, max_len=10):
         dirname = os.path.dirname(os.path.abspath(__file__)) 
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers.xml") , 1)
+        mujoco_env.MujocoEnv.__init__(self, os.path.join(dirname, "mjc/baxter_orient_left_cts_with_grippers_modified.xml") , 1)
         utils.EzPickle.__init__(self)
 
         ## mujoco things
@@ -52,7 +52,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         
         ## ik setup
-        urdf_filename = osp.join(dirname, "urdf", "baxter.urdf")
+        urdf_filename = osp.join(dirname, "urdf", "baxter_modified.urdf")
                 
         with open(urdf_filename) as f:
             urdf = f.read()
@@ -107,7 +107,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
             self.set_state(qpos, qvel)
 
-            target_pos = np.array(list(qpos[10:12] +  self.np_random.uniform(low=-0.05, high=0.05, size=2)) + [0.20]) 
+            target_pos = np.array(list(qpos[10:12] +  self.np_random.uniform(low=-0.05, high=0.05, size=2)) + [0.1]) 
             target_quat = np.array([1.0, 0.0 , 0.0, 0])
             target = np.concatenate((target_pos, target_quat))
             action_jt_space = self.do_ik(ee_target= target, jt_pos = self.data.qpos[1:8].flat)
@@ -230,9 +230,9 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.close_gripper(gap)
         # print("delta x:%.4f, y:%.4f"%(delta_x, delta_y))
         x, y, z = self.old_state[:3].copy()
-        # print("old x:%.4f, y:%.4f"%(x,y))
+        # print("old x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
 
-        curr_out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+        curr_out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<-0.05 or z>0.5)
 
         x += delta_x*0.05
         y += delta_y*0.05
@@ -241,7 +241,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # print("prev controller:",self.data.qpos[1:8].T)
         # print("x:%.4f,y:%.4f"%(0.2*x + 0.6 , 0.3*y + 0.3))
         
-        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.5)
+        out_of_bound = (x<0.4 or x>0.8) or (y<0.0 or y>0.6) or (z<-0.05 or z>0.5)
 
 
         if np.abs(delta_x*0.05)>0.0001 or np.abs(delta_y*0.05)>0.0001 or np.abs(delta_z*0.05)>0.0001:
@@ -354,9 +354,9 @@ if __name__ == "__main__":
             action2 = np.array([0., 0.4, 0., 0.4])
             action3 = np.array([0., 0., 0., -0.4])
             action4 = np.array([0,0,1,-0.4])
-            print(ob)
+            # print(ob)
 
-            for k in range(1000):
+            for k in range(10):
                 env.render()
 
             while((not done) and (i<1000)):
@@ -380,7 +380,7 @@ if __name__ == "__main__":
                 #     print(env.data.qpos.T)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, done)    
+                # print( i, info)    
                 i+=1
                 sleep(.001)
                 env.render()
