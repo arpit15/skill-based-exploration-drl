@@ -45,8 +45,11 @@ class SkillSet:
     def pi(self, obs, primitive_params=None, primitive_id=0):
         ## make obs for the skill
         starting_idx = self.params_start_idx[primitive_id]
-        curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
-        return self.skillset[primitive_id].pi(obs=obs, primitive_params=curr_skill_params)
+        if primitive_params is not None:
+            curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
+            return self.skillset[primitive_id].pi(obs=obs, primitive_params=curr_skill_params)
+        else:
+            return self.skillset[primitive_id].pi(obs=obs, primitive_params=None)
 
 
 class DDPGSkill(object):
