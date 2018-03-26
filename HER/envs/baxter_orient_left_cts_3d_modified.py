@@ -189,6 +189,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # self.set_state(qpos, qvel)
         # print("after grip location", self.data.site_xpos[0])
         # print("before grip", self.data.ctrl)
+        
+        ## HACK: for no gripper motion
+        if gap < -1 or gap > 1:
+            return
         ctrl = self.data.ctrl.copy()
         ctrl[:7,0] = self.data.qpos[1:8].flatten()
         ctrl[7,0] = (gap+1)*0.020833

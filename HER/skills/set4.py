@@ -7,7 +7,7 @@ from HER.skills.utils import mirror
 dim = 3
 def move_act(skill_action):
 	# get the old gripper loc
-	actual_action = [0.]*4
+	actual_action = [0.]*3 + [-2]
 	actual_action[:dim] = skill_action
 	return  np.array(actual_action)
 
