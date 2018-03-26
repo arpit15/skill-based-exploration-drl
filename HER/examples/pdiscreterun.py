@@ -75,7 +75,8 @@ def run(env_id, seed, evaluation, **kwargs):
         log_dir = kwargs['log_dir'],
         my_skill_set= my_skill_set,
         num_eval_episodes=kwargs['num_eval_episodes'],
-        render_eval = kwargs['render_eval']
+        render_eval = kwargs['render_eval'],
+        commit_for = kwargs['commit_for']
     )
     
     env.close()
@@ -110,6 +111,9 @@ def parse_args():
     parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
     parser.add_argument('--skillset', type=str, default='set4')
+
+    # meta parameters
+    parser.add_argument('--commit-for', type=int, default=1)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them

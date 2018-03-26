@@ -45,7 +45,8 @@ def train(env,
         my_skill_set=None,
         log_dir = None,
         num_eval_episodes=10,
-        render_eval = False
+        render_eval = False,
+        commit_for = 1
         ):
     """Train a deepq model.
 
@@ -114,6 +115,7 @@ def train(env,
     """
     # Create all the functions necessary to train the model
 
+    if my_skill_set: assert commit_for>=1, "commit_for >= 1"
 
     sess = tf.Session()
     sess.__enter__()
@@ -198,17 +200,31 @@ def train(env,
             kwargs['update_param_noise_scale'] = True
         paction = act(np.array(obs)[None], update_eps=update_eps, **kwargs)[0]
         
+        
         if(my_skill_set):
-            ## break actions into primitives and their params    
+            skill_obs = obs.copy()
             primitive_id = paction
-            action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=None)
+            rew = 0.
+            for _ in range(commit_for):
+            
+                ## break actions into primitives and their params    
+                action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
+                new_obs, skill_rew, done, _ = env.step(action)
+            
+                rew += skill_rew
+                if done:
+                    break
+                skill_obs = new_obs
         else:
             action= paction
 
-        env_action = action
-        reset = False
-        new_obs, rew, done, _ = env.step(env_action)
-        # Store transition in the replay buffer.
+            env_action = action
+            reset = False
+            new_obs, rew, done, _ = env.step(env_action)
+          
+
+
+        # Store transition in the replay buffer for the outer env
         replay_buffer.add(obs, paction, rew, new_obs, float(done))
         obs = new_obs
 
@@ -240,13 +256,7 @@ def train(env,
 
         mean_100ep_reward = round(np.mean(episode_rewards[-101:-1]), 1)
         num_episodes = len(episode_rewards)
-        # if done and print_freq is not None and len(episode_rewards) % print_freq == 0:
-        #     logger.record_tabular("steps", t)
-        #     logger.record_tabular("episodes", num_episodes)
-        #     logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
-        #     logger.record_tabular("%d time spent exploring", int(100 * exploration.value(t)))
-            # logger.dump_tabular()
-
+    
         if (checkpoint_freq is not None and t > learning_starts and
                 num_episodes > 100 and t % checkpoint_freq == 0):
             if saved_mean_reward is None or mean_100ep_reward > saved_mean_reward:
@@ -278,10 +288,25 @@ def train(env,
                     eval_paction = act(np.array(eval_obs)[None])[0]
                     
                     if(my_skill_set):
-                        eval_primitive_id = eval_paction
-                        eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_obs.copy(), primitive_params=None)
+                        skill_obs = obs.copy()
+                        primitive_id = paction
+                        rew = 0.
+                        for _ in range(commit_for):
+                        
+                            ## break actions into primitives and their params    
+                            action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
+                            new_obs, skill_rew, done, _ = env.step(action)
+                        
+                            rew += skill_rew
+                            if done:
+                                break
+                            skill_obs = new_obs
                     else:
-                        eval_action = eval_paction
+                        action= paction
+
+                        env_action = action
+                        reset = False
+                        new_obs, rew, done, _ = env.step(env_action)
 
 
                     eval_obs, eval_r, eval_done, eval_info = eval_env.step(eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
