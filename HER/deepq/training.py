@@ -117,236 +117,236 @@ def train(env,
 
     if my_skill_set: assert commit_for>=1, "commit_for >= 1"
 
-    sess = tf.Session()
-    sess.__enter__()
-
-    ## restore
-    if my_skill_set:
-        ## restore skills
-        my_skill_set.restore_skillset(sess=sess)
-        action_shape = my_skill_set.len
-    else:
-        action_shape = env.action_space.n
-        
-    # capture the shape outside the closure so that the env object is not serialized
-    # by cloudpickle when serializing make_obs_ph
-    observation_space_shape = env.observation_space.shape
-    def make_obs_ph(name):
-        return U.BatchInput(observation_space_shape, name=name)
-
-    act, train, update_target, debug = deepq.build_train(
-        make_obs_ph=make_obs_ph,
-        q_func=q_func,
-        num_actions=action_shape,
-        optimizer=tf.train.AdamOptimizer(learning_rate=lr),
-        gamma=gamma,
-        grad_norm_clipping=10,
-        param_noise=param_noise
-    )
-
-    act_params = {
-        'make_obs_ph': make_obs_ph,
-        'q_func': q_func,
-        'num_actions': action_shape,
-    }
-
-    act = ActWrapper(act, act_params)
-
-    # Create the replay buffer
-    if prioritized_replay:
-        replay_buffer = PrioritizedReplayBuffer(buffer_size, alpha=prioritized_replay_alpha)
-        if prioritized_replay_beta_iters is None:
-            prioritized_replay_beta_iters = max_timesteps
-        beta_schedule = LinearSchedule(prioritized_replay_beta_iters,
-                                       initial_p=prioritized_replay_beta0,
-                                       final_p=1.0)
-    else:
-        replay_buffer = ReplayBuffer(buffer_size)
-        beta_schedule = None
-    # Create the schedule for exploration starting from 1.
-    exploration = LinearSchedule(schedule_timesteps=int(exploration_fraction * max_timesteps),
-                                 initial_p=1.0,
-                                 final_p=exploration_final_eps)
-
-    # Initialize the parameters and copy them to the target network.
-    U.initialize()
-    update_target()
-
-    episode_rewards = [0.0]
-    saved_mean_reward = None
-    obs = env.reset()
-    reset = True
+    with U.single_threaded_session() as sess:
     
-    model_saved = False
-    model_file = os.path.join(log_dir, "model")
-    for t in range(max_timesteps):
-        if callback is not None:
-            if callback(locals(), globals()):
-                break
-        # Take action and update exploration to the newest value
-        kwargs = {}
-        if not param_noise:
-            update_eps = exploration.value(t)
-            update_param_noise_threshold = 0.
+
+        ## restore
+        if my_skill_set:
+            ## restore skills
+            my_skill_set.restore_skillset(sess=sess)
+            action_shape = my_skill_set.len
         else:
-            update_eps = 0.
-            # Compute the threshold such that the KL divergence between perturbed and non-perturbed
-            # policy is comparable to eps-greedy exploration with eps = exploration.value(t).
-            # See Appendix C.1 in Parameter Space Noise for Exploration, Plappert et al., 2017
-            # for detailed explanation.
-            update_param_noise_threshold = -np.log(1. - exploration.value(t) + exploration.value(t) / float(env.action_space.n))
-            kwargs['reset'] = reset
-            kwargs['update_param_noise_threshold'] = update_param_noise_threshold
-            kwargs['update_param_noise_scale'] = True
-        paction = act(np.array(obs)[None], update_eps=update_eps, **kwargs)[0]
-        
-        
-        if(my_skill_set):
-            skill_obs = obs.copy()
-            primitive_id = paction
-            rew = 0.
-            for _ in range(commit_for):
+            action_shape = env.action_space.n
             
-                ## break actions into primitives and their params    
-                action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
-                new_obs, skill_rew, done, _ = env.step(action)
-            
-                rew += skill_rew
-                if done:
+        # capture the shape outside the closure so that the env object is not serialized
+        # by cloudpickle when serializing make_obs_ph
+        observation_space_shape = env.observation_space.shape
+        def make_obs_ph(name):
+            return U.BatchInput(observation_space_shape, name=name)
+
+        act, train, update_target, debug = deepq.build_train(
+            make_obs_ph=make_obs_ph,
+            q_func=q_func,
+            num_actions=action_shape,
+            optimizer=tf.train.AdamOptimizer(learning_rate=lr),
+            gamma=gamma,
+            grad_norm_clipping=10,
+            param_noise=param_noise
+        )
+
+        act_params = {
+            'make_obs_ph': make_obs_ph,
+            'q_func': q_func,
+            'num_actions': action_shape,
+        }
+
+        act = ActWrapper(act, act_params)
+
+        # Create the replay buffer
+        if prioritized_replay:
+            replay_buffer = PrioritizedReplayBuffer(buffer_size, alpha=prioritized_replay_alpha)
+            if prioritized_replay_beta_iters is None:
+                prioritized_replay_beta_iters = max_timesteps
+            beta_schedule = LinearSchedule(prioritized_replay_beta_iters,
+                                           initial_p=prioritized_replay_beta0,
+                                           final_p=1.0)
+        else:
+            replay_buffer = ReplayBuffer(buffer_size)
+            beta_schedule = None
+        # Create the schedule for exploration starting from 1.
+        exploration = LinearSchedule(schedule_timesteps=int(exploration_fraction * max_timesteps),
+                                     initial_p=1.0,
+                                     final_p=exploration_final_eps)
+
+        # Initialize the parameters and copy them to the target network.
+        U.initialize()
+        update_target()
+
+        episode_rewards = [0.0]
+        saved_mean_reward = None
+        obs = env.reset()
+        reset = True
+        
+        model_saved = False
+        model_file = os.path.join(log_dir, "model")
+        for t in range(max_timesteps):
+            if callback is not None:
+                if callback(locals(), globals()):
                     break
-                skill_obs = new_obs
-        else:
-            action= paction
-
-            env_action = action
-            reset = False
-            new_obs, rew, done, _ = env.step(env_action)
-          
-
-
-        # Store transition in the replay buffer for the outer env
-        replay_buffer.add(obs, paction, rew, new_obs, float(done))
-        obs = new_obs
-
-        episode_rewards[-1] += rew
-        if done:
-            obs = env.reset()
-            episode_rewards.append(0.0)
-            reset = True
-            print("Time:%d, episodes:%d"%(t,len(episode_rewards)))
-        
-
-        if t > learning_starts and t % train_freq == 0:
-            # print('Training!')
-            # Minimize the error in Bellman's equation on a batch sampled from replay buffer.
-            if prioritized_replay:
-                experience = replay_buffer.sample(batch_size, beta=beta_schedule.value(t))
-                (obses_t, actions, rewards, obses_tp1, dones, weights, batch_idxes) = experience
+            # Take action and update exploration to the newest value
+            kwargs = {}
+            if not param_noise:
+                update_eps = exploration.value(t)
+                update_param_noise_threshold = 0.
             else:
-                obses_t, actions, rewards, obses_tp1, dones = replay_buffer.sample(batch_size)
-                weights, batch_idxes = np.ones_like(rewards), None
-            td_errors = train(obses_t, actions, rewards, obses_tp1, dones, weights)
-            if prioritized_replay:
-                new_priorities = np.abs(td_errors) + prioritized_replay_eps
-                replay_buffer.update_priorities(batch_idxes, new_priorities)
-
-        if t > learning_starts and t % target_network_update_freq == 0:
-            # Update target network periodically.
-            update_target()
-
-        mean_100ep_reward = round(np.mean(episode_rewards[-101:-1]), 1)
-        num_episodes = len(episode_rewards)
-    
-        if (checkpoint_freq is not None and t > learning_starts and
-                num_episodes > 100 and t % checkpoint_freq == 0):
-            if saved_mean_reward is None or mean_100ep_reward > saved_mean_reward:
-                if print_freq is not None:
-                    logger.log("Saving model due to mean reward increase: {} -> {}".format(
-                               saved_mean_reward, mean_100ep_reward))
-                U.save_state(model_file)
-                model_saved = True
-                saved_mean_reward = mean_100ep_reward
-
-        if (eval_env is not None) and t > learning_starts and t % target_network_update_freq == 0:
+                update_eps = 0.
+                # Compute the threshold such that the KL divergence between perturbed and non-perturbed
+                # policy is comparable to eps-greedy exploration with eps = exploration.value(t).
+                # See Appendix C.1 in Parameter Space Noise for Exploration, Plappert et al., 2017
+                # for detailed explanation.
+                update_param_noise_threshold = -np.log(1. - exploration.value(t) + exploration.value(t) / float(env.action_space.n))
+                kwargs['reset'] = reset
+                kwargs['update_param_noise_threshold'] = update_param_noise_threshold
+                kwargs['update_param_noise_scale'] = True
+            paction = act(np.array(obs)[None], update_eps=update_eps, **kwargs)[0]
             
-            # dumping other stats
-            logger.record_tabular("steps", t)
-            logger.record_tabular("episodes", num_episodes)
-            logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
-            logger.record_tabular("%d time spent exploring", int(100 * exploration.value(t)))
+            
+            if(my_skill_set):
+                skill_obs = obs.copy()
+                primitive_id = paction
+                rew = 0.
+                for _ in range(commit_for):
+                
+                    ## break actions into primitives and their params    
+                    action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
+                    new_obs, skill_rew, done, _ = env.step(action)
+                
+                    rew += skill_rew
+                    if done:
+                        break
+                    skill_obs = new_obs
+            else:
+                action= paction
 
-            print("Testing!")
-            eval_episode_rewards = []
-            eval_episode_successes = []
+                env_action = action
+                reset = False
+                new_obs, rew, done, _ = env.step(env_action)
+              
 
-            for i in range(num_eval_episodes):
-                eval_episode_reward = 0.
-                eval_obs = eval_env.reset()
-                eval_obs_start = eval_obs.copy()
-                eval_done = False
-                while(not eval_done):
-                    eval_paction = act(np.array(eval_obs)[None])[0]
-                    
-                    if(my_skill_set):
-                        eval_skill_obs = eval_obs.copy()
-                        eval_primitive_id = eval_paction
-                        eval_r = 0.
-                        for _ in range(commit_for):
+
+            # Store transition in the replay buffer for the outer env
+            replay_buffer.add(obs, paction, rew, new_obs, float(done))
+            obs = new_obs
+
+            episode_rewards[-1] += rew
+            if done:
+                obs = env.reset()
+                episode_rewards.append(0.0)
+                reset = True
+                print("Time:%d, episodes:%d"%(t,len(episode_rewards)))
+            
+
+            if t > learning_starts and t % train_freq == 0:
+                # print('Training!')
+                # Minimize the error in Bellman's equation on a batch sampled from replay buffer.
+                if prioritized_replay:
+                    experience = replay_buffer.sample(batch_size, beta=beta_schedule.value(t))
+                    (obses_t, actions, rewards, obses_tp1, dones, weights, batch_idxes) = experience
+                else:
+                    obses_t, actions, rewards, obses_tp1, dones = replay_buffer.sample(batch_size)
+                    weights, batch_idxes = np.ones_like(rewards), None
+                td_errors = train(obses_t, actions, rewards, obses_tp1, dones, weights)
+                if prioritized_replay:
+                    new_priorities = np.abs(td_errors) + prioritized_replay_eps
+                    replay_buffer.update_priorities(batch_idxes, new_priorities)
+
+            if t > learning_starts and t % target_network_update_freq == 0:
+                # Update target network periodically.
+                update_target()
+
+            mean_100ep_reward = round(np.mean(episode_rewards[-101:-1]), 1)
+            num_episodes = len(episode_rewards)
+        
+            if (checkpoint_freq is not None and t > learning_starts and
+                    num_episodes > 100 and t % checkpoint_freq == 0):
+                if saved_mean_reward is None or mean_100ep_reward > saved_mean_reward:
+                    if print_freq is not None:
+                        logger.log("Saving model due to mean reward increase: {} -> {}".format(
+                                   saved_mean_reward, mean_100ep_reward))
+                    U.save_state(model_file)
+                    model_saved = True
+                    saved_mean_reward = mean_100ep_reward
+
+            if (eval_env is not None) and t > learning_starts and t % target_network_update_freq == 0:
+                
+                # dumping other stats
+                logger.record_tabular("steps", t)
+                logger.record_tabular("episodes", num_episodes)
+                logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
+                logger.record_tabular("%d time spent exploring", int(100 * exploration.value(t)))
+
+                print("Testing!")
+                eval_episode_rewards = []
+                eval_episode_successes = []
+
+                for i in range(num_eval_episodes):
+                    eval_episode_reward = 0.
+                    eval_obs = eval_env.reset()
+                    eval_obs_start = eval_obs.copy()
+                    eval_done = False
+                    while(not eval_done):
+                        eval_paction = act(np.array(eval_obs)[None])[0]
                         
-                            ## break actions into primitives and their params    
-                            eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
-                            eval_new_obs, eval_skill_rew, eval_done, _ = env.step(eval_action)
+                        if(my_skill_set):
+                            eval_skill_obs = eval_obs.copy()
+                            eval_primitive_id = eval_paction
+                            eval_r = 0.
+                            for _ in range(commit_for):
+                            
+                                ## break actions into primitives and their params    
+                                eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
+                                eval_new_obs, eval_skill_rew, eval_done, _ = env.step(eval_action)
+                                if render_eval:
+                                    print("Render!")
+                                    
+                                    eval_env.render()
+                                    print("rendered!")
+
+                                eval_r += eval_skill_rew
+                                if eval_done:
+                                    break
+                                eval_skill_obs = eval_new_obs
+                        else:
+                            eval_action= eval_paction
+
+                            env_action = eval_action
+                            reset = False
+                            new_obs, rew, done, _ = env.step(env_action)
                             if render_eval:
                                 print("Render!")
                                 
                                 eval_env.render()
                                 print("rendered!")
 
-                            eval_r += eval_skill_rew
-                            if eval_done:
-                                break
-                            eval_skill_obs = eval_new_obs
-                    else:
-                        eval_action= eval_paction
 
-                        env_action = eval_action
-                        reset = False
-                        new_obs, rew, done, _ = env.step(env_action)
-                        if render_eval:
-                            print("Render!")
-                            
-                            eval_env.render()
-                            print("rendered!")
+                        eval_episode_reward += eval_r
+                        
+                    eval_episode_success = (eval_info["done"]=="goal reached")
+                    if(eval_episode_success):
+                        logger.info("success, training epoch:%d,starting config:"%epoch, eval_obs_start, 'final state', eval_obs)
 
 
-                    eval_episode_reward += eval_r
-                    
-                eval_episode_success = (eval_info["done"]=="goal reached")
-                if(eval_episode_success):
-                    logger.info("success, training epoch:%d,starting config:"%epoch, eval_obs_start, 'final state', eval_obs)
+                    eval_episode_rewards.append(eval_episode_reward)
+                    eval_episode_successes.append(eval_episode_success)
+
+                combined_stats = {}
+
+                combined_stats['eval/return'] = normal_mean(eval_episode_rewards)
+                combined_stats['eval/success'] = normal_mean(eval_episode_success)
+                combined_stats['eval/episodes'] = (len(eval_episode_rewards))
+
+                for key in sorted(combined_stats.keys()):
+                    logger.record_tabular(key, combined_stats[key])
+                
+                print("dumping the stats!")
+                logger.dump_tabular()
+                set_trace()
+
+                        
+
+        if model_saved:
+            if print_freq is not None:
+                logger.log("Restored model with mean reward: {}".format(saved_mean_reward))
+            U.load_state(model_file)
 
 
-                eval_episode_rewards.append(eval_episode_reward)
-                eval_episode_successes.append(eval_episode_success)
-
-            combined_stats = {}
-
-            combined_stats['eval/return'] = normal_mean(eval_episode_rewards)
-            combined_stats['eval/success'] = normal_mean(eval_episode_success)
-            combined_stats['eval/episodes'] = (len(eval_episode_rewards))
-
-            for key in sorted(combined_stats.keys()):
-                logger.record_tabular(key, combined_stats[key])
-            
-            print("dumping the stats!")
-            logger.dump_tabular()
-            set_trace()
-
-                    
-
-    if model_saved:
-        if print_freq is not None:
-            logger.log("Restored model with mean reward: {}".format(saved_mean_reward))
-        U.load_state(model_file)
-
-    return act
