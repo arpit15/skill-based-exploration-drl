@@ -50,7 +50,7 @@ def run(env_id, seed, evaluation, **kwargs):
 
     start_time = time.time()
     
-    act = training.train(
+    training.train(
         env=env,
         eval_env = eval_env,
         q_func=model,
