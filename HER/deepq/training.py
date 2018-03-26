@@ -295,7 +295,7 @@ def train(env,
                             
                                 ## break actions into primitives and their params    
                                 eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
-                                eval_new_obs, eval_skill_rew, eval_done, _ = env.step(eval_action)
+                                eval_new_obs, eval_skill_rew, eval_done, eval_info = env.step(eval_action)
                                 if render_eval:
                                     print("Render!")
                                     
@@ -311,7 +311,7 @@ def train(env,
 
                             env_action = eval_action
                             reset = False
-                            new_obs, rew, done, _ = env.step(env_action)
+                            eval_new_obs, eval_r, eval_done, eval_info = env.step(env_action)
                             if render_eval:
                                 print("Render!")
                                 
@@ -320,6 +320,7 @@ def train(env,
 
 
                         eval_episode_reward += eval_r
+                        eval_obs = eval_new_obs
                         
                     eval_episode_success = (eval_info["done"]=="goal reached")
                     if(eval_episode_success):
@@ -340,14 +341,6 @@ def train(env,
                 
                 print("dumping the stats!")
                 logger.dump_tabular()
-                set_trace()
-
-            for key in sorted(combined_stats.keys()):
-                logger.record_tabular(key, combined_stats[key])
-            
-            print("dumping the stats!")
-            logger.dump_tabular()
-            #set_trace()
 
         if model_saved:
             if print_freq is not None:
