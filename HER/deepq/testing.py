@@ -32,7 +32,7 @@ def testing(eval_env, model_path, my_skill_set, render_eval):
                 
                     ## break actions into primitives and their params    
                     eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
-                    eval_new_obs, eval_skill_rew, eval_done, eval_info = env.step(eval_action)
+                    eval_new_obs, eval_skill_rew, eval_done, eval_info = eval_env.step(eval_action)
                     if render_eval:
                         print("Render!")
                         
@@ -49,7 +49,7 @@ def testing(eval_env, model_path, my_skill_set, render_eval):
 
                 env_action = eval_action
                 reset = False
-                eval_new_obs, eval_r, eval_done, eval_info = env.step(env_action)
+                eval_new_obs, eval_r, eval_done, eval_info = eval_env.step(env_action)
                 if render_eval:
                     print("Render!")
                     

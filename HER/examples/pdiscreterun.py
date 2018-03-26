@@ -63,8 +63,8 @@ def run(env_id, seed, evaluation, **kwargs):
         batch_size=kwargs['batch_size'],
         print_freq=100,
         checkpoint_freq=200,
-        learning_starts=40,
-        target_network_update_freq=100,
+        learning_starts=2,
+        target_network_update_freq=10,
         prioritized_replay= kwargs['prioritized_replay'],
         prioritized_replay_alpha=0.6,
         prioritized_replay_beta0=0.4,
@@ -93,7 +93,7 @@ def parse_args():
     boolean_flag(parser, 'render-eval', default=False)
     boolean_flag(parser, 'render', default=False)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=128)  # per MPI worker
+    parser.add_argument('--batch-size', type=int, default=2)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--gamma', type=float, default=0.98)
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total

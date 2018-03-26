@@ -178,7 +178,8 @@ def train(env,
         reset = True
         
         model_saved = False
-        model_file = os.path.join(log_dir, "model")
+        
+        model_file = os.path.join(log_dir, "model", "deepq")
         for t in range(max_timesteps):
             if callback is not None:
                 if callback(locals(), globals()):
@@ -295,7 +296,8 @@ def train(env,
                             
                                 ## break actions into primitives and their params    
                                 eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
-                                eval_new_obs, eval_skill_rew, eval_done, eval_info = env.step(eval_action)
+                                eval_new_obs, eval_skill_rew, eval_done, eval_info = eval_env.step(eval_action)
+                                # print('env reward:%f'%eval_skill_rew)
                                 if render_eval:
                                     print("Render!")
                                     
@@ -311,7 +313,7 @@ def train(env,
 
                             env_action = eval_action
                             reset = False
-                            eval_new_obs, eval_r, eval_done, eval_info = env.step(env_action)
+                            eval_new_obs, eval_r, eval_done, eval_info = eval_env.step(env_action)
                             if render_eval:
                                 print("Render!")
                                 
@@ -319,7 +321,9 @@ def train(env,
                                 print("rendered!")
 
 
+                        
                         eval_episode_reward += eval_r
+                        # print("eval_r:%f, eval_episode_reward:%f"%(eval_r, eval_episode_reward))
                         eval_obs = eval_new_obs
                         
                     eval_episode_success = (eval_info["done"]=="goal reached")
@@ -336,6 +340,8 @@ def train(env,
                 combined_stats['eval/success'] = normal_mean(eval_episode_success)
                 combined_stats['eval/episodes'] = (len(eval_episode_rewards))
 
+                # print(eval_episode_rewards)
+                # set_trace()
                 for key in sorted(combined_stats.keys()):
                     logger.record_tabular(key, combined_stats[key])
                 
