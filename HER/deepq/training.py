@@ -311,7 +311,7 @@ def train(env,
             
             print("dumping the stats!")
             logger.dump_tabular()
-            set_trace()
+            #set_trace()
 
                     
 
