@@ -62,7 +62,7 @@ def run(env_id, seed, evaluation, **kwargs):
         train_freq=1,
         batch_size=kwargs['batch_size'],
         print_freq=100,
-        checkpoint_freq=1000,
+        checkpoint_freq=200,
         learning_starts=40,
         target_network_update_freq=100,
         prioritized_replay= kwargs['prioritized_replay'],
@@ -93,7 +93,7 @@ def parse_args():
     boolean_flag(parser, 'render', default=False)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--batch-size', type=int, default=128)  # per MPI worker
-    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--gamma', type=float, default=0.98)
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
     parser.add_argument('--nb-epoch-cycles', type=int, default=20)
@@ -122,11 +122,14 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    from ipdb import set_trace
     args = parse_args()
    
     logger.configure(dir=args["log_dir"])
     logger.info(str(args))
-        
+    
+    # print(logger.Logger.CURRENT.output_formats)
+    # set_trace()
     # Run actual script.
     try:
         run(**args)

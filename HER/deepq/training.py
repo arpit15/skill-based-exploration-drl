@@ -12,11 +12,13 @@ from HER import logger
 from HER.ddpg.util import normal_mean, normal_std
 
 import baselines.common.tf_util as U
-from baselines import logger
 from baselines.common.schedules import LinearSchedule
 from baselines import deepq
 from baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
 from baselines.deepq.simple import ActWrapper
+
+#debug
+from ipdb import set_trace
 
 def train(env,
         eval_env,
@@ -176,7 +178,6 @@ def train(env,
     model_saved = False
     model_file = os.path.join(log_dir, "model")
     for t in range(max_timesteps):
-        print("Time:%d"%t)
         if callback is not None:
             if callback(locals(), globals()):
                 break
@@ -216,9 +217,11 @@ def train(env,
             obs = env.reset()
             episode_rewards.append(0.0)
             reset = True
+            print("Time:%d, episodes:%d"%(t,len(episode_rewards)))
+        
 
         if t > learning_starts and t % train_freq == 0:
-            print('Training!')
+            # print('Training!')
             # Minimize the error in Bellman's equation on a batch sampled from replay buffer.
             if prioritized_replay:
                 experience = replay_buffer.sample(batch_size, beta=beta_schedule.value(t))
@@ -237,12 +240,12 @@ def train(env,
 
         mean_100ep_reward = round(np.mean(episode_rewards[-101:-1]), 1)
         num_episodes = len(episode_rewards)
-        if done and print_freq is not None and len(episode_rewards) % print_freq == 0:
-            logger.record_tabular("steps", t)
-            logger.record_tabular("episodes", num_episodes)
-            logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
-            logger.record_tabular("% time spent exploring", int(100 * exploration.value(t)))
-            logger.dump_tabular()
+        # if done and print_freq is not None and len(episode_rewards) % print_freq == 0:
+        #     logger.record_tabular("steps", t)
+        #     logger.record_tabular("episodes", num_episodes)
+        #     logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
+        #     logger.record_tabular("%d time spent exploring", int(100 * exploration.value(t)))
+            # logger.dump_tabular()
 
         if (checkpoint_freq is not None and t > learning_starts and
                 num_episodes > 100 and t % checkpoint_freq == 0):
@@ -255,6 +258,13 @@ def train(env,
                 saved_mean_reward = mean_100ep_reward
 
         if (eval_env is not None) and t > learning_starts and t % target_network_update_freq == 0:
+            
+            # dumping other stats
+            logger.record_tabular("steps", t)
+            logger.record_tabular("episodes", num_episodes)
+            logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
+            logger.record_tabular("%d time spent exploring", int(100 * exploration.value(t)))
+
             print("Testing!")
             eval_episode_rewards = []
             eval_episode_successes = []
@@ -298,7 +308,10 @@ def train(env,
 
             for key in sorted(combined_stats.keys()):
                 logger.record_tabular(key, combined_stats[key])
+            
+            print("dumping the stats!")
             logger.dump_tabular()
+            set_trace()
 
                     
 
