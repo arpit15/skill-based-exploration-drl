@@ -288,33 +288,37 @@ def train(env,
                     eval_paction = act(np.array(eval_obs)[None])[0]
                     
                     if(my_skill_set):
-                        skill_obs = obs.copy()
-                        primitive_id = paction
-                        rew = 0.
+                        eval_skill_obs = eval_obs.copy()
+                        eval_primitive_id = eval_paction
+                        eval_r = 0.
                         for _ in range(commit_for):
                         
                             ## break actions into primitives and their params    
-                            action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
-                            new_obs, skill_rew, done, _ = env.step(action)
-                        
-                            rew += skill_rew
-                            if done:
-                                break
-                            skill_obs = new_obs
-                    else:
-                        action= paction
+                            eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
+                            eval_new_obs, eval_skill_rew, eval_done, _ = env.step(eval_action)
+                            if render_eval:
+                                print("Render!")
+                                
+                                eval_env.render()
+                                print("rendered!")
 
-                        env_action = action
+                            eval_r += eval_skill_rew
+                            if eval_done:
+                                break
+                            eval_skill_obs = eval_new_obs
+                    else:
+                        eval_action= eval_paction
+
+                        env_action = eval_action
                         reset = False
                         new_obs, rew, done, _ = env.step(env_action)
+                        if render_eval:
+                            print("Render!")
+                            
+                            eval_env.render()
+                            print("rendered!")
 
 
-                    eval_obs, eval_r, eval_done, eval_info = eval_env.step(eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
-                    if render_eval:
-                        print("Render!")
-                        
-                        eval_env.render()
-                        print("rendered!")
                     eval_episode_reward += eval_r
                     
                 eval_episode_success = (eval_info["done"]=="goal reached")
