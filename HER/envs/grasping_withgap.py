@@ -11,17 +11,12 @@ class BaxterEnv(reacher2d.BaxterEnv):
 
     
     def reset_model(self,
-        gripper_pos = np.array([0.6 , 0.3 , 0.15]),
-        ctrl=np.array([0.04, -0.04]),
-        no_change_required = False
+                    gripper_pos = np.array([0.6 , 0.3 , 0.15]),
+                    ctrl=np.array([0.04, -0.04])
         ):
         
         
         self.apply_action(pos=gripper_pos, ctrl=ctrl)
-
-        # for child classes
-        if no_change_required:
-            return self._get_obs()
 
         # 0: random, 1: grasped
         sample = self.np_random.choice(2)

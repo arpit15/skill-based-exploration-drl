@@ -1,1 +1,1 @@
-def mirror(x): return x
+def mirror(x, y=None): return x

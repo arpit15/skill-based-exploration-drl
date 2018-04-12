@@ -134,7 +134,7 @@ class DDPGSkill(object):
         q = None
         action = action.flatten()
         action = np.clip(action, -1, 1)
-        return self.get_action(action), q
+        return self.get_action(action, obs), q
 
 
 if __name__ == "__main__":

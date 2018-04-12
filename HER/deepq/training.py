@@ -255,6 +255,7 @@ def train(env,
                 # Update target network periodically.
                 update_target()
 
+            # print(len(episode_rewards), episode_rewards[-11:-1])
             mean_100ep_reward = round(np.mean(episode_rewards[-101:-1]), 1)
             num_episodes = len(episode_rewards)
         
@@ -328,7 +329,7 @@ def train(env,
                         
                     eval_episode_success = (eval_info["done"]=="goal reached")
                     if(eval_episode_success):
-                        logger.info("success, training epoch:%d,starting config:"%epoch, eval_obs_start, 'final state', eval_obs)
+                        logger.info("success, training epoch:%d,starting config:"%t, eval_obs_start, 'final state', eval_obs)
 
 
                     eval_episode_rewards.append(eval_episode_reward)
@@ -336,12 +337,11 @@ def train(env,
 
                 combined_stats = {}
 
+                # print(eval_episode_successes, np.mean(eval_episode_successes))
                 combined_stats['eval/return'] = normal_mean(eval_episode_rewards)
-                combined_stats['eval/success'] = normal_mean(eval_episode_success)
+                combined_stats['eval/success'] = normal_mean(eval_episode_successes)
                 combined_stats['eval/episodes'] = (len(eval_episode_rewards))
 
-                # print(eval_episode_rewards)
-                # set_trace()
                 for key in sorted(combined_stats.keys()):
                     logger.record_tabular(key, combined_stats[key])
                 
