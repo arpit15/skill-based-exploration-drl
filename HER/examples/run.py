@@ -34,9 +34,13 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     gym.logger.setLevel(logging.WARN)
 
     if evaluation and rank==0:
-        eval_env = gym.make(env_id)
-        eval_env = bench.Monitor(eval_env, os.path.join(logger.get_dir(), 'gym_eval'))
-        #env = bench.Monitor(env, None)
+        if kwargs['eval_env_id']: 
+            eval_env_id = kwargs['eval_env_id']
+        else: 
+            eval_env_id = env_id
+        eval_env = gym.make(eval_env_id)
+        # del eval_env_id from kwargs
+        del kwargs['eval_env_id']
     else:
         eval_env = None
 
@@ -115,6 +119,7 @@ def parse_args():
     parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
     parser.add_argument('--num-timesteps', type=int, default=None)
     boolean_flag(parser, 'evaluation', default=True)
+    parser.add_argument('--eval-env-id', type=str, default=None)
 
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/her')

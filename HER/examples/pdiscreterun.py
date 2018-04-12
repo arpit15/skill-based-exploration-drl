@@ -29,7 +29,13 @@ def run(env_id, seed, evaluation, **kwargs):
     gym.logger.setLevel(logging.WARN)
 
     if evaluation:
-        eval_env = gym.make(env_id)
+        if kwargs['eval_env_id']: 
+            eval_env_id = kwargs['eval_env_id']
+        else: 
+            eval_env_id = env_id
+        eval_env = gym.make(eval_env_id)
+        # del eval_env_id from kwargs
+        del kwargs['eval_env_id']
     else:
         eval_env = None
 
@@ -103,6 +109,7 @@ def parse_args():
     parser.add_argument('--nb-rollout-steps', type=int, default=320)  # per epoch cycle and MPI worker
     parser.add_argument('--num-timesteps', type=int, default=None)
     boolean_flag(parser, 'evaluation', default=True)
+    parser.add_argument('--eval-env-id', type=str, default=None)
     parser.add_argument('--num-eval-episodes', type=int, default=10)
     boolean_flag(parser, 'prioritized_replay', default=True)
 
