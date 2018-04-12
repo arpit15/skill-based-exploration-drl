@@ -8,7 +8,8 @@ from HER.common.misc_util import (
     boolean_flag,
 )
 from HER.ddpg.skills import SkillSet
-from HER import deepq
+from HER.deepq import testing
+from HER import logger
 
 import gym
 import tensorflow as tf
@@ -32,8 +33,10 @@ def run(env_id, seed, evaluation, **kwargs):
         my_skill_set = SkillSet(skillset_file.skillset)
     else:
         my_skill_set = None
-        
-    deepq.testing(env, model_path, my_skill_set, kwargs['render'])
+    
+
+    model_path = os.path.join(kwargs['restore_dir'], "model")
+    testing.testing(env, model_path, my_skill_set, kwargs['render_eval'])
 
     env.close()
 

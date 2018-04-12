@@ -2,9 +2,11 @@ from baselines import deepq
 import os.path as osp
 from time import sleep
 
+import baselines.common.tf_util as U
+
 def testing(eval_env, model_path, my_skill_set, render_eval):
     
-    act = deepq.load(osp.join(model_path, "model.pkl"))
+    act = deepq.load(osp.join(model_path, "deepq"))
 
     ## restore
     if my_skill_set:
@@ -21,7 +23,7 @@ def testing(eval_env, model_path, my_skill_set, render_eval):
         eval_obs = eval_env.reset()
         eval_done = False
         
-       while(not eval_done):
+        while(not eval_done):
             eval_paction = act(np.array(eval_obs)[None])[0]
             
             if(my_skill_set):

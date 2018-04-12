@@ -265,7 +265,8 @@ def train(env,
                     if print_freq is not None:
                         logger.log("Saving model due to mean reward increase: {} -> {}".format(
                                    saved_mean_reward, mean_100ep_reward))
-                    U.save_state(model_file)
+                    # U.save_state(model_file)
+                    act.save(model_file)
                     model_saved = True
                     saved_mean_reward = mean_100ep_reward
 
@@ -351,6 +352,7 @@ def train(env,
         if model_saved:
             if print_freq is not None:
                 logger.log("Restored model with mean reward: {}".format(saved_mean_reward))
-            U.load_state(model_file)
+            # U.load_state(model_file)
+            act.load(model_file)
 
 
