@@ -61,7 +61,7 @@ def run(env_id, seed, evaluation, **kwargs):
         eval_env = eval_env,
         q_func=model,
         lr=kwargs['lr'],
-        max_timesteps=10000,
+        max_timesteps=100000,
         buffer_size=50000,
         exploration_fraction=0.1,
         exploration_final_eps=0.02,
@@ -69,8 +69,8 @@ def run(env_id, seed, evaluation, **kwargs):
         batch_size=kwargs['batch_size'],
         print_freq=100,
         checkpoint_freq=200,
-        learning_starts=2,
-        target_network_update_freq=10,
+        learning_starts=100,
+        target_network_update_freq=500,
         prioritized_replay= kwargs['prioritized_replay'],
         prioritized_replay_alpha=0.6,
         prioritized_replay_beta0=0.4,
@@ -99,7 +99,7 @@ def parse_args():
     boolean_flag(parser, 'render-eval', default=False)
     boolean_flag(parser, 'render', default=False)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--gamma', type=float, default=0.98)
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
