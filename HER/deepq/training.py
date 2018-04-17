@@ -117,7 +117,7 @@ def train(env,
     """
     # Create all the functions necessary to train the model
 
-    eval_env = None
+
     if my_skill_set: assert commit_for>=1, "commit_for >= 1"
 
     with U.single_threaded_session() as sess:
@@ -188,6 +188,12 @@ def train(env,
         model_saved = False
         
         model_file = os.path.join(log_dir, "model", "deepq")
+
+        # save the initial act model 
+        print("Saving the starting model")
+        os.makedirs(os.path.dirname(model_file), exist_ok=True)
+        act.save(model_file + '.pkl')
+
         for t in range(max_timesteps):
             if callback is not None:
                 if callback(locals(), globals()):
@@ -334,10 +340,10 @@ def train(env,
                             reset = False
                             eval_new_obs, eval_r, eval_done, eval_info = eval_env.step(env_action)
                             if render_eval:
-                                print("Render!")
+                                # print("Render!")
                                 
                                 eval_env.render()
-                                print("rendered!")
+                                # print("rendered!")
 
 
                         
@@ -347,7 +353,7 @@ def train(env,
                         
                     eval_episode_success = (eval_info["done"]=="goal reached")
                     if(eval_episode_success):
-                        logger.info("success, training epoch:%d,starting config:"%t, eval_obs_start, 'final state', eval_obs)
+                        logger.info("success, training epoch:%d,starting config:"%t)
 
 
                     eval_episode_rewards.append(eval_episode_reward)

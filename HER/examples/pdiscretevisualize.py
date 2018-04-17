@@ -36,7 +36,7 @@ def run(env_id, seed, evaluation, **kwargs):
     
 
     model_path = os.path.join(kwargs['restore_dir'], "model")
-    testing.testing(env, model_path, my_skill_set, kwargs['render_eval'])
+    testing.testing(env, model_path, my_skill_set, kwargs['render_eval'], kwargs['commit_for'])
 
     env.close()
 
@@ -65,6 +65,9 @@ def parse_args():
     boolean_flag(parser, 'her', default=True)
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
+
+    # meta parameters
+    parser.add_argument('--commit-for', type=int, default=1)
 
     parser.add_argument('--skillset', type=str, default='set3')
 

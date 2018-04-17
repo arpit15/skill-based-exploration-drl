@@ -1,21 +1,46 @@
-from baselines import deepq
 import os.path as osp
 from time import sleep
+import cloudpickle
+import zipfile
+import tempfile
+import tensorflow as tf
+import numpy as np 
 
+from baselines import deepq
 import baselines.common.tf_util as U
+from baselines.deepq.simple import ActWrapper
 
 def load_actor(sess, model_path):
-    pass
+    model_file = osp.join(model_path,'deepq.pkl')
+    print("Loading act model from %s"%(model_file))
+    with open(model_file, "rb") as f:
+        model_data, act_params = cloudpickle.load(f)
+    act = deepq.build_act(**act_params)
+
+    with tempfile.TemporaryDirectory() as td:
+        arc_path = osp.join(td, "packed.zip")
+        with open(arc_path, "wb") as f:
+            f.write(model_data)
+
+        zipfile.ZipFile(arc_path, 'r', zipfile.ZIP_DEFLATED).extractall(td)
+            
+        fname = osp.join(td, "model")
+        saver = tf.train.Saver()
+        saver.restore(sess, fname)
+    return ActWrapper(act, act_params)
     
-def testing(eval_env, model_path, my_skill_set, render_eval):
+def testing(eval_env, model_path, my_skill_set, render_eval, commit_for):
     
     with U.single_threaded_session() as sess:
+
+        act = load_actor(sess, model_path)
+
         ## restore
         if my_skill_set:
             # restore skills
             my_skill_set.restore_skillset(sess=sess)
 
-        act = load_actor(sess, osp.join(model_path))
+        
         # act = deepq.load(osp.join(model_path, "deepq.pkl"))
         # U.load_state( osp.join(model_path , "deepq"))
 
@@ -42,11 +67,11 @@ def testing(eval_env, model_path, my_skill_set, render_eval):
                         eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
                         eval_new_obs, eval_skill_rew, eval_done, eval_info = eval_env.step(eval_action)
                         if render_eval:
-                            print("Render!")
+                            # print("Render!")
                             
                             eval_env.render()
-                            sleep(0.001)
-                            print("rendered!")
+                            sleep(0.1)
+                            # print("rendered!")
 
                         eval_r += eval_skill_rew
                         if eval_done:
@@ -59,10 +84,10 @@ def testing(eval_env, model_path, my_skill_set, render_eval):
                     reset = False
                     eval_new_obs, eval_r, eval_done, eval_info = eval_env.step(env_action)
                     if render_eval:
-                        print("Render!")
+                        # print("Render!")
                         
                         eval_env.render()
-                        print("rendered!")
+                        # print("rendered!")
 
 
                 eval_episode_reward += eval_r
