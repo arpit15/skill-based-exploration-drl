@@ -120,6 +120,7 @@ def train(env,
 
     if my_skill_set: assert commit_for>=1, "commit_for >= 1"
 
+    save_idx = 0
     with U.single_threaded_session() as sess:
     
 
@@ -287,7 +288,8 @@ def train(env,
                         logger.log("Saving model due to mean reward increase: {} -> {}".format(
                                    saved_mean_reward, mean_100ep_reward))
                     U.save_state(model_file)
-                    act.save(model_file + '.pkl')
+                    act.save(model_file + '%d.pkl'%save_idx)
+                    save_idx += 1
                     model_saved = True
                     saved_mean_reward = mean_100ep_reward
                 # else:

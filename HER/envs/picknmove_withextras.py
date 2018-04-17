@@ -12,7 +12,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         # randomize gripper loc
 
         # gripper_pos = np.array([0.6 , 0.3 , 0.15])
-        gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim], self.target_range_max[:self.space_dim], size=self.space_dim)        
+        gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim)        
         self.apply_action(pos=gripper_pos)
 
 
@@ -34,12 +34,12 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             assert object_qpos.shape == (7,)
 
             dim = 2
-            object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim], self.target_range_max[:dim], size=dim)
+            object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + 0.05, self.target_range_max[:dim] - 0.05 , size=dim) 
             object_qpos[dim] = 0.1
 
             
             while(np.linalg.norm(gripper_pos[:dim] - object_qpos[:dim]) < 0.05):
-                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim], self.target_range_max[:dim], size=dim)
+                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + 0.05, self.target_range_max[:dim] - 0.05, size=dim)
 
 
         # spawning obj on ground
@@ -56,7 +56,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         target_qpos = self.data.get_joint_qpos('target')
         target_qpos[:self.space_dim] = np.array([0.5, 0.3,0.])
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.05):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim], self.target_range_max[:self.space_dim], size=self.space_dim) 
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim) 
             if(self.space_dim==3):
                 target_qpos[2] = max(0.1, target_qpos[2])
         

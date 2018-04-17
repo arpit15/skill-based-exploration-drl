@@ -68,7 +68,7 @@ def run(env_id, seed, evaluation, **kwargs):
         train_freq=1,
         batch_size=kwargs['batch_size'],
         print_freq=100,
-        checkpoint_freq=200,
+        checkpoint_freq=50,
         learning_starts=max(50, kwargs['batch_size']),
         target_network_update_freq=100,
         prioritized_replay= kwargs['prioritized_replay'],

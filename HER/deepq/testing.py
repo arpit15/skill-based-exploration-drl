@@ -11,7 +11,7 @@ import baselines.common.tf_util as U
 from baselines.deepq.simple import ActWrapper
 
 def load_actor(sess, model_path):
-    model_file = osp.join(model_path,'deepq.pkl')
+    model_file = osp.join(model_path,'deepq1.pkl')
     print("Loading act model from %s"%(model_file))
     with open(model_file, "rb") as f:
         model_data, act_params = cloudpickle.load(f)
@@ -33,16 +33,13 @@ def testing(eval_env, model_path, my_skill_set, render_eval, commit_for):
     
     with U.single_threaded_session() as sess:
 
+        ### IMPORTANT: to load the actor before skills as actor loading calls restore over all vars
         act = load_actor(sess, model_path)
 
         ## restore
         if my_skill_set:
             # restore skills
             my_skill_set.restore_skillset(sess=sess)
-
-        
-        # act = deepq.load(osp.join(model_path, "deepq.pkl"))
-        # U.load_state( osp.join(model_path , "deepq"))
 
         # Evaluate.
         eval_episode_rewards = []
