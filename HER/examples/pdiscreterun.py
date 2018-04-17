@@ -81,6 +81,7 @@ def run(env_id, seed, evaluation, **kwargs):
         log_dir = kwargs['log_dir'],
         my_skill_set= my_skill_set,
         num_eval_episodes=kwargs['num_eval_episodes'],
+        render = kwargs['render'],
         render_eval = kwargs['render_eval'],
         commit_for = kwargs['commit_for']
     )

@@ -1,5 +1,6 @@
 import os
 import tempfile
+from time import sleep
 
 import tensorflow as tf
 import zipfile
@@ -45,6 +46,7 @@ def train(env,
         my_skill_set=None,
         log_dir = None,
         num_eval_episodes=10,
+        render=False,
         render_eval = False,
         commit_for = 1
         ):
@@ -115,6 +117,7 @@ def train(env,
     """
     # Create all the functions necessary to train the model
 
+    eval_env = None
     if my_skill_set: assert commit_for>=1, "commit_for >= 1"
 
     with U.single_threaded_session() as sess:
@@ -122,8 +125,6 @@ def train(env,
 
         ## restore
         if my_skill_set:
-            ## restore skills
-            my_skill_set.restore_skillset(sess=sess)
             action_shape = my_skill_set.len
         else:
             action_shape = env.action_space.n
@@ -170,7 +171,14 @@ def train(env,
 
         # Initialize the parameters and copy them to the target network.
         U.initialize()
+        # sess.run(tf.variables_initializer(new_variables))
+        # sess.run(tf.global_variables_initializer())
         update_target()
+
+        if my_skill_set:
+            ## restore skills
+            my_skill_set.restore_skillset(sess=sess)
+            
 
         episode_rewards = [0.0]
         saved_mean_reward = None
@@ -201,7 +209,6 @@ def train(env,
                 kwargs['update_param_noise_scale'] = True
             paction = act(np.array(obs)[None], update_eps=update_eps, **kwargs)[0]
             
-            
             if(my_skill_set):
                 skill_obs = obs.copy()
                 primitive_id = paction
@@ -211,7 +218,10 @@ def train(env,
                     ## break actions into primitives and their params    
                     action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
                     new_obs, skill_rew, done, _ = env.step(action)
-                
+                    if render:
+                        # print(action)
+                        env.render()
+                        sleep(0.1)
                     rew += skill_rew
                     if done:
                         break
@@ -222,6 +232,9 @@ def train(env,
                 env_action = action
                 reset = False
                 new_obs, rew, done, _ = env.step(env_action)
+                if render:
+                    env.render()
+                    sleep(0.1)
               
 
 

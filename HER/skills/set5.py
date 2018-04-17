@@ -10,11 +10,13 @@ def move_act(skill_action, obs):
 	assert obs.size == 28, "Using with wrong env. The target envs should be picknmove-v3"
 	actual_action = [0.]*3 + [-1]#[obs[9]]
 	actual_action[:dim] = skill_action
+	# print("move action",actual_action)
 	return  np.array(actual_action)
 
 def move_obs(obs, params):
 	## domain knowledge: move to object
 	# obs: gripper, block/target
+	# print("creating move obs")
 	obj_rel_pos = obs[6:9]
 	if(np.linalg.norm(obj_rel_pos[:2]) < 0.05 and obj_rel_pos[2]<0.15):
 		# object in hand
@@ -23,14 +25,19 @@ def move_obs(obs, params):
 		tmp[-1] += 0.1
 		
 	else:
-		tmp = obs[dim:2*dim]
+		tmp = obs[dim:2*dim] + np.array([0.,0.,0.1])
 
-	return np.concatenate((obs[:dim] , tmp))
+	final_obs = np.concatenate((obs[:dim] , tmp))
+	# print("move obs", final_obs)
+	return final_obs
 
 def grasp_obs(obs, params):
+	# print("creating grasp obs")
 	obj_loc = obs[dim:2*dim]
 	target = [obj_loc[0], obj_loc[1], 0.05]
-	return np.concatenate((obs[:-3], target ))
+	final_obs = np.concatenate((obs[:-3], target ))
+	# print("grasp ob", final_obs)
+	return final_obs
 
 
 move = {

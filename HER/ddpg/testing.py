@@ -83,7 +83,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
                 # print(eval_obs, max_action*eval_action, eval_info)
                 if render_eval:
                     eval_env.render()
-                    sleep(0.001)
+                    sleep(0.1)
                     
                 eval_episode_reward += eval_r
                 

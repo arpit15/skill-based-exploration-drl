@@ -12,7 +12,7 @@ from ipdb import set_trace
 if __name__ == "__main__":
     
     print("Loading %s with skillset %s"%(sys.argv[1], sys.argv[2]))
-    commit_for = 1
+    commit_for = 7
     np.set_printoptions(precision=3)
     eval_env = gym.make(sys.argv[1])
     EVAL_EPISODE = 100
@@ -41,9 +41,9 @@ if __name__ == "__main__":
                 while(not eval_done):
                     
                     # eval_paction = 1#np.random.choice(my_skill_set.len)
-                    if(k<10):
+                    if(k<1):
                         eval_paction = 0
-                    elif(k<30):
+                    elif(k<2):
                         eval_paction = 1
                     else:
                         eval_paction = 0
