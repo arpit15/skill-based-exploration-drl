@@ -5,8 +5,8 @@ from gym.envs.robotics import rotations
 
 class BaxterEnv(reacher2d.BaxterEnv):
     
-    def __init__(self, max_len=50, test=False):
-        super(BaxterEnv, self).__init__(max_len=max_len, obs_dim=28, action_dim=4, filename="mjc/gripper.xml", space_dim=3)
+    def __init__(self, max_len=50, test=False,filename="mjc/gripper.xml"):
+        super(BaxterEnv, self).__init__(max_len=max_len, obs_dim=28, action_dim=4, filename=filename, space_dim=3)
         self.test = test
 
     

@@ -11,7 +11,7 @@ if __name__ == "__main__":
     print("Loading %s"%sys.argv[1])
     np.set_printoptions(precision=3)
     env = gym.make(sys.argv[1])
-    EVAL_EPISODE = 100
+    EVAL_EPISODE = 10
     reward_mat = []
 
     try:
@@ -36,10 +36,10 @@ if __name__ == "__main__":
             # print("obj initial pos", env.data.get_joint_qpos("box"))
 
             k =0
-            # while k<10:
-            #     k += 1
-            #     sleep(0.1)
-            #     env.render(mode='human')
+            while k<50:
+                k += 1
+                sleep(0.1)
+                env.render(mode='human')
             # set_trace()
             # grip_pos = env.env.sim.data.get_site_xpos('robot0:grip')
             # grip_velp = env.env.sim.data.get_site_xvelp('robot0:grip')
@@ -54,16 +54,16 @@ if __name__ == "__main__":
                 # ee_x, ee_y, obj_x, obj_y, t_x, t_y = ob
                 
                 # action = np.array([(obj_x - ee_x)/0.05, (obj_y -ee_y)/0.05])
-                # action = [0.,0., 0.,0.]
+                # action = [0.,0., 0.1,-1.]
                 action = env.action_space.sample()
                 
                 # for checking grasping
                 # action = [0., 0., 1.0, 1]
                 
                 ob, reward, done, info = env.step(action)
-                print(i, action, ob, reward)
+                # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, done) 
+                # print( i, reward) 
                 # print("target:x:%.4f,y:%.4f,z:%.4f"%(ob[-3], ob[-2], ob[-1]))
                 # print("gripper", env.data.get_site_xpos("grip_r"))   
                 i+=1

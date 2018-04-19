@@ -11,6 +11,19 @@ register(
 
 # Baxter envs
 register(
+    id='putainb-v0',
+    entry_point='HER.envs.putainb_withextras:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='putainbt-v0',
+    entry_point='HER.envs.putainb_withextras:BaxterEnv',
+    kwargs={'max_len':50,
+            'test':True}
+)
+
+register(
     id='Reacher2d-v0',
     entry_point='HER.envs.reacher2d:BaxterEnv',
     kwargs={'max_len':20}
