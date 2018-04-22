@@ -34,9 +34,11 @@ def run(env_id, seed, evaluation, **kwargs):
     else:
         my_skill_set = None
     
+    set_global_seeds(seed)
+    env.seed(seed)
 
     model_path = os.path.join(kwargs['restore_dir'], "model")
-    testing.testing(env, model_path, my_skill_set, kwargs['render_eval'], kwargs['commit_for'])
+    testing.testing(env, model_path, my_skill_set, kwargs['render_eval'], kwargs['commit_for'], kwargs['nb_eval_episodes'])
 
     env.close()
 
@@ -46,38 +48,23 @@ def parse_args():
     parser.add_argument('--env-id', type=str, default='Baxter3dbox-v0')
     boolean_flag(parser, 'render-eval', default=True)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=128)  # per MPI worker
-    parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
-    parser.add_argument('--nb-epoch-cycles', type=int, default=20)
-    parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-rollout-steps', type=int, default=320)  # per epoch cycle and MPI worker
-    parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
-    parser.add_argument('--num-timesteps', type=int, default=None)
+    parser.add_argument('--nb-eval-episodes', type=int, default=100)  # per epoch cycle and MPI worker
     boolean_flag(parser, 'evaluation', default=True)
 
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
-    parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
-    boolean_flag(parser, 'dologging', default=True)
+    boolean_flag(parser, 'dologging', default=False)
     boolean_flag(parser, 'invert-grad', default=False)
-    boolean_flag(parser, 'her', default=True)
-    boolean_flag(parser, 'actor-reg', default=True)
-    boolean_flag(parser, 'tf-sum-logging', default=False)
-
+    
     # meta parameters
     parser.add_argument('--commit-for', type=int, default=1)
-
     parser.add_argument('--skillset', type=str, default='set3')
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
     # they agree with the other parameters
-    if args.num_timesteps is not None:
-        assert(args.num_timesteps == args.nb_epochs * args.nb_epoch_cycles * args.nb_rollout_steps)
     dict_args = vars(args)
-    del dict_args['num_timesteps']
     return dict_args
 
 

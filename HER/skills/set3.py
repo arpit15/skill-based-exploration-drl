@@ -1,3 +1,4 @@
+# v0.1 params
 ## this file assumes the following
 # action: [delta_x, delta_y, delta_z, gap]
 # obs: [gripper_xyz, block_xyz_wrt_gripper, target_xyz_wrt_block]

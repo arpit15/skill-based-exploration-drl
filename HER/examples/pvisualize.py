@@ -30,25 +30,15 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     
     # Create envs.
     env = gym.make(env_id)
-    if dologging: env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
     gym.logger.setLevel(logging.WARN)
 
     if evaluation and rank==0:
         eval_env = gym.make(env_id)
-        if dologging: eval_env = bench.Monitor(eval_env, os.path.join(logger.get_dir(), 'gym_eval'))
-        #env = bench.Monitor(env, None)
     else:
         eval_env = None
 
-    
-
-
-    # Parse noise_type
-    action_noise = None
-    param_noise = None
-
     tf.reset_default_graph()
-    ## this is a HACK
+    
     if kwargs['skillset']:
         skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
         my_skill_set = SkillSet(skillset_file.skillset)
@@ -56,22 +46,6 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     else:
         nb_actions = env.action_space.shape[-1]
-
-    for current_noise_type in noise_type.split(','):
-        current_noise_type = current_noise_type.strip()
-        if current_noise_type == 'none':
-            pass
-        elif 'adaptive-param' in current_noise_type:
-            _, stddev = current_noise_type.split('_')
-            param_noise = AdaptiveParamNoiseSpec(initial_stddev=float(stddev), desired_action_stddev=float(stddev))
-        elif 'normal' in current_noise_type:
-            _, stddev = current_noise_type.split('_')
-            action_noise = NormalActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
-        elif 'ou' in current_noise_type:
-            _, stddev = current_noise_type.split('_')
-            action_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
-        else:
-            raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
 
     # Configure components.
     memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
@@ -97,11 +71,9 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Disable logging for rank != 0 to avoid noise.
     if rank == 0:
         start_time = time.time()
-        
 
-
-    testing.test(env=env, eval_env=eval_env, param_noise=param_noise,
-        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, **kwargs)
+    testing.test(env=env, eval_env=eval_env, param_noise=param_noise, 
+        actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, **kwargs)
     env.close()
     if eval_env is not None:
         eval_env.close()
@@ -136,7 +108,9 @@ def parse_args():
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=False)    
 
-    parser.add_argument('--skillset', type=str, default='set3')
+    parser.add_argument('--skillset', type=str, default='set8')
+    parser.add_argument('--commit-for', type=int, default=1)
+    
 
     args = parser.parse_args()
     dict_args = vars(args)

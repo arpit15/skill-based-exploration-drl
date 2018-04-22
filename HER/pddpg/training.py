@@ -108,7 +108,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         ## restore
         if kwargs['skillset']:
             ## restore skills
-            kwargs['my_skill_set'].restore_skillset(sess=sess)
+            my_skill_set = kwargs['my_skill_set']
+            my_skill_set.restore_skillset(sess=sess)
         ## restore current controller
         if kwargs["restore_dir"] is not None:
             restore_dir = osp.join(kwargs["restore_dir"], "model")
@@ -172,7 +173,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Predict next action.
                     paction, pq = agent.pi(obs, apply_noise=True, compute_Q=True)
                     
-                    if(kwargs['skillset']):
+                    if(my_skill_set):
                         ## break actions into primitives and their params    
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
@@ -182,36 +183,47 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         # ## HACK. TODO: make it more general
                         # primitive_obs[-3:] = paction[kwargs['my_skill_set'].len:]
                         # primitive_obs = np.concatenate((obs.copy(), paction[kwargs['my_skill_set'].len:]))
-
-                        action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[kwargs['my_skill_set'].len:])
+                        r = 0.
+                        skill_obs = obs.copy()
+                        for _ in range(kwargs['commit_for']):
+                            action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=paction[my_skill_set.len:])
+                            # Execute next action.
+                            if rank == 0 and render:
+                                env.render()
+                            assert max_action.shape == action.shape
+                            new_obs, skill_r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
+                            r += skill_r
+                            skill_obs = new_obs
+                            if done or my_skill_set.termination(new_obs, primitive_id):
+                                break
                     else:
-                        action, q = paction, pq
+                        action = paction
+                        # Execute next action.
+                        if rank == 0 and render:
+                            env.render()
+                        assert max_action.shape == action.shape
+                        new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
+                    
 
 
                     assert action.shape == env.action_space.shape
 
-                    # Execute next action.
-                    if rank == 0 and render:
-                        env.render()
-                    assert max_action.shape == action.shape
-                    new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
-                    #if((t+1)%100) == 0:
-                    #    print(max_action*action, new_obs, r)
+                    
                     t += 1
-                    if rank == 0 and render:
-                        env.render()
+                    
                     episode_reward += r
                     episode_step += 1
 
                     # Book-keeping.
-                    epoch_actions.append(action)
+                    epoch_actions.append(paction)
                     epoch_qs.append(pq)
                     agent.store_transition(obs, paction, r, new_obs, done)
 
                     ## storing info for hindsight
-                    states.append(obs.copy())
-                    pactions.append(paction.copy())
-                    actions.append(action.copy())
+                    if kwargs['her']:
+                        states.append(obs.copy())
+                        pactions.append(paction.copy())
+                        actions.append(action.copy())
 
                     obs = new_obs
 
@@ -225,22 +237,22 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         epoch_episodes += 1
                         episodes += 1
 
-                        if kwargs["her"]:
-                            # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
+                        # if kwargs["her"]:
+                        #     # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
 
-                            ## create hindsight experience replay
-                            her_states, her_rewards = env.env.apply_hindsight(states, actions, new_obs.copy())
+                        #     ## create hindsight experience replay
+                        #     her_states, her_rewards = env.env.apply_hindsight(states, actions, new_obs.copy())
                             
-                            ## store her transitions: her_states: n+1, her_rewards: n
-                            for her_i in range(len(her_states)-2):
-                                agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
-                            #store last transition
-                            agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
+                        #     ## store her transitions: her_states: n+1, her_rewards: n
+                        #     for her_i in range(len(her_states)-2):
+                        #         agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
+                        #     #store last transition
+                        #     agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
 
 
-                            ## refresh the storage containers
-                            del states, pactions, actions
-                            states, pactions, actions = [], [], []
+                        #     ## refresh the storage containers
+                        #     del states, pactions, actions
+                        #     states, pactions, actions = [], [], []
 
                         agent.reset()
                         obs = env.reset()
@@ -286,20 +298,32 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             # eval_primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
 
                             # eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_primitive_obs)
-                            
-                            eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_obs.copy(), primitive_params=eval_paction[kwargs['my_skill_set'].len:])
-                    
+                            eval_r = 0.
+                            eval_skill_obs = eval_obs.copy()
+                            for _ in range(kwargs['commit_for']):
+                                eval_action = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=eval_paction[my_skill_set.len:])
+                                
+                                eval_new_obs, eval_skill_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
+                                
+                                if render_eval:
+                                    eval_env.render()  
+
+                                eval_r += eval_skill_r
+                                eval_skill_obs = eval_new_obs
+
+                                eval_terminate_skill = my_skill_set.termination(eval_new_obs, eval_primitive_id)
+
+                                if eval_done or eval_terminate_skill:
+                                    break
+
                         else:
                             eval_action, eval_q = eval_paction, eval_pq
+                            eval_new_obs, eval_skill_r, eval_done, eval_info = eval_env.step(max_action * eval_action)
 
 
-                        eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
-                        if render_eval:
-                            print("Render!")
-                            
-                            eval_env.render()
-                            print("rendered!")
+                        
                         eval_episode_reward += eval_r
+                        eval_obs = eval_new_obs
 
                         eval_qs.append(eval_pq)
                         

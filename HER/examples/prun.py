@@ -33,13 +33,16 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     logger.info("Env info")
     logger.info(env.__doc__)
     logger.info("-"*20)
-    env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
     gym.logger.setLevel(logging.WARN)
 
     if evaluation and rank==0:
-        eval_env = gym.make(env_id)
-        eval_env = bench.Monitor(eval_env, os.path.join(logger.get_dir(), 'gym_eval'))
-        #env = bench.Monitor(env, None)
+        if kwargs['eval_env_id']: 
+            eval_env_id = kwargs['eval_env_id']
+        else: 
+            eval_env_id = env_id
+        eval_env = gym.make(eval_env_id)
+        # del eval_env_id from kwargs
+        del kwargs['eval_env_id']
     else:
         eval_env = None
 
@@ -115,7 +118,8 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--env-id', type=str, default='Baxter3dbox-v0')
+    parser.add_argument('--env-id', type=str, default='picknmove-v3')
+    parser.add_argument('--eval-env-id', type=str, default=None)
     boolean_flag(parser, 'render-eval', default=False)
     boolean_flag(parser, 'layer-norm', default=True)
     boolean_flag(parser, 'render', default=False)
@@ -145,11 +149,16 @@ def parse_args():
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=True)
     boolean_flag(parser, 'invert-grad', default=False)
-    boolean_flag(parser, 'her', default=True)
+    
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
-    parser.add_argument('--skillset', type=str, default='set3')
+    parser.add_argument('--skillset', type=str, default='set8')
+    parser.add_argument('--commit-for', type=int, default=1)
+
+
+    # TODO: make her at hierarchical level
+    boolean_flag(parser, 'her', default=False)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them

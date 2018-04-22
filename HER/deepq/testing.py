@@ -29,7 +29,7 @@ def load_actor(sess, model_path):
         saver.restore(sess, fname)
     return ActWrapper(act, act_params)
     
-def testing(eval_env, model_path, my_skill_set, render_eval, commit_for):
+def testing(eval_env, model_path, my_skill_set, render_eval, commit_for, num_episodes):
     
     with U.single_threaded_session() as sess:
 
@@ -45,7 +45,7 @@ def testing(eval_env, model_path, my_skill_set, render_eval, commit_for):
         eval_episode_rewards = []
         eval_episode_rewards_history = []
         eval_episode_success = []
-        for i in range(10):
+        for i in range(num_episodes):
             print("Evaluating:%d"%(i+1))
             eval_episode_reward = 0.
             eval_obs = eval_env.reset()
@@ -61,7 +61,7 @@ def testing(eval_env, model_path, my_skill_set, render_eval, commit_for):
                     for _ in range(commit_for):
                     
                         ## break actions into primitives and their params    
-                        eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
+                        eval_action = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
                         eval_new_obs, eval_skill_rew, eval_done, eval_info = eval_env.step(eval_action)
                         if render_eval:
                             # print("Render!")
@@ -71,9 +71,13 @@ def testing(eval_env, model_path, my_skill_set, render_eval, commit_for):
                             # print("rendered!")
 
                         eval_r += eval_skill_rew
-                        if eval_done:
-                            break
                         eval_skill_obs = eval_new_obs
+
+                        eval_terminate_skill = my_skill_set.termination(eval_new_obs)  
+                        if eval_done or eval_terminate_skill:
+                            break
+
+                        
                 else:
                     eval_action= eval_paction
 

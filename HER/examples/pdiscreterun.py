@@ -61,14 +61,14 @@ def run(env_id, seed, evaluation, **kwargs):
         eval_env = eval_env,
         q_func=model,
         lr=kwargs['lr'],
-        max_timesteps=100000,
+        max_timesteps=kwargs['num_timesteps'],
         buffer_size=50000,
         exploration_fraction=0.1,
         exploration_final_eps=0.002,
         train_freq=1,
         batch_size=kwargs['batch_size'],
         print_freq=100,
-        checkpoint_freq=50,
+        checkpoint_freq=kwargs['save_freq'],
         learning_starts=max(50, kwargs['batch_size']),
         target_network_update_freq=100,
         prioritized_replay= kwargs['prioritized_replay'],
@@ -103,12 +103,8 @@ def parse_args():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--gamma', type=float, default=0.98)
-    parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
-    parser.add_argument('--nb-epoch-cycles', type=int, default=20)
-    parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-rollout-steps', type=int, default=320)  # per epoch cycle and MPI worker
-    parser.add_argument('--num-timesteps', type=int, default=None)
+    
+    parser.add_argument('--num-timesteps', type=int, default=100000)
     boolean_flag(parser, 'evaluation', default=True)
     parser.add_argument('--eval-env-id', type=str, default=None)
     parser.add_argument('--num-eval-episodes', type=int, default=10)
@@ -116,20 +112,18 @@ def parse_args():
 
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
-    parser.add_argument('--save-freq', type=int, default=1)
-    parser.add_argument('--restore-dir', type=str, default=None)
+    parser.add_argument('--save-freq', type=int, default=20)
     parser.add_argument('--skillset', type=str, default='set4')
+
+    ## TODO: add model restore and continue training
+    # parser.add_argument('--restore-dir', type=str, default=None)  
+    
 
     # meta parameters
     parser.add_argument('--commit-for', type=int, default=1)
 
     args = parser.parse_args()
-    # we don't directly specify timesteps for this script, so make sure that if we do specify them
-    # they agree with the other parameters
-    if args.num_timesteps is not None:
-        assert(args.num_timesteps == args.nb_epochs * args.nb_epoch_cycles * args.nb_rollout_steps)
     dict_args = vars(args)
-    del dict_args['num_timesteps']
     return dict_args
 
 

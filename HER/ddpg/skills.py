@@ -51,11 +51,15 @@ class SkillSet:
         else:
             return self.skillset[primitive_id].pi(obs=obs, primitive_params=None)
 
+    def termination(self, obs, primitive_id):
+        return self.skillset[primitive_id].termination(obs)
+
+
 
 class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
         action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None,
-        action_func = None, obs_func = None, num_params=None):
+        action_func = None, obs_func = None, num_params=None, termination = None):
         
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
@@ -68,6 +72,10 @@ class DDPGSkill(object):
         self.observation_range = observation_range
         self.actor = Actor(nb_actions=nb_actions, name=skill_name, layer_norm=layer_norm)
         self.num_params = num_params
+        if termination: 
+            self.termination = termination
+        else:
+            self.termination = lambda x: False
 
         # funcs
         self.get_action = action_func
@@ -131,10 +139,9 @@ class DDPGSkill(object):
         feed_dict = {self.obs0: [self.get_obs(obs=obs, params=primitive_params)]}
         
         action = self.sess.run(actor_tf, feed_dict=feed_dict)
-        q = None
         action = action.flatten()
         action = np.clip(action, -1, 1)
-        return self.get_action(action, obs), q
+        return self.get_action(action, obs)
 
 
 if __name__ == "__main__":

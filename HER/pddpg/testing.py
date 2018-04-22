@@ -49,7 +49,8 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         ## restore
         if kwargs['skillset']:
             ## restore skills
-            kwargs['my_skill_set'].restore_skillset(sess=sess)
+            my_skill_set = kwargs['my_skill_set']
+            my_skill_set.restore_skillset(sess=sess)
 
         ## restore meta controller weights
         restore_dir = osp.join(kwargs["restore_dir"], "model")
@@ -87,7 +88,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
 
                 if(kwargs['skillset']):
                     ## break actions into primitives and their params    
-                    eval_primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
+                    eval_primitives_prob = eval_paction[:my_skill_set.len]
                     eval_primitive_id = np.argmax(eval_primitives_prob)
                     # primitive_obs = eval_obs.copy()
                     ## HACK. TODO: make it more general
@@ -95,20 +96,30 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
 
                     # print(primitive_id)
                     # eval_action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
-                    eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_obs.copy(), primitive_params=eval_paction[kwargs['my_skill_set'].len:])
+                    eval_r = 0.
+                    eval_skill_obs = eval_obs.copy()
+                    for _ in range(kwargs['commit_for']):
+                        eval_action = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=eval_paction[kwargs['my_skill_set'].len:])
+                        eval_skill_new_obs, eval_skill_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     
+                        eval_skill_obs = eval_skill_new_obs
+                        eval_r += eval_skill_r
+                        if render_eval:
+                            eval_env.render()
+                            sleep(0.001)
+
+                        if eval_done or my_skill_set.termination(new_obs, eval_primitive_id):
+                            break
+
+                    eval_new_obs = eval_skill_new_obs
+
                 else:
                     eval_action, q = eval_paction, eval_pq
+                    eval_new_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
 
-
-                eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
-                
-                # print(eval_obs, max_action*eval_action, eval_info)
-                if render_eval:
-                    eval_env.render()
-                    sleep(0.001)
                     
                 eval_episode_reward += eval_r
+                eval_obs = eval_new_obs
 
             print("ended",eval_info["done"])
                 

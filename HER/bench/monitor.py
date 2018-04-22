@@ -39,7 +39,7 @@ class Monitor(Wrapper):
         self.total_steps = 0
         self.current_reset_info = {} # extra info about the current episode, that was passed in during reset()
 
-    def _reset(self, **kwargs):
+    def reset(self, **kwargs):
         if not self.allow_early_resets and not self.needs_reset:
             raise RuntimeError("Tried to reset an environment before done. If you want to allow early resets, wrap your env with Monitor(env, path, allow_early_resets=True)")
         self.rewards = []
@@ -51,7 +51,7 @@ class Monitor(Wrapper):
             self.current_reset_info[k] = v
         return self.env.reset(**kwargs)
 
-    def _step(self, action):
+    def step(self, action):
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
         ob, rew, done, info = self.env.step(action)

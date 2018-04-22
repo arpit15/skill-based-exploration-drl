@@ -223,16 +223,18 @@ def train(env,
                 for _ in range(commit_for):
                 
                     ## break actions into primitives and their params    
-                    action, _ = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
+                    action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=None)
                     new_obs, skill_rew, done, _ = env.step(action)
                     if render:
                         # print(action)
                         env.render()
                         sleep(0.1)
                     rew += skill_rew
-                    if done:
-                        break
                     skill_obs = new_obs
+                    terminate_skill = my_skill_set.termination(new_obs)
+                    if done or terminate_skill:
+                        break
+                    
             else:
                 action= paction
 
@@ -332,9 +334,13 @@ def train(env,
                                     print("rendered!")
 
                                 eval_r += eval_skill_rew
-                                if eval_done:
-                                    break
                                 eval_skill_obs = eval_new_obs
+                                
+                                eval_terminate_skill = my_skill_set.termination(eval_new_obs)
+
+                                if eval_done or eval_terminate_skill:
+                                    break
+                                
                         else:
                             eval_action= eval_paction
 
