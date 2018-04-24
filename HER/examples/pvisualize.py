@@ -72,7 +72,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     if rank == 0:
         start_time = time.time()
 
-    testing.test(env=env, eval_env=eval_env, param_noise=param_noise, 
+    testing.test(env=env, eval_env=eval_env, param_noise=None, action_noise=None,
         actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, **kwargs)
     env.close()
     if eval_env is not None:

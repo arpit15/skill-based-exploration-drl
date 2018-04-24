@@ -77,7 +77,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         eval_episode_rewards = []
         eval_episode_rewards_history = []
         eval_episode_success = []
-        for i in range(10):
+        for i in range(100):
             print("Evaluating:%d"%(i+1))
             eval_episode_reward = 0.
             eval_obs = eval_env.reset()
@@ -85,7 +85,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
             
             while(not eval_done):
                 eval_paction, eval_pq = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
-
+                print("meta action",np.argmax(eval_paction[:my_skill_set.len]))
                 if(kwargs['skillset']):
                     ## break actions into primitives and their params    
                     eval_primitives_prob = eval_paction[:my_skill_set.len]
@@ -106,9 +106,9 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
                         eval_r += eval_skill_r
                         if render_eval:
                             eval_env.render()
-                            sleep(0.001)
+                            sleep(0.1)
 
-                        if eval_done or my_skill_set.termination(new_obs, eval_primitive_id):
+                        if eval_done or my_skill_set.termination(eval_skill_new_obs, eval_primitive_id):
                             break
 
                     eval_new_obs = eval_skill_new_obs
