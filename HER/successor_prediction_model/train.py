@@ -16,6 +16,8 @@ import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
 
+train_fraction = 0.8
+
 def get_home_path(path):
     curr_home_path = os.getenv("HOME")
     return path.replace("$HOME",curr_home_path)
@@ -70,10 +72,10 @@ def in_test_set(line):
 ##
 
 def decode_line(line):
-    items = tf.decode_csv(line,[0.]*(in_size+out_size))
+    items = tf.decode_csv(line,[[0.]]*(in_size+out_size))
     feats = items[:in_size]
     label = items[in_size:]
-    return feats, labels
+    return feats, label
 
 def run(env_id, render, num_ep, log_dir, restore_dir, commit_for, 
             train_epoch, batch_size=32, lr = 1e-3, seed = 0):
