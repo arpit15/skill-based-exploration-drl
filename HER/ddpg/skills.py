@@ -55,6 +55,11 @@ class SkillSet:
         return self.skillset[primitive_id].termination(obs)
 
 
+def mirror(*args, **kwargs):
+    if 'obs' in kwargs:
+        return kwargs['obs']
+    else:
+        return args[0]
 
 class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
@@ -78,8 +83,8 @@ class DDPGSkill(object):
             self.termination = lambda x: False
 
         # funcs
-        self.get_action = action_func
-        self.get_obs = obs_func
+        self.get_action = action_func if action_func is not None else mirror
+        self.get_obs = obs_func if obs_func is not None else mirror
         
         # Observation normalization.
         if self.normalize_observations:
