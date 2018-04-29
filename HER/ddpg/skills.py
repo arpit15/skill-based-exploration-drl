@@ -43,12 +43,15 @@ class SkillSet:
             skill.restore_skill(path = get_home_path(skill.restore_path), sess = sess)
 
     def pi(self, obs, primitive_params=None, primitive_id=0):
+
         ## make obs for the skill
         starting_idx = self.params_start_idx[primitive_id]
         if primitive_params is not None:
             curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
+            print(self.skillset[primitive_id].skill_name, curr_skill_params)
             return self.skillset[primitive_id].pi(obs=obs, primitive_params=curr_skill_params)
         else:
+            print(self.skillset[primitive_id].skill_name)
             return self.skillset[primitive_id].pi(obs=obs, primitive_params=None)
 
     def termination(self, obs, primitive_id):

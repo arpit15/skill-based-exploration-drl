@@ -13,10 +13,10 @@ class regressor:
         self.sess = sess
         self.log_dir = log_dir
         # loss function 
-        self.loss = tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor))
+        self.loss = tf.reduce_sum(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1))
 
         # summary
-        tf.summary.scalar("loss", self.loss)
+        tf.summary.scalar("sqrt loss", tf.sqrt(self.loss))
         self.sum = tf.summary.merge_all()
 
         # optim
