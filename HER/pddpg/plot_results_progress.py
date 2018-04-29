@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sys import argv
 import numpy as np
+import os.path as osp
 from ipdb import set_trace
 
 if __name__ == "__main__":
@@ -9,7 +10,7 @@ if __name__ == "__main__":
 
 	print("checking the dir %s"%dirname)
 	try:
-		data = pd.read_csv(dirname + "progress.csv")
+		data = pd.read_csv(osp.join(dirname , "progress.csv"))
 		data = data.fillna(0.0)
 		print(data["eval/success"][-10:])
 		plt.subplot(2,1,1)
