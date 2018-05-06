@@ -85,7 +85,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
             
             while(not eval_done):
                 eval_paction, eval_pq = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
-                print("meta action",np.argmax(eval_paction[:my_skill_set.len]))
+                # print("meta action",np.argmax(eval_paction[:my_skill_set.len]))
                 if(kwargs['skillset']):
                     ## break actions into primitives and their params    
                     eval_primitives_prob = eval_paction[:my_skill_set.len]

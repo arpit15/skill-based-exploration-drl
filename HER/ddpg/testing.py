@@ -42,7 +42,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         agent.initialize(sess)
         sess.graph.finalize()
 
-        set_trace()
+        # set_trace()
         ## restore
         restore_dir = osp.join(kwargs["restore_dir"], "model")
         if (restore_dir is not None):
@@ -76,6 +76,9 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
             eval_obs = eval_env.reset()
             eval_done = False
             
+            # while(True):
+            #     eval_env.render()
+
             while(not eval_done):
                 eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
                 eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])

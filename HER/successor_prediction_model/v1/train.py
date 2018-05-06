@@ -52,7 +52,8 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
                 ob, _, done, _ = env.step(action)
                 i += 1
 
-            writer.writerow(np.concatenate((starting_ob, ob[-3:])).tolist())
+            starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
+            writer.writerow(np.concatenate((starting_ob, ob[:6])).tolist())
 
     print("DATA logging done!")
     # data input generator
@@ -85,14 +86,14 @@ def decode_line(line):
     label = items[in_size:]
     return feats, label
 
-def run(env_id, render, num_ep, log_dir, restore_dir, commit_for, 
-            train_epoch, batch_size=32, lr = 1e-3, seed = 0, dataset_size=1000):
+def run(env_id, render, log_dir, restore_dir, commit_for, 
+            train_epoch, batch_size=32, lr = 1e-3, seed = 0, dataset_size=2000):
     
     env = gym.make(env_id)
     observation_shape = env.observation_space.shape[-1]
     global in_size, out_size
-    in_size = observation_shape
-    out_size = observation_shape - 3
+    in_size = 9#observation_shape
+    out_size = 6#observation_shape - 3
 
     set_global_seeds(seed)
     env.seed(seed)
@@ -103,8 +104,8 @@ def run(env_id, render, num_ep, log_dir, restore_dir, commit_for,
 
         print("Assumption: Goal is 3d target location")
         
-        pred_model = regressor(in_shape = observation_shape, 
-                            out_shape = observation_shape - 3,
+        pred_model = regressor(in_shape = in_size, 
+                            out_shape = out_size,
                             name = "suc_pred_model", sess=sess,
                             log_dir=log_dir)
         
@@ -144,16 +145,17 @@ def run(env_id, render, num_ep, log_dir, restore_dir, commit_for,
 
         # save mean and var
         statistics = np.concatenate((train_mean, train_std))
-        with open(osp.join(log_dir, "%s_stat.npy"%env_id), 'w') as f:
+        with open(osp.join(log_dir, "%s_stat.npy"%env_id), 'wb') as f:
             np.save(f, statistics)
         # create pd
         train_dataset = ( ( train - train_mean)/train_std)
         test_dataset = ( ( test - train_mean)/train_std)
         test_dataset = test_dataset.values
-        test_dataset = [test_dataset[:,:observation_shape], test_dataset[:,observation_shape:]]
+        test_dataset = [test_dataset[:,:in_size], test_dataset[:,in_size:]]
         ####
 
-        pred_model.train(num_ep, batch_size, lr, train_dataset , test_dataset)
+        print(train_dataset.shape, test_dataset[0].shape)
+        pred_model.train(train_epoch, batch_size, lr, train_dataset , test_dataset)
         pred_model.save()
 
 def parse_args():
@@ -161,7 +163,6 @@ def parse_args():
 
     parser.add_argument('--env-id', type=str, default='Baxter-v1')
     boolean_flag(parser, 'render', default=False)
-    parser.add_argument('--num-ep', type=int, default=10)
     parser.add_argument('--lr', type=float, default=1e-4)
     
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
@@ -173,6 +174,7 @@ def parse_args():
     parser.add_argument('--commit-for', type=int, default=5)
     parser.add_argument('--train-epoch', type=int, default=10)
 
+    parser.add_argument('--batch-size', type=int, default=64)
 
     
     args = parser.parse_args()
