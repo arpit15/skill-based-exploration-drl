@@ -52,7 +52,8 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
                 ob, _, done, _ = env.step(action)
                 i += 1
 
-            writer.writerow(np.concatenate((starting_ob, ob[:-3])).tolist())
+            starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
+            writer.writerow(np.concatenate((starting_ob, ob[:6])).tolist())
 
     print("DATA logging done!")
     # data input generator
@@ -91,8 +92,8 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
     env = gym.make(env_id)
     observation_shape = env.observation_space.shape[-1]
     global in_size, out_size
-    in_size = observation_shape
-    out_size = observation_shape - 3
+    in_size = 9#observation_shape
+    out_size = 6#observation_shape - 3
 
     set_global_seeds(seed)
     env.seed(seed)
@@ -103,8 +104,8 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
 
         print("Assumption: Goal is 3d target location")
         
-        pred_model = regressor(in_shape = observation_shape, 
-                            out_shape = observation_shape - 3,
+        pred_model = regressor(in_shape = in_size, 
+                            out_shape = out_size,
                             name = "suc_pred_model", sess=sess,
                             log_dir=log_dir)
         
@@ -150,7 +151,7 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
         train_dataset = ( ( train - train_mean)/train_std)
         test_dataset = ( ( test - train_mean)/train_std)
         test_dataset = test_dataset.values
-        test_dataset = [test_dataset[:,:observation_shape], test_dataset[:,observation_shape:]]
+        test_dataset = [test_dataset[:,:in_size], test_dataset[:,in_size:]]
         ####
 
         print(train_dataset.shape, test_dataset[0].shape)
