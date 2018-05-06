@@ -55,7 +55,7 @@ if __name__ == "__main__":
                         for _ in range(commit_for):
                         
                             ## break actions into primitives and their params    
-                            eval_action, _ = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
+                            eval_action = my_skill_set.pi(primitive_id=eval_primitive_id, obs = eval_skill_obs.copy(), primitive_params=None)
                             eval_new_obs, eval_skill_rew, eval_done, eval_info = eval_env.step(eval_action)
                             
                             print(eval_paction, eval_action, eval_skill_rew)    

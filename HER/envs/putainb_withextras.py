@@ -20,7 +20,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
 
 
         # 0: random, 1: grasped
-        sample = self.np_random.choice(2)
+        sample = 0#self.np_random.choice(2)
         print("sample", sample)
         if sample == 1 and (not self.test):
 
