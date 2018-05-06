@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     try:
 
-        # ob = env.reset()
+        ob = env.reset()
         # print(ob)
         # while True:
         #     env.render(mode = 'human')

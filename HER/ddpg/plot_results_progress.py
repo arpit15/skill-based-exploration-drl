@@ -16,7 +16,7 @@ if __name__ == "__main__":
 		print(data["eval/success"][-10:])
 		plt.subplot(2,1,1)
 		plt.plot(data["total/epochs"]%200, data["eval/return_history"], label='eval')
-		plt.plot(data["total/epochs"]%200, data["rollout/return_history"], label='train')
+		plt.plot(data["total/epochs"], data["rollout/return_history"], label='train')
 		plt.legend()
 		plt.xlabel('Epochs --->')
 		plt.ylabel('Episode Reward ---->')

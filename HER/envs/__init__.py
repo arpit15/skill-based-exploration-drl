@@ -3,6 +3,12 @@ import HER
 
 # Fetch envs
 register(
+    id='release-v0',
+    entry_point='HER.envs.release_withextras:BaxterEnv',
+    kwargs={'max_len':10}
+)
+
+register(
     id='fetchpnp-v0',
     entry_point='HER.envs.fetchpnp:FetchPnp',
     kwargs={'reward_type':''},
