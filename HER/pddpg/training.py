@@ -150,9 +150,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         epoch_episodes = 0
 
         ## containers for hindsight
-        if kwargs["her"]: 
+        # if kwargs["her"]: 
             # logger.info("-"*50 +'\nWill create HER\n' + "-"*50)
-            states, pactions, actions = [], [], []
+            # states, pactions, actions = [], [], []
 
         print("Ready to go!")
         for epoch in range(global_t, nb_epochs):
@@ -220,10 +220,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     agent.store_transition(obs, paction, r, new_obs, done)
 
                     ## storing info for hindsight
-                    if kwargs['her']:
-                        states.append(obs.copy())
-                        pactions.append(paction.copy())
-                        actions.append(action.copy())
+                    # if kwargs['her']:
+                    #     states.append(obs.copy())
+                    #     pactions.append(paction.copy())
+                    #     actions.append(action.copy())
 
                     obs = new_obs
 

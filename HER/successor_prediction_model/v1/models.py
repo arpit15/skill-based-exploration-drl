@@ -13,19 +13,22 @@ class classifier:
         # tf
         self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
         self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[50,10],scope="suc_pred_model", num_actions= out_shape,layer_norm=True)
-        self.pred = tf.sigmoid(self.out_tensor) > 0.5
+        self.prob = tf.sigmoid(self.out_tensor)
+        self.pred = self.prob > 0.5
+        self.pred = tf.cast(self.pred, tf.float32)
         self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
         
         self.sess = sess
         self.log_dir = log_dir
         # loss function 
         self.loss = tf.losses.sigmoid_cross_entropy(self.target_tensor, self.out_tensor)
-        self.accuracy, _ = tf.metrics.accuracy(self.target_tensor, self.pred)
+        # self.accuracy, _ = tf.metrics.accuracy(self.target_tensor, self.pred)
+        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.pred, self.target_tensor), tf.float32))
 
         # summary
         tf.summary.histogram("input", self.in_tensor)
         tf.summary.histogram("output", self.out_tensor)
-        tf.summary.histogram("outputVstarget", self.target_tensor - self.out_tensor)
+        tf.summary.histogram("outputVstarget", self.target_tensor - self.pred)
         tf.summary.scalar("loss", self.loss)
         tf.summary.scalar("accuracy", self.accuracy)
         self.sum = tf.summary.merge_all()
