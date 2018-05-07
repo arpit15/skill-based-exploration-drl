@@ -8,11 +8,13 @@ from HER.pddpg.ddpg import DDPG
 from HER.pddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
 import HER.common.tf_util as U
 from HER.ddpg.util import read_checkpoint_local
+from HER.common.schedules import LinearSchedule
 
 from HER import logger
 import numpy as np
 import tensorflow as tf
 from mpi4py import MPI
+from HER.planning.MC_planning_with_memories import Planning_with_memories
 
 import os.path as osp
 from ipdb import set_trace
@@ -48,6 +50,15 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
     if dologging: logger.info('scaling actions by {} before executing in env'.format(max_action))
     
+    if kwargs['look_ahead']:
+        look_ahead = True
+        look_ahead_planner = Planning_with_memories(kwargs['my_skill_set'], env)
+        exploration = LinearSchedule(schedule_timesteps=int(nb_epochs * nb_epoch_cycles),
+                                     initial_p=1.0,
+                                     final_p=exploration_final_eps)
+    else:
+        look_ahead = False
+
     if kwargs['skillset']:
         action_shape = (kwargs['my_skill_set'].len + kwargs['my_skill_set'].params,)
     else:
@@ -171,7 +182,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
                     # Predict next action.
-                    paction, pq = agent.pi(obs, apply_noise=True, compute_Q=True)
+                    
+                    # exploration check
+                    if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*cycle)):
+                        paction = look_ahead_planner.create_plan(obs)
+                    else:
+                        paction, _ = agent.pi(obs, apply_noise=True, compute_Q=True)
                     
                     if(my_skill_set):
                         ## break actions into primitives and their params    

@@ -114,6 +114,18 @@ register(
 )
 
 register(
+    id='picknmoved-v2',
+    entry_point='HER.envs.picknmovedense_withextras:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='picknmovedt-v2',
+    entry_point='HER.envs.picknmovedense_withextras:BaxterEnv',
+    kwargs={'max_len':50, 'test':True}
+)
+
+register(
     id='picknmove-v3',
     entry_point='HER.envs.picknmove_withextras:BaxterEnv',
     kwargs={'max_len':100}

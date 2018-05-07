@@ -5,48 +5,54 @@ from HER.ddpg.models import Model
 from HER.deepq.models import _mlp
 
 class classifier:
-    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp"):
+    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp", train=True, in_tensor = None):
         # properties
         self.in_shape = in_shape
         self.out_shape = out_shape
 
         # tf
-        self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
-        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[50,10],scope="suc_pred_model", num_actions= out_shape,layer_norm=True)
+        if in_tensor is None:
+            self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
+        else: 
+            self.in_tensor = in_tensor
+            
+        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[50,10],scope=name, num_actions= out_shape,layer_norm=True)
         self.prob = tf.sigmoid(self.out_tensor)
         self.pred = self.prob > 0.5
         self.pred = tf.cast(self.pred, tf.float32)
-        self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
         
         self.sess = sess
-        self.log_dir = log_dir
-        # loss function 
-        self.loss = tf.losses.sigmoid_cross_entropy(self.target_tensor, self.out_tensor)
-        # self.accuracy, _ = tf.metrics.accuracy(self.target_tensor, self.pred)
-        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.pred, self.target_tensor), tf.float32))
 
-        # summary
-        tf.summary.histogram("input", self.in_tensor)
-        tf.summary.histogram("output", self.out_tensor)
-        tf.summary.histogram("outputVstarget", self.target_tensor - self.pred)
-        tf.summary.scalar("loss", self.loss)
-        tf.summary.scalar("accuracy", self.accuracy)
-        self.sum = tf.summary.merge_all()
+        if train:
+            self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
+            self.log_dir = log_dir
+            # loss function 
+            self.loss = tf.losses.sigmoid_cross_entropy(self.target_tensor, self.out_tensor)
+            # self.accuracy, _ = tf.metrics.accuracy(self.target_tensor, self.pred)
+            self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.pred, self.target_tensor), tf.float32))
 
-        # optim
-        self.lr = tf.placeholder(tf.float32,(),'learning_rate')
-        self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        self.optim = tf.train.AdamOptimizer(self.lr) \
-                          .minimize(self.loss, var_list=(self.vars))
+            # summary
+            tf.summary.histogram("input", self.in_tensor)
+            tf.summary.histogram("output", self.out_tensor)
+            tf.summary.histogram("outputVstarget", self.target_tensor - self.pred)
+            tf.summary.scalar("loss", self.loss)
+            tf.summary.scalar("accuracy", self.accuracy)
+            self.sum = tf.summary.merge_all()
 
-        # saver
-        self.saver = tf.train.Saver(var_list = self.vars, max_to_keep=5, 
-                                        name="%s_suc_pred_net"%name, 
-                                        keep_checkpoint_every_n_hours=1,
-                                        save_relative_paths=True)
+            # optim
+            self.lr = tf.placeholder(tf.float32,(),'learning_rate')
+            self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+            self.optim = tf.train.AdamOptimizer(self.lr) \
+                              .minimize(self.loss, var_list=(self.vars))
 
-        self.writer_t = tf.summary.FileWriter(osp.join(self.log_dir ,'tfsum' ,'train'), sess.graph)
-        self.writer_v = tf.summary.FileWriter(osp.join(self.log_dir , 'tfsum', 'test'), sess.graph)
+            # saver
+            self.saver = tf.train.Saver(var_list = self.vars, max_to_keep=5, 
+                                            name="%s_suc_pred_net"%name, 
+                                            keep_checkpoint_every_n_hours=1,
+                                            save_relative_paths=True)
+
+            self.writer_t = tf.summary.FileWriter(osp.join(self.log_dir ,'tfsum' ,'train'), sess.graph)
+            self.writer_v = tf.summary.FileWriter(osp.join(self.log_dir , 'tfsum', 'test'), sess.graph)
 
 
     def train(self, num_epochs, batch_size, lr=1e-3, train_dataset = None, test_dataset=None, test_freq = 1, save_freq=10, log=True):
@@ -94,4 +100,11 @@ class classifier:
                                         self.target_tensor: test_label
                                         })
         return test_summary
+
+    def prediction(self, obs):
+        predict_prob = self.sess.run(self.prob, feed_dict={
+                                        self.in_tensor: test_feats
+                                        })
+
+        return predict_prob
 

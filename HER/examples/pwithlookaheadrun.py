@@ -157,6 +157,7 @@ def parse_args():
     parser.add_argument('--commit-for', type=int, default=1)
 
     boolean_flag(parser, 'look-ahead', default=True)
+    parser.add_argument('--exploration-final-eps', type=int, default=0.001)
 
 
 
