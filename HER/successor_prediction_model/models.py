@@ -4,7 +4,7 @@ import os.path as osp
 from HER.ddpg.models import Model
 from HER.deepq.models import _mlp
 
-class classifier:
+class regressor:
     def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp"):
         # properties
         self.in_shape = in_shape
@@ -12,22 +12,21 @@ class classifier:
 
         # tf
         self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
-        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[50,10],scope="suc_pred_model", num_actions= out_shape,layer_norm=True)
-        self.pred = tf.sigmoid(self.out_tensor) > 0.5
+        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[100,100,100],scope="suc_pred_model", num_actions= out_shape,layer_norm=True)
         self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
         
         self.sess = sess
         self.log_dir = log_dir
         # loss function 
-        self.loss = tf.losses.sigmoid_cross_entropy(self.target_tensor, self.out_tensor)
-        self.accuracy = tf.metrics.accuracy(self.target_tensor, self.pred)
+        self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1))
 
+        self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1)))
         # summary
         tf.summary.histogram("input", self.in_tensor)
         tf.summary.histogram("output", self.out_tensor)
         tf.summary.histogram("outputVstarget", self.target_tensor - self.out_tensor)
         tf.summary.scalar("loss", self.loss)
-        tf.summary.scalar("accuracy", self.accuracy)
+        tf.summary.scalar("sqrt loss", self.sqrt_loss)
         self.sum = tf.summary.merge_all()
 
         # optim
@@ -55,7 +54,7 @@ class classifier:
             curr_train_data = train_dataset.sample(batch_size, axis=0).as_matrix()
             
             feed_dict[self.in_tensor] = curr_train_data[:, :self.in_shape]
-            feed_dict[self.target_tensor] = curr_train_data[:,-1]
+            feed_dict[self.target_tensor] = curr_train_data[:,self.in_shape:]
 
             train_summary, train_loss, _ = self.sess.run([self.sum, self.loss, self.optim], feed_dict)
             if log:
@@ -90,5 +89,25 @@ class classifier:
                                         self.in_tensor: test_feats,
                                         self.target_tensor: test_label
                                         })
+        # test_loss = 0.
+        # i = 0
+        # while True:
+        #     try:
+        #         i += 1
+        #         test_feats, test_label = self.sess.run(test_dataset)
+
+        #         test_loss += self.sess.run(self.loss, feed_dict={
+        #                                 self.in_tensor: test_feats,
+        #                                 self.target_tensor: test_label
+        #                                 })
+
+        #         print(test_feats.shape, test_loss)
+
+
+        #     except tf.errors.OutOfRangeError:
+        #         break
+        
+        # print("test loss:%f, %.4f"%(test_loss, test_loss))
+        # test_summary = tf.Summary(value=[tf.Summary.Value(tag="loss",simple_value=test_loss/i)])
         return test_summary
 

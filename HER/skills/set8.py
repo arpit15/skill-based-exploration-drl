@@ -1,4 +1,4 @@
-# v1 params
+# v2 params
 ## this file assumes the following
 # action: [delta_x, delta_y, delta_z, gap]
 # obs: [gripper_state, block_state, target_xyz]
@@ -23,11 +23,26 @@ def transfer_obs(obs, params):
 	# has to predict the location of the contact point of the gripper with obj
 	tmp = params
 	tmp[-1] += 0.1
+
+	# params are predicted b/w [-1,1]
+	# x,y,z = tmp
+	# x = 0.3 + (x+1)*0.25
+	# y = 0. + (y+1)*0.3
+	# z = 0.08 + (z+1)*0.125
+	# tmp = np.concatenate((x,y,z))
+
 	final_obs = np.concatenate((obs[:dim] , tmp))
 	# print("move obs", final_obs)
 	return final_obs
 
 def transit_obs(obs,params):
+	# params are predicted b/w [-1,1]
+	# x,y,z = params
+	# x = 0.3 + (x+1)*0.25
+	# y = 0. + (y+1)*0.3
+	# z = 0.08 + (z+1)*0.125 - 0.08
+	# params = np.concatenate((x,y,z))
+
 	final_obs = np.concatenate((obs[:dim] , params))
 	# print("move obs", final_obs)
 	return final_obs
