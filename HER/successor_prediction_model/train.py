@@ -28,6 +28,7 @@ def get_home_path(path):
 
 def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
     
+    log_dir = osp.expanduser(log_dir)
     # get data for training and dump into csv
     csv_filename = osp.join(log_dir, "%s.csv"%env_id)
 
@@ -52,8 +53,8 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
                 ob, _, done, _ = env.step(action)
                 i += 1
 
-            starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
-            writer.writerow(np.concatenate((starting_ob, ob[:6])).tolist())
+            #starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
+            writer.writerow(np.concatenate((starting_ob, ob[:-3])).tolist())
 
     print("DATA logging done!")
     # data input generator
@@ -118,10 +119,11 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
         sess.run(init_op)
 
         # restore actor
-        actor_model.restore_skill(path = get_home_path(restore_dir), sess = sess)
+        actor_model.restore_skill(path = get_home_path(osp.expanduser(restore_dir)), sess = sess)
 
         generate_data(env, env_id, log_dir, actor_model, dataset_size, commit_for)
-
+        
+        exit(1)
         ## creating dataset tensors
         csv_filename = osp.join(log_dir, "%s.csv"%env_id)
         # base_dataset = tf.data.TextLineDataset(csv_filename)
