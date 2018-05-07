@@ -14,7 +14,7 @@ from HER.common.misc_util import (
     boolean_flag,
 )
 
-from HER.successor_prediction_model.models import classifier
+from HER.successor_prediction_model.v1.models import classifier
 import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
@@ -52,8 +52,8 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
         ## 
         base_dataset = np.loadtxt(csv_filename, delimiter=',')
         train, test = train_test_split(base_dataset, test_size=0.2)
-        train_feat = train[:-1]
-        train_labels = train[-1]
+        train_feat = train[:,:-1]
+        train_labels = train[:,-1]
         # print(train.shape, test.shape)
 
         # whiten
@@ -67,10 +67,11 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
 
         # create pd
         train_feat_dataset = ( ( train_feat - train_feat_mean)/train_feat_std)
-        train_dataset = pd.DataFrame(np.concatenate((train_feat_dataset, train_labels)))
+        print(train_feat_dataset.shape, train_labels[:, np.newaxis].shape)
+        train_dataset = pd.DataFrame(np.concatenate((train_feat_dataset, train_labels[:, np.newaxis]),axis=1))
         
-        test_feat_dataset = ( ( test[:-1] - train_feat_mean)/train_feat_std)
-        test_dataset = [test_feat_dataset, test[-1]]
+        test_feat_dataset = ( ( test[:, :-1] - train_feat_mean)/train_feat_std)
+        test_dataset = [test_feat_dataset, test[:,[-1]]]
         ####
 
         print(train_dataset.shape, test_dataset[0].shape)

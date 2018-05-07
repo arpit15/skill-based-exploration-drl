@@ -20,7 +20,7 @@ class classifier:
         self.log_dir = log_dir
         # loss function 
         self.loss = tf.losses.sigmoid_cross_entropy(self.target_tensor, self.out_tensor)
-        self.accuracy = tf.metrics.accuracy(self.target_tensor, self.pred)
+        self.accuracy, _ = tf.metrics.accuracy(self.target_tensor, self.pred)
 
         # summary
         tf.summary.histogram("input", self.in_tensor)
@@ -55,7 +55,7 @@ class classifier:
             curr_train_data = train_dataset.sample(batch_size, axis=0).as_matrix()
             
             feed_dict[self.in_tensor] = curr_train_data[:, :self.in_shape]
-            feed_dict[self.target_tensor] = curr_train_data[:,-1]
+            feed_dict[self.target_tensor] = curr_train_data[:,[-1]]
 
             train_summary, train_loss, _ = self.sess.run([self.sum, self.loss, self.optim], feed_dict)
             if log:
