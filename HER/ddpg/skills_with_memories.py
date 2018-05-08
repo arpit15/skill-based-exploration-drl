@@ -1,18 +1,16 @@
-from HER.ddpg.models import Actor
+import glob
 import tensorflow as tf
+import os.path as osp
+import numpy as np
+import os
+
+from HER.ddpg.models import Actor, Critic
 from HER import logger
 from HER.common.mpi_running_mean_std import RunningMeanStd
 from HER.ddpg.ddpg import normalize
 import HER.common.tf_util as U
 from HER.ddpg.util import read_checkpoint_local
-import os.path as osp
-import numpy as np
-import os
 from HER.successor_prediction_model.v1.models import classifier
-
-def get_home_path(path):
-    curr_home_path = os.getenv("HOME")
-    return path.replace("$HOME",curr_home_path)
 
 class SkillSet:
     def __init__(self, skills):
@@ -32,7 +30,7 @@ class SkillSet:
         return len(self.skillset)
 
     @property
-    def params(self):
+    def num_params(self):
         num_params = 0
         for skill in self.skillset:
             num_params += skill.num_params
@@ -41,7 +39,7 @@ class SkillSet:
 
     def restore_skillset(self, sess):
         for skill in self.skillset:
-            skill.restore_skill(path = get_home_path(skill.restore_path), sess = sess)
+            skill.restore_skill(path = osp.expanduser(skill.restore_path), sess = sess)
 
     def pi(self, obs, primitive_params=None, primitive_id=0):
 
@@ -67,6 +65,9 @@ class SkillSet:
     def get_prob_skill_success(self, primitive_id, obs, primitive_params):
         return self.skillset[primitive_id].get_prob_skill_success(obs = obs, primitive_params = primitive_params)
 
+    def num_skill_params(self, primitive_id):
+        return self.skillset[primitive_id].num_params
+
 
 def mirror(*args, **kwargs):
     if 'obs' in kwargs:
@@ -77,14 +78,14 @@ def mirror(*args, **kwargs):
 class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
         action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None,
-        action_func = None, obs_func = None, num_params=None, termination = None):
+        action_func = None, obs_func = None, num_params=None, termination = None, get_full_state_func=None):
         
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
         
         # Parameters.
         self.skill_name = skill_name
-        self.restore_path = restore_path
+        self.restore_path = osp.expanduser(restore_path)
         self.normalize_observations = normalize_observations
         self.action_range = action_range
         self.observation_range = observation_range
@@ -98,7 +99,8 @@ class DDPGSkill(object):
 
         self.num_params = num_params
         # load memory
-        memory_filename = glob.glob(osp.join(restore_path, 'memory' , '*.csv'))[0]
+        print("searching for memory in %s"%osp.join(self.restore_path, 'memory'))
+        memory_filename = glob.glob(osp.join(self.restore_path, 'memory' , '*.csv'))[0]
 
         self.memory = np.loadtxt(memory_filename , delimiter= ',')
         self.starting_state_goal = self.memory[:, :observation_shape[0]]
@@ -112,6 +114,7 @@ class DDPGSkill(object):
         # funcs
         self.get_action = action_func if action_func is not None else mirror
         self.get_obs = obs_func if obs_func is not None else mirror
+        self.get_full_state = get_full_state_func if get_full_state_func is not None else mirror
         
         # Observation normalization.
         if self.normalize_observations:
@@ -136,6 +139,7 @@ class DDPGSkill(object):
         model_var = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='%s/suc_pred_model'%self.skill_name)
 
         for var in model_var:
+            name = var.name
             name = name.replace("%s/"%self.skill_name,"")
             var_restore_dict_successor_model[name[:-2]] = var
 
@@ -152,16 +156,19 @@ class DDPGSkill(object):
         var_restore_dict_ddpg={}
 
         for var in self.actor.trainable_vars:
+            name = var.name
             name = name.replace("%s/"%self.skill_name, "")
             var_restore_dict_ddpg[name[:-2]] = var
         
         obs_rms_var = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='%s/obs_rms'%self.skill_name)
 
         for var in obs_rms_var:
+            name = var.name
             name = name.replace("%s/"%self.skill_name,"")
             var_restore_dict_ddpg[name[:-2]] = var
 
         for var in self.critic.trainable_vars:
+            name = var.name
             name = name.replace("%s/"%self.skill_name, "")
             var_restore_dict_ddpg[name[:-2]] = var
         
@@ -177,7 +184,7 @@ class DDPGSkill(object):
         
         
         print('Restore path : ',path)
-        model_checkpoint_path = read_checkpoint_local(path)
+        model_checkpoint_path = read_checkpoint_local(osp.join(path, "model"))
         if model_checkpoint_path:
             self.loader_ddpg.restore(U.get_session(), model_checkpoint_path)
             logger.info("Successfully loaded %s skill"%self.skill_name)
@@ -208,6 +215,7 @@ class DDPGSkill(object):
 
     def get_critic_value(self, obs, primitive_params):
         feed_dict = {self.obs0: [self.get_obs(obs=obs, params=primitive_params)]}
+        # print("skill %s"%self.skill_name)
         q_value = self.sess.run(self.critic_tf, feed_dict)
         return q_value
 
@@ -215,13 +223,13 @@ class DDPGSkill(object):
         skill_obs = self.get_obs(obs = obs, params = primitive_params)
 
         # do Nearest neighbour 
-        min_dist_idx = np.argmin( np.linalg.norm(starting_state_goal - skill_obs, axis=1))
+        min_dist_idx = np.argmin( np.linalg.norm(self.starting_state_goal - skill_obs, axis=1))
         next_obs = self.ending_state[min_dist_idx].copy()
 
         # append target
         target = obs[-3:]
         next_state = np.concatenate((next_obs, target))
-        next_full_state = self.get_full_state(next_state)
+        next_full_state = self.get_full_state(next_state, prev_obs = obs)
 
         return next_full_state
 

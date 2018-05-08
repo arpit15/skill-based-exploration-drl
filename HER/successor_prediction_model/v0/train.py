@@ -15,7 +15,7 @@ from HER.common.misc_util import (
 )
 
 from HER.pddpg.models import Actor
-from HER.successor_prediction_model.models import regressor
+from HER.successor_prediction_model.v0.models import regressor
 import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U

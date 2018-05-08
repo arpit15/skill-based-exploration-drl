@@ -18,7 +18,7 @@ def move_act(skill_action, obs):
 
 def transfer_obs(obs, params):
 	## domain knowledge: move to object
-	# print("creating move obs")
+	# print("creating transfer obs ", obs.shape, params.shape)
 	final_obs = np.concatenate((obs[:-3] , params))
 	return final_obs
 
@@ -50,6 +50,17 @@ def end_grasp(obs):
 
 end_transfer = end_grasp
 
+def reacher_get_full_state_func(reacher_obs, prev_obs):
+	# assumption: the gripper vel and everything else is 0 for reacher
+	curr_full_obs = np.zeros_like(prev_obs)
+	curr_full_obs[:dim] = reacher_obs[:dim].copy()
+	curr_full_obs[dim:2*dim] = prev_obs[dim:2*dim].copy()
+	curr_full_obs[2*dim: 3*dim] = prev_obs[dim:2*dim] - curr_full_obs[:dim]
+
+	curr_full_obs[-dim:] = reacher_obs[-dim:].copy()
+	return curr_full_obs.copy()
+
+
 transit = {
 	"nb_actions":dim,
 	"action_func":move_act,
@@ -58,7 +69,8 @@ transit = {
 	"obs_func":transit_obs,
 	"num_params": dim,
 	"termination": end_transit,
-	"restore_path":"$HOME/new_RL3/baseline_results_new/v1/Reacher3d-v0/run1/model"
+	'get_full_state_func': reacher_get_full_state_func,
+	"restore_path":"~/new_RL3/baseline_results_new/v1/Reacher3d-v0/run1"
 }
 
 grasp = {
@@ -69,7 +81,7 @@ grasp = {
 	"obs_func":grasp_obs,
 	"num_params": 1,
 	"termination": end_grasp,
-	"restore_path":"$HOME/new_RL3/baseline_results_new/v1/grasping-v2/run2/model"
+	"restore_path":"~/new_RL3/baseline_results_new/v1/grasping-v2/run2"
 }
 
 transfer = {
@@ -78,9 +90,9 @@ transfer = {
 	"skill_name": "transfer",
 	"observation_shape":(28,),
 	"obs_func":transfer_obs,
-	"num_params": 1,
+	"num_params": 3,
 	"termination": end_transfer,
-	"restore_path":"$HOME/new_RL3/baseline_results_new/v1/release-v0/run1/model"
+	"restore_path":"~/new_RL3/baseline_results_new/v1/transfer-v0/run1"
 }
 
 skillset = [transit, transfer, grasp]

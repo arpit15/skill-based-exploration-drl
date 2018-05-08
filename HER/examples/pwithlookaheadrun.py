@@ -7,8 +7,8 @@ from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
-from HER.ddpg.skills import SkillSet
-import HER.pddpg.training as training
+from HER.ddpg.skills_with_memories import SkillSet
+import HER.pddpg.training_with_look_ahead as training
 from HER.pddpg.models import Actor, Critic
 from HER.pddpg.memory import Memory
 from HER.pddpg.noise import *
@@ -56,7 +56,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         # import HER.skills.set2 as skillset_file
         skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
         my_skill_set = SkillSet(skillset_file.skillset)
-        nb_actions = my_skill_set.params +  my_skill_set.len
+        nb_actions = my_skill_set.num_params +  my_skill_set.len
 
     else:
         nb_actions = env.action_space.shape[-1]
@@ -153,7 +153,7 @@ def parse_args():
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
-    parser.add_argument('--skillset', type=str, default='set8')
+    parser.add_argument('--skillset', type=str, default='set9')
     parser.add_argument('--commit-for', type=int, default=1)
 
     boolean_flag(parser, 'look-ahead', default=True)

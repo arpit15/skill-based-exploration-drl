@@ -8,7 +8,7 @@ class Node:
 		self.reward = reward
 		self.value = value
 		self.skill_num = skill_num
-		self.params = self.params
+		self.params = params
 		self.parent = parent
 		self.height = height
 		self.prob = prob
@@ -47,7 +47,7 @@ class Planning_with_memories:
 			# sample skills
 			sampled_skills = np.random.choice(self.skillset.len, size = self.num_samples)
 			for node_id, sampled_skill_num in enumerate(sampled_skills):
-				sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.skillset[sampled_skill_num].num_params)
+				sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
 
 				critic_value = self.skillset.get_critic_value(primitive_id=sampled_skill_num, obs = state, primitive_params = sampled_params)
 				next_state = self.skillset.get_terminal_state_from_memory(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
@@ -75,7 +75,7 @@ class Planning_with_memories:
 		for node_id, node in enumerate(leaflist):
 			node_utility = (self.value_scale*node.value + self.reward_scale*node.reward)
 
-			expected_node_utility = self.prob*node_utility
+			expected_node_utility = node.prob*node_utility
 
 			if(node_utility > max_utility):
 				max_utility = node_utility
@@ -93,11 +93,12 @@ class Planning_with_memories:
 		chosen_skill_params = curr_node.child.params
 
 		# create paction and return
-		paction = np.zeros((self.skillset.len + my_skill_set.params, 1))
+		paction = np.zeros((self.skillset.len + self.skillset.num_params, ))
 		paction[chosen_skill] = 1.0
-		starting_idx = skillset.params_start_idx[chosen_skill]
+		starting_idx = self.skillset.params_start_idx[chosen_skill]
 		ending_idx = starting_idx + chosen_skill_params.size
 
+		# print(chosen_skill_params.shape, paction.shape)
 		paction[ starting_idx: ending_idx] = chosen_skill_params
 		return paction.copy()
 

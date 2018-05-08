@@ -55,12 +55,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         look_ahead_planner = Planning_with_memories(kwargs['my_skill_set'], env)
         exploration = LinearSchedule(schedule_timesteps=int(nb_epochs * nb_epoch_cycles),
                                      initial_p=1.0,
-                                     final_p=exploration_final_eps)
+                                     final_p=kwargs['exploration_final_eps'])
     else:
         look_ahead = False
 
     if kwargs['skillset']:
-        action_shape = (kwargs['my_skill_set'].len + kwargs['my_skill_set'].params,)
+        action_shape = (kwargs['my_skill_set'].len + kwargs['my_skill_set'].num_params,)
     else:
         action_shape = env.action_space.shape
 
@@ -375,7 +375,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 combined_stats['train/loss_actor'] = normal_mean(epoch_actor_losses)
                 combined_stats['train/loss_critic'] = normal_mean(epoch_critic_losses)
                 combined_stats['train/param_noise_distance'] = normal_mean(epoch_adaptive_distances)
-
+                combined_stats['train/exploration'] = exploration.value(epoch*nb_epoch_cycles)
                 # Evaluation statistics.
                 if eval_env is not None:
                     combined_stats['eval/return'] = normal_mean(eval_episode_rewards)

@@ -20,7 +20,7 @@ from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
 
 def run(env_id, render, log_dir, restore_dir, commit_for, 
-            train_epoch, batch_size=32, lr = 1e-3, seed = 0, dataset_size=2000):
+            train_epoch, batch_size=32, lr = 1e-3, seed = 0, dataset_size=2000, whiten = False):
     
     env = gym.make(env_id)
     observation_shape = env.observation_space.shape[-1]
@@ -57,24 +57,29 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
         # print(train.shape, test.shape)
 
         # whiten
-        train_feat_mean = np.mean(train_feat, axis=0)
-        train_feat_std = np.std(train_feat, axis=0)
+        if whiten:
+            train_feat_mean = np.mean(train_feat, axis=0)
+            train_feat_std = np.std(train_feat, axis=0)
 
-        # save mean and var
-        statistics = np.concatenate((train_feat_mean, train_feat_std))
-        with open(osp.join(log_dir, "%s_stat.npy"%env_id), 'wb') as f:
-            np.save(f, statistics)
+            # save mean and var
+            statistics = np.concatenate((train_feat_mean, train_feat_std))
+            with open(osp.join(log_dir, "%s_stat.npy"%env_id), 'wb') as f:
+                np.save(f, statistics)
 
-        # create pd
-        train_feat_dataset = ( ( train_feat - train_feat_mean)/train_feat_std)
-        print(train_feat_dataset.shape, train_labels[:, np.newaxis].shape)
-        train_dataset = pd.DataFrame(np.concatenate((train_feat_dataset, train_labels[:, np.newaxis]),axis=1))
-        
-        test_feat_dataset = ( ( test[:, :-1] - train_feat_mean)/train_feat_std)
-        test_dataset = [test_feat_dataset, test[:,[-1]]]
-        ####
+            # create pd
+            train_feat_dataset = ( ( train_feat - train_feat_mean)/train_feat_std)
+            print(train_feat_dataset.shape, train_labels[:, np.newaxis].shape)
+            train_dataset = pd.DataFrame(np.concatenate((train_feat_dataset, train_labels[:, np.newaxis]),axis=1))
+            
+            test_feat_dataset = ( ( test[:, :-1] - train_feat_mean)/train_feat_std)
+            test_dataset = [test_feat_dataset, test[:,[-1]]]
+            ####
 
-        print(train_dataset.shape, test_dataset[0].shape)
+            print(train_dataset.shape, test_dataset[0].shape)
+        else:
+            train_dataset = pd.DataFrame(np.concatenate((train_feat, train_labels[:, np.newaxis]),axis=1))
+            test_dataset = [test[:, :-1], test[:,[-1]]]
+
         pred_model.train(train_epoch, batch_size, lr, train_dataset , test_dataset)
         pred_model.save()
 
@@ -95,6 +100,7 @@ def parse_args():
     parser.add_argument('--train-epoch', type=int, default=10)
 
     parser.add_argument('--batch-size', type=int, default=64)
+    boolean_flag(parser, 'whiten', default=False)
 
     
     args = parser.parse_args()

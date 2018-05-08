@@ -3,8 +3,8 @@ import HER
 
 # Fetch envs
 register(
-    id='release-v0',
-    entry_point='HER.envs.release_withextras:BaxterEnv',
+    id='transfer-v0',
+    entry_point='HER.envs.transfer_withextras:BaxterEnv',
     kwargs={'max_len':10}
 )
 
@@ -116,7 +116,7 @@ register(
 register(
     id='picknmoved-v2',
     entry_point='HER.envs.picknmovedense_withextras:BaxterEnv',
-    kwargs={'max_len':50}
+    kwargs={'max_len':100}
 )
 
 register(
