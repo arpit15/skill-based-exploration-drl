@@ -3,6 +3,7 @@ import tensorflow as tf
 import os.path as osp
 import numpy as np
 import os
+from mpi4py import MPI
 
 from HER.ddpg.models import Actor, Critic
 from HER import logger
@@ -23,7 +24,7 @@ class SkillSet:
             param_idx += self.skillset[-1].num_params
 
 
-        logger.info("Skill set init!\n" + "#"*50)
+        if MPI.COMM_WORLD.Get_rank() == 0: logger.info("Skill set init!\n" + "#"*50)
 
     @property
     def len(self):
@@ -143,10 +144,11 @@ class DDPGSkill(object):
             name = name.replace("%s/"%self.skill_name,"")
             var_restore_dict_successor_model[name[:-2]] = var
 
-        logger.info("restoring following pred model vars\n"+"-"*20)
-        logger.info("num of vars to restore:%d"%len(var_restore_dict_successor_model))
-        logger.info(str(var_restore_dict_successor_model))
-        logger.info("-"*50)
+        if MPI.COMM_WORLD.Get_rank() == 0:
+            logger.debug("restoring following pred model vars\n"+"-"*20)
+            logger.debug("num of vars to restore:%d"%len(var_restore_dict_successor_model))
+            logger.debug(str(var_restore_dict_successor_model))
+            logger.debug("-"*50)
 
         return var_restore_dict_successor_model
 
@@ -172,10 +174,11 @@ class DDPGSkill(object):
             name = name.replace("%s/"%self.skill_name, "")
             var_restore_dict_ddpg[name[:-2]] = var
         
-        logger.info("restoring following ddpg vars\n"+"-"*20)
-        logger.info("num of vars to restore:%d"%len(var_restore_dict_ddpg))
-        logger.info(str(var_restore_dict_ddpg))
-        logger.info("-"*50)
+        if MPI.COMM_WORLD.Get_rank() == 0:
+            logger.debug("restoring following ddpg vars\n"+"-"*20)
+            logger.debug("num of vars to restore:%d"%len(var_restore_dict_ddpg))
+            logger.debug(str(var_restore_dict_ddpg))
+            logger.debug("-"*50)
 
         return var_restore_dict_ddpg
 
@@ -187,12 +190,12 @@ class DDPGSkill(object):
         model_checkpoint_path = read_checkpoint_local(osp.join(path, "model"))
         if model_checkpoint_path:
             self.loader_ddpg.restore(U.get_session(), model_checkpoint_path)
-            logger.info("Successfully loaded %s skill"%self.skill_name)
+            if MPI.COMM_WORLD.Get_rank() == 0: logger.info("Successfully loaded %s skill"%self.skill_name)
 
         model_checkpoint_path = read_checkpoint_local(osp.join(path, "pred_model"))
         if model_checkpoint_path:
             self.loader_successor_model.restore(U.get_session(), model_checkpoint_path)
-            logger.info("Successfully loaded pred model for %s skill"%self.skill_name)
+            if MPI.COMM_WORLD.Get_rank() == 0: logger.info("Successfully loaded pred model for %s skill"%self.skill_name)
 
 
 

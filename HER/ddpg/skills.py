@@ -1,13 +1,15 @@
-from HER.ddpg.models import Actor
+from mpi4py import MPI
 import tensorflow as tf
+import os.path as osp
+import numpy as np
+import os
+
+from HER.ddpg.models import Actor
 from HER import logger
 from HER.common.mpi_running_mean_std import RunningMeanStd
 from HER.ddpg.ddpg import normalize
 import HER.common.tf_util as U
 from HER.ddpg.util import read_checkpoint_local
-import os.path as osp
-import numpy as np
-import os
 
 def get_home_path(path):
     curr_home_path = os.getenv("HOME")
@@ -24,7 +26,7 @@ class SkillSet:
             param_idx += self.skillset[-1].num_params
 
 
-        logger.info("Skill set init!\n" + "#"*50)
+        if MPI.COMM_WORLD.Get_rank() == 0: logger.info("Skill set init!\n" + "#"*50)
 
     @property
     def len(self):
@@ -120,11 +122,11 @@ class DDPGSkill(object):
             
             var_restore_dict[name[:-2]] = var
 
-        
-        logger.info("restoring following vars\n"+"-"*20)
-        logger.info("num of vars to restore:%d"%len(train_vars))
-        logger.info(str(var_restore_dict))
-        logger.info("-"*50)
+        if MPI.COMM_WORLD.Get_rank() == 0:
+            logger.debug("restoring following vars\n"+"-"*20)
+            logger.debug("num of vars to restore:%d"%len(train_vars))
+            logger.debug(str(var_restore_dict))
+            logger.debug("-"*50)
 
         return var_restore_dict
 
@@ -139,7 +141,7 @@ class DDPGSkill(object):
         if model_checkpoint_path:
             # model_checkpoint_path = osp.join(path, osp.basename(checkpoint.model_checkpoint_path))
             self.loader.restore(U.get_session(), model_checkpoint_path)
-            logger.info("Successfully loaded %s skill"%self.skill_name)
+            if MPI.COMM_WORLD.Get_rank() == 0: logger.info("Successfully loaded %s skill"%self.skill_name)
 
     def pi(self, obs, primitive_params,compute_Q=False):
         

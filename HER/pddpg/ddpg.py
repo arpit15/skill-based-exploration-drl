@@ -1,5 +1,6 @@
 from copy import copy
 from functools import reduce
+from mpi4py import MPI
 
 import numpy as np
 import tensorflow as tf
@@ -26,12 +27,12 @@ def denormalize(x, stats):
 
 
 def get_target_updates(vars, target_vars, tau):
-    logger.info('setting up target updates ...')
+    logger.debug('setting up target updates ...')
     soft_updates = []
     init_updates = []
     assert len(vars) == len(target_vars)
     for var, target_var in zip(vars, target_vars):
-        logger.info('  {} <- {}'.format(target_var.name, var.name))
+        logger.debug('  {} <- {}'.format(target_var.name, var.name))
         init_updates.append(tf.assign(target_var, var))
         soft_updates.append(tf.assign(target_var, (1. - tau) * target_var + tau * var))
     assert len(init_updates) == len(vars)
@@ -46,10 +47,10 @@ def get_perturbed_actor_updates(actor, perturbed_actor, param_noise_stddev):
     updates = []
     for var, perturbed_var in zip(actor.vars, perturbed_actor.vars):
         if var in actor.perturbable_vars:
-            logger.info('  {} <- {} + noise'.format(perturbed_var.name, var.name))
+            logger.debug('  {} <- {} + noise'.format(perturbed_var.name, var.name))
             updates.append(tf.assign(perturbed_var, var + tf.random_normal(tf.shape(var), mean=0., stddev=param_noise_stddev)))
         else:
-            logger.info('  {} <- {}'.format(perturbed_var.name, var.name))
+            logger.debug('  {} <- {}'.format(perturbed_var.name, var.name))
             updates.append(tf.assign(perturbed_var, var))
     assert len(updates) == len(actor.vars)
     return tf.group(*updates)
@@ -63,9 +64,9 @@ class DDPG(object):
         critic_l2_reg=0., actor_lr=1e-4, critic_lr=1e-3, clip_norm=None, reward_scale=1.,
         inverting_grad = False, actor_reg=True):
         
-        logger.info("Parameterized DDPG params")
-        logger.info(str(locals()))
-        logger.info("-"*20)
+        logger.debug("Parameterized DDPG params")
+        logger.debug(str(locals()))
+        logger.debug("-"*20)
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
         self.obs1 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs1')
@@ -165,7 +166,7 @@ class DDPG(object):
         param_noise_actor = copy(self.actor)
         param_noise_actor.name = 'param_noise_actor'
         self.perturbed_actor_tf = param_noise_actor(normalized_obs0)
-        logger.info('setting up param noise')
+        logger.debug('setting up param noise')
         self.perturb_policy_ops = get_perturbed_actor_updates(self.actor, param_noise_actor, self.param_noise_stddev)
 
         # Configure separate copy for stddev adoption.
@@ -176,7 +177,8 @@ class DDPG(object):
         self.adaptive_policy_distance = tf.sqrt(tf.reduce_mean(tf.square(self.actor_tf - adaptive_actor_tf)))
 
     def setup_actor_optimizer(self):
-        logger.info('setting up actor optimizer')
+        if MPI.COMM_WORLD.Get_rank() == 0:
+            logger.info('setting up actor optimizer')
 
         ## as used in Hindsight Experience Replay to stop saturation in tanh
         if self.actor_reg:
@@ -196,13 +198,15 @@ class DDPG(object):
             beta1=0.9, beta2=0.999, epsilon=1e-08)
 
     def setup_critic_optimizer(self):
-        logger.info('setting up critic optimizer')
+        if MPI.COMM_WORLD.Get_rank() == 0:
+            logger.info('setting up critic optimizer')
+
         normalized_critic_target_tf = tf.clip_by_value(normalize(self.critic_target, self.ret_rms), self.return_range[0], self.return_range[1])
         self.critic_loss = tf.reduce_mean(tf.square(self.normalized_critic_tf - normalized_critic_target_tf))
         if self.critic_l2_reg > 0.:
             critic_reg_vars = [var for var in self.critic.trainable_vars if 'kernel' in var.name and 'output' not in var.name]
             for var in critic_reg_vars:
-                logger.info('  regularizing: {}'.format(var.name))
+                logger.debug('  regularizing: {}'.format(var.name))
             logger.info('  applying l2 regularization with {}'.format(self.critic_l2_reg))
             critic_reg = tc.layers.apply_regularization(
                 tc.layers.l2_regularizer(self.critic_l2_reg),

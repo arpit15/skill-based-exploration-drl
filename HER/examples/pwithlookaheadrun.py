@@ -30,9 +30,11 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     env = gym.make(env_id)
 
     # print(env.action_space.shape)
-    logger.info("Env info")
-    logger.info(env.__doc__)
-    logger.info("-"*20)
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        logger.debug("Env info")
+        logger.debug(env.__doc__)
+        logger.debug("-"*20)
+
     gym.logger.setLevel(logging.WARN)
 
     if evaluation and rank==0:
@@ -180,7 +182,7 @@ if __name__ == '__main__':
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.configure(dir=args["log_dir"])
         
-        logger.info(str(args))
+        logger.debug(str(args))
         
     # Run actual script.
     try:
