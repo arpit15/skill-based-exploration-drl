@@ -46,7 +46,7 @@ if __name__ == "__main__":
                     elif(k<2):
                         eval_paction = 1
                     else:
-                        eval_paction = 0
+                        eval_paction = 2
                     
                     if(my_skill_set):
                         eval_skill_obs = eval_obs.copy()

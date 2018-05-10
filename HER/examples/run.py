@@ -27,9 +27,9 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Create envs.
     env = gym.make(env_id)
-    logger.info("Env info")
-    logger.info(env.__doc__)
-    logger.info("-"*20)
+    logger.debug("Env info")
+    logger.debug(env.__doc__)
+    logger.debug("-"*20)
     env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
     gym.logger.setLevel(logging.WARN)
 
@@ -74,7 +74,6 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
-    logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
     tf.reset_default_graph()
     set_global_seeds(seed)
     env.seed(seed)
@@ -83,6 +82,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Disable logging for rank != 0 to avoid noise.
     if rank == 0:
+        logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
         start_time = time.time()
     training.train(env=env, eval_env=eval_env, param_noise=param_noise,
         action_noise=action_noise, actor=actor, critic=critic, memory=memory, **kwargs)
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.configure(dir=args["log_dir"])
         
-        logger.info(str(args))
+        logger.debug(str(args))
         
     # Run actual script.
     try:

@@ -37,7 +37,7 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         # env specific params
         self.max_num_steps = max_len
-        print("INIT DONE!")
+        print("ENV INIT DONE!")
       
 
     ## gym methods

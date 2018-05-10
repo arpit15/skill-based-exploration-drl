@@ -24,9 +24,9 @@ def read_checkpoint_local(restore_dir):
 
 
 def reduce_var(x, axis=None, keepdims=False):
-    m = tf.reduce_mean(x, axis=axis, keep_dims=True)
+    m = tf.reduce_mean(x, axis=axis, keepdims=True)
     devs_squared = tf.square(x - m)
-    return tf.reduce_mean(devs_squared, axis=axis, keep_dims=keepdims)
+    return tf.reduce_mean(devs_squared, axis=axis, keepdims=keepdims)
 
 
 def reduce_std(x, axis=None, keepdims=False):

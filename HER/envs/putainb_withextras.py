@@ -24,7 +24,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         #print("sample", sample)
         if sample == 1 and (not self.test):
 
-            gripper_pos = np.array([0.5 , 0.32 , 0.2])
+            gripper_pos = np.array([0.5 , 0.2 , 0.2])
             self.close_gripper(gap=0)
             # gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim)        
             self.apply_action(pos=gripper_pos)

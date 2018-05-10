@@ -25,7 +25,8 @@ class MujocoEnv(gym.Env):
         if not osp.exists(fullpath):
             raise IOError("File %s does not exist" % fullpath)
         else:
-            print("Loading model %s"%osp.basename(model_path))
+            pass
+            # print("Loading model %s"%osp.basename(model_path))
         
         model = mujoco_py.load_model_from_path(fullpath)
         self.sim = mujoco_py.MjSim(model, nsubsteps=num_substeps)

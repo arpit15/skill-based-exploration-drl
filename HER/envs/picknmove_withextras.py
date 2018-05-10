@@ -18,7 +18,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
 
         # 0: random, 1: grasped
         sample = self.np_random.choice(2)
-        #print("sample", sample)
+        # print("sample", sample)
         if sample == 1 and (not self.test):
             
             # define one pose in hand 

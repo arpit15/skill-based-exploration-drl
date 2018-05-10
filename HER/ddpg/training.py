@@ -3,6 +3,7 @@ import time
 from collections import deque
 import pickle
 import math 
+from time import sleep
 
 from HER.ddpg.ddpg import DDPG
 from HER.ddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
@@ -55,8 +56,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         inverting_grad = invert_grad,
         actor_reg = actor_reg
         )
-    if dologging: logger.info('Using agent with the following configuration:')
-    if dologging: logger.info(str(agent.__dict__.items()))
+    if dologging: logger.debug('Using agent with the following configuration:')
+    if dologging: logger.debug(str(agent.__dict__.items()))
 
     # Set up logging stuff only for a single worker.
     if rank != -1:
@@ -174,6 +175,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     t += 1
                     if rank == 0 and render:
                         env.render()
+                        sleep(0.1)
                     episode_reward += r
                     episode_step += 1
 
