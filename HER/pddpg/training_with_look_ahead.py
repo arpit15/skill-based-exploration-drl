@@ -72,8 +72,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         inverting_grad = invert_grad,
         actor_reg = actor_reg
         )
-    if dologging: logger.info('Using agent with the following configuration:')
-    if dologging: logger.info(str(agent.__dict__.items()))
+
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        if dologging: logger.debug('Using agent with the following configuration:')
+        if dologging: logger.debug(str(agent.__dict__.items()))
 
     # Set up logging stuff only for a single worker.
     if rank == 0:

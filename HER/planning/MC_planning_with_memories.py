@@ -46,16 +46,19 @@ class Planning_with_memories:
 			# create child node
 			# sample skills
 			sampled_skills = np.random.choice(self.skillset.len, size = self.num_samples)
+			# print(sampled_skills)
 			for node_id, sampled_skill_num in enumerate(sampled_skills):
 				sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
 
+				# print("skill:%d, goal"%sampled_skill_num, sampled_params)
+				
 				critic_value = self.skillset.get_critic_value(primitive_id=sampled_skill_num, obs = state, primitive_params = sampled_params)
 				next_state = self.skillset.get_terminal_state_from_memory(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
 				prob = self.skillset.get_prob_skill_success(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
 				
 				if curr_node.height == 1:
 					# creating a leaf node
-					child_reward = self.env.calc_reward(state)
+					child_reward = self.env.calc_reward(next_state)
 				else:
 					child_reward = 0.
 
@@ -74,6 +77,10 @@ class Planning_with_memories:
 		# get the child with max utility
 		for node_id, node in enumerate(leaflist):
 			print("value:%.4f, reward:%.4f"%(node.value, node.reward))
+			# if(node.skill_num>0):
+			# 	print("obj loc:%s"%(str(node.state[3:6])))
+			# else:
+			# 	print("Reacher")
 			node_utility = (self.value_scale*node.value + self.reward_scale*node.reward)
 
 			expected_node_utility = node.prob*node_utility
@@ -94,7 +101,7 @@ class Planning_with_memories:
 		chosen_skill_params = curr_node.child.params
 
 		# create paction and return
-		print("suggested skill id:%d, goal:"%chosen_skill, chosen_skill_params)
+		print("suggested skill id:%d, utility:%.4f,goal:"%(chosen_skill, max_utility), chosen_skill_params)
 		paction = np.zeros((self.skillset.len + self.skillset.num_params, ))
 		paction[chosen_skill] = 1.0
 		starting_idx = self.skillset.params_start_idx[chosen_skill]
