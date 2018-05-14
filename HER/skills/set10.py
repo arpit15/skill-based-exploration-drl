@@ -27,7 +27,7 @@ def transfer_obs(obs, params):
 	x = 0.3 + (x+1)*0.25
 	y = 0. + (y+1)*0.3
 	z = 0.08 + (z+1)*0.125
-	params = np.concatenate((x,y,z))
+	params = np.array((x,y,z))
 
 	final_obs = np.concatenate((obs[:-3] , params))
 	return final_obs
@@ -38,7 +38,7 @@ def transit_obs(obs,params):
 	x = 0.3 + (x+1)*0.25
 	y = 0. + (y+1)*0.3
 	z = 0.08 + (z+1)*0.125 - 0.08
-	params = np.concatenate((x,y,z))
+	params = np.array((x,y,z))
 
 	final_obs = np.concatenate((obs[:dim] , params))
 	# print("move obs", final_obs)

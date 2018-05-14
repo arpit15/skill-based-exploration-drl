@@ -76,7 +76,7 @@ class Planning_with_memories:
 		max_utility_node_id = -1
 		# get the child with max utility
 		for node_id, node in enumerate(leaflist):
-			print("value:%.4f, reward:%.4f"%(node.value, node.reward))
+			#print("value:%.4f, reward:%.4f"%(node.value, node.reward))
 			# if(node.skill_num>0):
 			# 	print("obj loc:%s"%(str(node.state[3:6])))
 			# else:
@@ -101,7 +101,7 @@ class Planning_with_memories:
 		chosen_skill_params = curr_node.child.params
 
 		# create paction and return
-		print("suggested skill id:%d, utility:%.4f,goal:"%(chosen_skill, max_utility), chosen_skill_params)
+		#print("suggested skill id:%d, utility:%.4f,goal:"%(chosen_skill, max_utility), chosen_skill_params)
 		paction = np.zeros((self.skillset.len + self.skillset.num_params, ))
 		paction[chosen_skill] = 1.0
 		starting_idx = self.skillset.params_start_idx[chosen_skill]
