@@ -61,6 +61,34 @@ class EpsilonNormalActionNoise(ActionNoise):
     def __repr__(self):
         return 'EpsilonNormalActionNoise(mu={}, sigma={}, epsilon={})'.format(self.mu, self.sigma, self.epsilon)
 
+class EpsilonNormalParameterizedActionNoise(ActionNoise):
+    ''' Based on Hindsight Experience Replay paper: https://pdfs.semanticscholar.org/9734/9dee55ba13067f467695eecb3a3bb68e43bd.pdf
+    '''
+    def __init__(self, mu, sigma, epsilon, discrete_actions_dim):
+        self.mu = mu
+        self.sigma = sigma
+        self.epsilon = epsilon
+        self.discrete_actions_dim = discrete_actions_dim
+        
+    def __call__(self, action):
+        discrete_actions_prob = action[:self.discrete_actions_dim]
+        continuous_actions = action[self.discrete_actions_dim:]
+            
+        if(random()>self.epsilon):
+            continuous_actions += np.random.normal(self.mu, self.sigma)
+            action = np.concatenate((discrete_actions_prob, continuous_actions))
+            return action
+        else:
+            continuous_actions = np.random.uniform(-1. , 1., size= action.size - self.discrete_actions_dim)
+            discrete_actions_prob = np.zeros((self.discrete_actions_dim,))
+            chosen_action = np.random.choice(self.discrete_actions_dim)
+            discrete_actions_prob[chosen_action] = 1.0
+            action = np.concatenate((discrete_actions_prob, continuous_actions))
+            return action
+
+    def __repr__(self):
+        return 'EpsilonNormalParameterizedActionNoise(mu={}, sigma={}, epsilon={})'.format(self.mu, self.sigma, self.epsilon)
+
 
 # Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 class OrnsteinUhlenbeckActionNoise(ActionNoise):

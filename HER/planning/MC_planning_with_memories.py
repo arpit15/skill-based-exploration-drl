@@ -56,6 +56,7 @@ class Planning_with_memories:
 				next_state = self.skillset.get_terminal_state_from_memory(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
 				prob = self.skillset.get_prob_skill_success(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
 				
+				print("prob:%.4f"%prob)
 				if curr_node.height == 1:
 					# creating a leaf node
 					child_reward = self.env.calc_reward(next_state)

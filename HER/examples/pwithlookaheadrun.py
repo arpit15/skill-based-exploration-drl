@@ -2,7 +2,7 @@ import argparse
 import time
 import os
 import logging
-from HER import logger, bench
+from HER import logger
 from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
@@ -20,8 +20,11 @@ from mpi4py import MPI
 ## my imports
 import HER.envs
 
+# debug 
+from ipdb import set_trace
+
 def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
-    # Configure things.
+    # Configure loggers.
     rank = MPI.COMM_WORLD.Get_rank()
     if rank != 0:
         logger.set_level(logger.DISABLED)
@@ -29,7 +32,6 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Create envs.
     env = gym.make(env_id)
 
-    # print(env.action_space.shape)
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.debug("Env info")
         logger.debug(env.__doc__)
@@ -47,13 +49,12 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         del kwargs['eval_env_id']
     else:
         eval_env = None
-
-    # Parse noise_type
-    action_noise = None
-    param_noise = None
-
+    ###
+    
     tf.reset_default_graph()
-    ## this is a HACK
+    ## NOTE: do tf things after this line
+
+    # importing the current skill configs
     if kwargs['skillset']:
         # import HER.skills.set2 as skillset_file
         skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
@@ -62,6 +63,11 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     else:
         nb_actions = env.action_space.shape[-1]
+    ###
+
+    # Parse noise_type
+    action_noise = None
+    param_noise = None
 
     for current_noise_type in noise_type.split(','):
         current_noise_type = current_noise_type.strip()
@@ -78,32 +84,37 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
             action_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
         elif 'epsnorm' in current_noise_type:
             _, stddev, epsilon  = current_noise_type.split('_')
-            action_noise = EpsilonNormalActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions), epsilon= float(epsilon))
+            if kwargs['skillset']:
+                action_noise = EpsilonNormalParameterizedActionNoise(mu=np.zeros(my_skill_set.num_params), sigma=float(stddev) * np.ones(my_skill_set.num_params), epsilon= float(epsilon),discrete_actions_dim=my_skill_set.len)
+            else:
+                action_noise = EpsilonNormalActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions), epsilon= float(epsilon))
+
         else:
             raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
+    ###
 
     # Configure components.
     memory = Memory(limit=int(1e6), action_shape=(nb_actions,), observation_shape=env.observation_space.shape)
+    
+    # tf components
     critic = Critic(layer_norm=layer_norm)
     
     if kwargs['skillset'] is None:
         actor = Actor(discrete_action_size = env.env.discrete_action_size, cts_action_size = nb_actions - env.env.discrete_action_size, layer_norm=layer_norm)
         my_skill_set = None
     else:
-        # pass
-        # get the skillset and make actor accordingly
-        actor = Actor(discrete_action_size = my_skill_set.len , cts_action_size = nb_actions - my_skill_set.len, layer_norm=layer_norm)
+        actor = Actor(discrete_action_size = my_skill_set.len , cts_action_size = my_skill_set.num_params, layer_norm=layer_norm)
+    ###
 
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
-    logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
+    logger.debug('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
     
-    set_global_seeds(seed)
-    env.seed(seed)
-    if eval_env is not None:
-        eval_env.seed(seed)
+    set_global_seeds(seed)  # tf, numpy, random
+    env.seed(seed)          # numpy with a more complicated seed
+    ###
 
-    # Disable logging for rank != 0 to avoid noise.
+    # Disable logging for rank != 0 to avoid a ton of prints.
     if rank == 0:
         start_time = time.time()
     
@@ -139,7 +150,7 @@ def parse_args():
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
     parser.add_argument('--nb-epoch-cycles', type=int, default=20)
     parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
+    parser.add_argument('--nb-eval-episodes', type=int, default=20)  # per epoch cycle
     parser.add_argument('--nb-rollout-steps', type=int, default=320)  # per epoch cycle and MPI worker
     parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
     parser.add_argument('--num-timesteps', type=int, default=None)
@@ -147,6 +158,7 @@ def parse_args():
 
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
+    boolean_flag(parser, 'her', default=True)
     parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=True)
@@ -155,16 +167,12 @@ def parse_args():
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
-    parser.add_argument('--skillset', type=str, default='set9')
+    parser.add_argument('--skillset', type=str, default='set10')
     parser.add_argument('--commit-for', type=int, default=1)
 
     boolean_flag(parser, 'look-ahead', default=True)
-    parser.add_argument('--exploration-final-eps', type=int, default=0.001)
-
-
-
-    # TODO: make her at hierarchical level
-    boolean_flag(parser, 'her', default=False)
+    parser.add_argument('--exploration-final-eps', type=float, default=0.001)
+    parser.add_argument('--num-samples', type=int, default=5)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
@@ -181,7 +189,6 @@ if __name__ == '__main__':
    
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.configure(dir=args["log_dir"])
-        
         logger.debug(str(args))
         
     # Run actual script.

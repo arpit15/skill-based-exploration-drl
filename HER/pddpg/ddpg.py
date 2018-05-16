@@ -288,10 +288,8 @@ class DDPG(object):
             q = None
         action = action.flatten()
         if self.action_noise is not None and apply_noise:
-            # noise = self.action_noise()
-            # assert noise.shape == action.shape
-            # action += noise
             action = self.action_noise(action)
+
         action = np.clip(action, self.action_range[0], self.action_range[1])
         return action, q
 

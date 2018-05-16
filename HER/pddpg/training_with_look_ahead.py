@@ -2,7 +2,6 @@ import os
 import time
 from collections import deque
 import pickle
-import math 
 
 from HER.pddpg.ddpg import DDPG
 from HER.pddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
@@ -21,7 +20,7 @@ from ipdb import set_trace
 
 def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, param_noise, actor, critic,
     normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
-    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
+    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_episodes, batch_size, memory,
     tau=0.05, eval_env=None, param_noise_adaption_interval=50, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
 
@@ -48,11 +47,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     else:
         actor_reg = False
 
-    if dologging: logger.info('scaling actions by {} before executing in env'.format(max_action))
+    if dologging: logger.debug('scaling actions by {} before executing in env'.format(max_action))
     
     if kwargs['look_ahead']:
         look_ahead = True
-        look_ahead_planner = Planning_with_memories(kwargs['my_skill_set'], env)
+        look_ahead_planner = Planning_with_memories(skillset=kwargs['my_skill_set'], 
+                                                        env=env, 
+                                                        num_samples= kwargs['num_samples'])
         exploration = LinearSchedule(schedule_timesteps=int(nb_epochs * nb_epoch_cycles),
                                      initial_p=1.0,
                                      final_p=kwargs['exploration_final_eps'])
@@ -73,26 +74,20 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         actor_reg = actor_reg
         )
 
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        if dologging: logger.debug('Using agent with the following configuration:')
-        if dologging: logger.debug(str(agent.__dict__.items()))
+    if dologging and MPI.COMM_WORLD.Get_rank() == 0:
+        logger.debug('Using agent with the following configuration:')
+        logger.debug(str(agent.__dict__.items()))
 
-    # Set up logging stuff only for a single worker.
-    if rank == 0:
-        saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5)
-        save_freq = kwargs["save_freq"]
-    else:
-        saver = None
+    # should have saver for all thread to restore. But dump only using 1 saver
+    saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=20, save_relative_paths=True)
+    save_freq = kwargs["save_freq"]
     
-
     # step = 0
     global_t = 0
-    episode = 0
-    eval_episode_rewards_history = deque(maxlen=100)
+    eval_episode_rewards_history = deque(maxlen= 100)
     episode_rewards_history = deque(maxlen=100)
-
-    
    
+    ## get the session with the current graph => identical graph is used for each session
     with U.single_threaded_session() as sess:
         # Set summary saver
         if dologging and tf_sum_logging and rank==0: 
@@ -128,12 +123,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             restore_dir = osp.join(kwargs["restore_dir"], "model")
             if (restore_dir is not None) and rank==0:
                 print('Restore path : ',restore_dir)
-                # checkpoint = tf.train.get_checkpoint_state(restore_dir)
-                # if checkpoint and checkpoint.model_checkpoint_path:
                 model_checkpoint_path = read_checkpoint_local(restore_dir)
                 if model_checkpoint_path:
-                    print( "checkpoint loaded:" , model_checkpoint_path)
-                    
                     saver.restore(U.get_session(), model_checkpoint_path)
                     logger.info("checkpoint loaded:" + str(model_checkpoint_path))
                     tokens = model_checkpoint_path.split("-")[-1]
@@ -144,49 +135,62 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         agent.reset()
         obs = env.reset()
         
+        # maintained across epochs
+        episodes = 0
+        t = 0
+        start_time = time.time()
+        
+        # creating vars. this is done to keep the syntax for deleting the list simple a[:] = []
+        epoch_episode_rewards = []
+        epoch_episode_steps = []
+        epoch_actions = []
+        epoch_actor_losses = []
+        epoch_critic_losses = []
+        if param_noise is not None:
+            epoch_adaptive_distances = []
+
+        eval_episode_rewards = []
+        eval_episode_success = []        
+
+        # for each episode
         done = False
         episode_reward = 0.
         episode_step = 0
-        episodes = 0
-        t = 0
+        
 
-        epoch = 0
-        start_time = time.time()
-
-        epoch_episode_rewards = []
-        epoch_episode_steps = []
-        epoch_episode_eval_rewards = []
-        epoch_episode_eval_steps = []
-        epoch_start_time = time.time()
-        epoch_actions = []
-        # epoch_qs = []
-        epoch_episodes = 0
-
-        ## containers for hindsight
-        # if kwargs["her"]: 
-            # logger.info("-"*50 +'\nWill create HER\n' + "-"*50)
-            # states, pactions, actions = [], [], []
+        ## containers for hierarchical hindsight
+        if kwargs["her"]: 
+            logger.debug("-"*50 +'\nWill create HER\n' + "-"*50)
+            # per episode
+            states, pactions, sub_states = [], [], []
 
         print("Ready to go!")
         for epoch in range(global_t, nb_epochs):
             
             # stat containers
-            epoch_actor_losses = []
-            epoch_critic_losses = []
-            epoch_adaptive_distances = []
+            epoch_episodes = 0.
+            epoch_start_time = time.time()
 
-            eval_episode_rewards = []
-            # eval_qs = []
-            eval_episode_success = []
+            epoch_episode_rewards[:] = []
+            epoch_episode_steps[:] = []
+            epoch_actions[:] = []               # action mean: don't know if this indicates anything
+            epoch_actor_losses[:] = []
+            epoch_critic_losses[:] = []
+
+            if param_noise is not None:
+                epoch_adaptive_distances[:] = []
+
+            eval_episode_rewards[:] = []
+            eval_episode_success[:] = []
 
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
                 for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
+
                     # Predict next action.
-                    
                     # exploration check
-                    if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*cycle)):
+                    if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*nb_epoch_cycles + cycle)):
                         paction = look_ahead_planner.create_plan(obs)
                     else:
                         paction, _ = agent.pi(obs, apply_noise=True, compute_Q=True)
@@ -196,13 +200,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
 
-                        ## how about sending state seen by meta controller + cts params
-                        # primitive_obs = obs.copy()
-                        # ## HACK. TODO: make it more general
-                        # primitive_obs[-3:] = paction[kwargs['my_skill_set'].len:]
-                        # primitive_obs = np.concatenate((obs.copy(), paction[kwargs['my_skill_set'].len:]))
                         r = 0.
                         skill_obs = obs.copy()
+
+                        if kwargs['her']:
+                            curr_sub_states = [skill_obs.copy()]
+
                         for _ in range(kwargs['commit_for']):
                             action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=paction[my_skill_set.len:])
                             # Execute next action.
@@ -211,6 +214,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             assert max_action.shape == action.shape
                             new_obs, skill_r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                             r += skill_r
+
+                            if kwargs['her']:
+                                curr_sub_states.append(new_obs.copy())
+                             
                             skill_obs = new_obs
                             if done or my_skill_set.termination(new_obs, primitive_id):
                                 break
@@ -222,11 +229,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         assert max_action.shape == action.shape
                         new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     
-
-
                     assert action.shape == env.action_space.shape
 
-                    
                     t += 1
                     
                     episode_reward += r
@@ -234,55 +238,56 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                     # Book-keeping.
                     epoch_actions.append(paction)
-                    # epoch_qs.append(pq)
                     agent.store_transition(obs, paction, r, new_obs, done)
 
-                    ## storing info for hindsight
-                    # if kwargs['her']:
-                    #     states.append(obs.copy())
-                    #     pactions.append(paction.copy())
-                    #     actions.append(action.copy())
+                    # storing info for hindsight
+                    if kwargs['her']:
+                        states.append(obs.copy())
+                        pactions.append(paction.copy())
+                        sub_states.append(curr_sub_states)
 
                     obs = new_obs
 
                     if done:
                         # Episode done.
+                        # update stats
                         epoch_episode_rewards.append(episode_reward)
                         episode_rewards_history.append(episode_reward)
                         epoch_episode_steps.append(episode_step)
-                        episode_reward = 0.
-                        episode_step = 0
                         epoch_episodes += 1
                         episodes += 1
-
-                        # if kwargs["her"]:
-                        #     # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
-
-                        #     ## create hindsight experience replay
-                        #     her_states, her_rewards = env.env.apply_hindsight(states, actions, new_obs.copy())
-                            
-                        #     ## store her transitions: her_states: n+1, her_rewards: n
-                        #     for her_i in range(len(her_states)-2):
-                        #         agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
-                        #     #store last transition
-                        #     agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
-
-
-                        #     ## refresh the storage containers
-                        #     del states, pactions, actions
-                        #     states, pactions, actions = [], [], []
-
+                        # reinit
+                        episode_reward = 0.
+                        episode_step = 0
                         agent.reset()
                         obs = env.reset()
-                        #print(obs)
+
+                        if kwargs["her"]:
+                            # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
+
+                            # create hindsight experience replay
+                            if kwargs['skillset']:
+                                her_states, her_rewards = env.apply_hierarchical_hindsight(states, pactions, new_obs.copy(), sub_states)
+                            else:
+                                her_states, her_rewards = env.apply_hindsight(states, pactions, new_obs.copy())
+                            
+                            ## store her transitions: her_states: n+1, her_rewards: n
+                            for her_i in range(len(her_states)-2):
+                                agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
+                            #store last transition
+                            agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
+
+                            ## refresh the storage containers
+                            states[:], pactions[:] = [], []
+                            if kwargs['skillset']:
+                                sub_states[:] = []
 
                 # print(rank, "Training!")
                 # Train.
-                
                 for t_train in range(nb_train_steps):
                     # print(rank, t_train)
                     # Adapt param noise, if necessary.
-                    if memory.nb_entries >= batch_size and t % param_noise_adaption_interval == 0:
+                    if (memory.nb_entries >= batch_size) and (t % param_noise_adaption_interval == 0) and (param_noise is not None):
                         distance = agent.adapt_param_noise()
                         epoch_adaptive_distances.append(distance)
 
@@ -291,31 +296,25 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     epoch_actor_losses.append(al)
                     agent.update_target_net()
 
-                    if dologging and tf_sum_logging and rank==0:
-                        
+                    if dologging and tf_sum_logging and rank==0:                   
                         writer_t.add_summary(current_summary, epoch*nb_epoch_cycles*nb_train_steps + cycle*nb_train_steps + t_train)
 
-                # print("Evaluating!")
-                # Evaluate.
-                
-                
-                if (eval_env is not None) and rank==0:
+            # print("Evaluating!")
+            # Evaluate after training is done.
+            if (eval_env is not None) and rank==0:
+                for _ in range(nb_eval_episodes):
                     eval_episode_reward = 0.
                     eval_obs = eval_env.reset()
                     eval_obs_start = eval_obs.copy()
                     eval_done = False
                     while(not eval_done):
-                        eval_paction, eval_pq = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
+                        eval_paction, _ = agent.pi(eval_obs, apply_noise=False, compute_Q=False)
                         
                         if(kwargs['skillset']):
                             ## break actions into primitives and their params    
                             eval_primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
                             eval_primitive_id = np.argmax(eval_primitives_prob)
-                            # eval_primitive_obs = eval_obs.copy()
-                            ## HACK. TODO: make it more general
-                            # eval_primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
-
-                            # eval_action, eval_q = kwargs['my_skill_set'].pi(primitive_id=eval_primitive_id, obs = eval_primitive_obs)
+                            
                             eval_r = 0.
                             eval_skill_obs = eval_obs.copy()
                             for _ in range(kwargs['commit_for']):
@@ -327,23 +326,19 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                                     eval_env.render()  
 
                                 eval_r += eval_skill_r
-                                eval_skill_obs = eval_new_obs
-
+                                # check for skill termination or episode termination
                                 eval_terminate_skill = my_skill_set.termination(eval_new_obs, eval_primitive_id)
-
                                 if eval_done or eval_terminate_skill:
                                     break
 
+                                eval_skill_obs = eval_new_obs
+
                         else:
-                            eval_action, eval_q = eval_paction, eval_pq
-                            eval_new_obs, eval_skill_r, eval_done, eval_info = eval_env.step(max_action * eval_action)
+                            eval_action, _ = eval_paction, eval_pq
+                            eval_new_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)
 
-
-                        
                         eval_episode_reward += eval_r
                         eval_obs = eval_new_obs
-
-                        # eval_qs.append(eval_pq)
                         
                     eval_episode_rewards.append(eval_episode_reward)
                     eval_episode_rewards_history.append(eval_episode_reward)
@@ -371,14 +366,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 combined_stats['rollout/episodes'] = np.sum(epoch_episodes)
                 combined_stats['rollout/actions_mean'] = normal_mean(epoch_actions)
                 combined_stats['rollout/actions_std'] = normal_std(epoch_actions)
-                # combined_stats['rollout/Q_mean'] = normal_mean(epoch_qs)
-        
+                
                 # Train statistics.
                 combined_stats['train/loss_actor'] = normal_mean(epoch_actor_losses)
                 combined_stats['train/loss_critic'] = normal_mean(epoch_critic_losses)
                 combined_stats['train/param_noise_distance'] = normal_mean(epoch_adaptive_distances)
                 
-                if kwargs['look_ahead']: combined_stats['train/exploration'] = exploration.value(epoch*nb_epoch_cycles)
+                if kwargs['look_ahead']: combined_stats['train/exploration'] = exploration.value(epoch*nb_epoch_cycles + cycle)
                 
                 # Evaluation statistics.
                 if eval_env is not None:
@@ -388,13 +382,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         combined_stats['eval/return_history'] = normal_mean( np.mean(eval_episode_rewards_history) )
                     else:
                         combined_stats['eval/return_history'] = 0.
-                    # combined_stats['eval/Q'] = normal_mean(eval_qs)
                     combined_stats['eval/episodes'] = normal_mean(len(eval_episode_rewards))
 
 
                 # Total statistics.
                 combined_stats['total/duration'] = normal_mean(duration)
-                combined_stats['total/steps_per_second'] = normal_mean(float(t) / float(duration))
+                combined_stats['total/rollout_per_second'] = normal_mean(float(t) / float(duration))
                 combined_stats['total/episodes'] = normal_mean(episodes)
                 combined_stats['total/epochs'] = epoch + 1
                 combined_stats['total/steps'] = t
@@ -404,14 +397,15 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 logger.dump_tabular()
                 logger.info('')
                 logdir = logger.get_dir()
-                if rank == 0 and logdir:
-                    print("Dumping progress!")
-                    if hasattr(env, 'get_state'):
-                        with open(os.path.join(logdir, 'env_state.pkl'), 'wb') as f:
-                            pickle.dump(env.get_state(), f)
-                    if eval_env and hasattr(eval_env, 'get_state'):
-                        with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
-                            pickle.dump(eval_env.get_state(), f)
+
+                # if rank == 0 and logdir:
+                #     print("Dumping progress!")
+                #     if hasattr(env, 'get_state'):
+                #         with open(osp.join(logdir, 'env_state.pkl'), 'wb') as f:
+                #             pickle.dump(env.get_state(), f)
+                #     if eval_env and hasattr(eval_env, 'get_state'):
+                #         with open(osp.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
+                #             pickle.dump(eval_env.get_state(), f)
 
 
                 ## save tf model

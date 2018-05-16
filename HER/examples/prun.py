@@ -137,7 +137,7 @@ def parse_args():
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
     parser.add_argument('--nb-epoch-cycles', type=int, default=20)
     parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
+    parser.add_argument('--nb-eval-episodes', type=int, default=20)  # per epoch cycle
     parser.add_argument('--nb-rollout-steps', type=int, default=320)  # per epoch cycle and MPI worker
     parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
     parser.add_argument('--num-timesteps', type=int, default=None)
@@ -145,6 +145,7 @@ def parse_args():
 
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
+    boolean_flag(parser, 'her', default=True)
     parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=True)
@@ -155,10 +156,6 @@ def parse_args():
 
     parser.add_argument('--skillset', type=str, default='set8')
     parser.add_argument('--commit-for', type=int, default=1)
-
-
-    # TODO: make her at hierarchical level
-    boolean_flag(parser, 'her', default=False)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them

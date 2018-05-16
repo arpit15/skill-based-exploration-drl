@@ -2,7 +2,6 @@ import os
 import time
 from collections import deque
 import pickle
-import math 
 
 from HER.pddpg.ddpg import DDPG
 from HER.pddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
@@ -19,7 +18,7 @@ from ipdb import set_trace
 
 def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, param_noise, actor, critic,
     normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
-    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
+    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_episodes, batch_size, memory,
     tau=0.05, eval_env=None, param_noise_adaption_interval=50, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
 
@@ -61,20 +60,17 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         inverting_grad = invert_grad,
         actor_reg = actor_reg
         )
-    if dologging: logger.info('Using agent with the following configuration:')
-    if dologging: logger.info(str(agent.__dict__.items()))
 
-    # Set up logging stuff only for a single worker.
-    if rank == 0:
-        saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=5)
-        save_freq = kwargs["save_freq"]
-    else:
-        saver = None
+    if dologging: 
+        logger.info('Using agent with the following configuration:')
+        logger.info(str(agent.__dict__.items()))
+
+    # should have saver for all thread to restore. But dump only using 1 saver
+    saver = tf.train.Saver(keep_checkpoint_every_n_hours=2, max_to_keep=20, save_relative_paths=True)
+    save_freq = kwargs["save_freq"]
     
-
     # step = 0
     global_t = 0
-    episode = 0
     eval_episode_rewards_history = deque(maxlen=100)
     episode_rewards_history = deque(maxlen=100)
 
@@ -131,40 +127,53 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         agent.reset()
         obs = env.reset()
         
-        done = False
-        episode_reward = 0.
-        episode_step = 0
+        # maintained across epochs
         episodes = 0
         t = 0
-
-        epoch = 0
         start_time = time.time()
-
+        
+        # creating vars. this is done to keep the syntax for deleting the list simple a[:] = []
         epoch_episode_rewards = []
         epoch_episode_steps = []
         epoch_episode_eval_rewards = []
         epoch_episode_eval_steps = []
-        epoch_start_time = time.time()
         epoch_actions = []
-        # epoch_qs = []
-        epoch_episodes = 0
+        epoch_actor_losses = []
+        epoch_critic_losses = []
+        epoch_adaptive_distances = []
+
+        eval_episode_rewards = []
+        eval_episode_success = []        
+
+        # for each episode
+        done = False
+        episode_reward = 0.
+        episode_step = 0
 
         ## containers for hindsight
-        # if kwargs["her"]: 
-            # logger.info("-"*50 +'\nWill create HER\n' + "-"*50)
-            # states, pactions, actions = [], [], []
+        if kwargs["her"]: 
+            logger.debug("-"*50 +'\nWill create HER\n' + "-"*50)
+            # per episode
+            states, pactions, sub_states = [], [], []
 
         print("Ready to go!")
         for epoch in range(global_t, nb_epochs):
             
             # stat containers
-            epoch_actor_losses = []
-            epoch_critic_losses = []
-            epoch_adaptive_distances = []
+            epoch_episodes = 0.
+            epoch_start_time = time.time()
 
-            eval_episode_rewards = []
-            # eval_qs = []
-            eval_episode_success = []
+            epoch_episode_rewards[:] = []
+            epoch_episode_steps[:] = []
+            epoch_episode_eval_rewards[:] = []
+            epoch_episode_eval_steps[:] = []
+            epoch_actions[:] = []
+            epoch_actor_losses[:] = []
+            epoch_critic_losses[:] = []
+            epoch_adaptive_distances[:] = []
+            
+            eval_episode_rewards[:] = []
+            eval_episode_success[:] = []
 
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
@@ -178,13 +187,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
 
-                        ## how about sending state seen by meta controller + cts params
-                        # primitive_obs = obs.copy()
-                        # ## HACK. TODO: make it more general
-                        # primitive_obs[-3:] = paction[kwargs['my_skill_set'].len:]
-                        # primitive_obs = np.concatenate((obs.copy(), paction[kwargs['my_skill_set'].len:]))
                         r = 0.
                         skill_obs = obs.copy()
+
+                        if kwargs['her']:
+                            curr_sub_states = [skill_obs.copy()]
+
                         for _ in range(kwargs['commit_for']):
                             action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=paction[my_skill_set.len:])
                             # Execute next action.
@@ -193,6 +201,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             assert max_action.shape == action.shape
                             new_obs, skill_r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                             r += skill_r
+
+                            if kwargs['her']:
+                                curr_sub_states.append(new_obs.copy())
+                            
                             skill_obs = new_obs
                             if done or my_skill_set.termination(new_obs, primitive_id):
                                 break
@@ -219,44 +231,49 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # epoch_qs.append(pq)
                     agent.store_transition(obs, paction, r, new_obs, done)
 
-                    ## storing info for hindsight
-                    # if kwargs['her']:
-                    #     states.append(obs.copy())
-                    #     pactions.append(paction.copy())
-                    #     actions.append(action.copy())
+                    # storing info for hindsight
+                    if kwargs['her']:
+                        states.append(obs.copy())
+                        pactions.append(paction.copy())
+                        sub_states.append(curr_sub_states)
+
 
                     obs = new_obs
 
                     if done:
                         # Episode done.
+                        # update stats
                         epoch_episode_rewards.append(episode_reward)
                         episode_rewards_history.append(episode_reward)
                         epoch_episode_steps.append(episode_step)
-                        episode_reward = 0.
-                        episode_step = 0
                         epoch_episodes += 1
                         episodes += 1
-
-                        # if kwargs["her"]:
-                        #     # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
-
-                        #     ## create hindsight experience replay
-                        #     her_states, her_rewards = env.env.apply_hindsight(states, actions, new_obs.copy())
-                            
-                        #     ## store her transitions: her_states: n+1, her_rewards: n
-                        #     for her_i in range(len(her_states)-2):
-                        #         agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
-                        #     #store last transition
-                        #     agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
-
-
-                        #     ## refresh the storage containers
-                        #     del states, pactions, actions
-                        #     states, pactions, actions = [], [], []
-
+                        # reinit
+                        episode_reward = 0.
+                        episode_step = 0
                         agent.reset()
                         obs = env.reset()
-                        #print(obs)
+
+                        if kwargs["her"]:
+                            # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
+
+                            # create hindsight experience replay
+                            if kwargs['skillset']:
+                                her_states, her_rewards = env.apply_hierarchical_hindsight(states, pactions, new_obs.copy(), sub_states)
+                            else:
+                                her_states, her_rewards = env.apply_hindsight(states, pactions, new_obs.copy())
+                            
+                            ## store her transitions: her_states: n+1, her_rewards: n
+                            for her_i in range(len(her_states)-2):
+                                agent.store_transition(her_states[her_i], pactions[her_i], her_rewards[her_i], her_states[her_i+1],False)
+                            #store last transition
+                            agent.store_transition(her_states[-2], pactions[-1], her_rewards[-1], her_states[-1], True)
+
+                            ## refresh the storage containers
+                            states[:], pactions[:] = [], []
+                            if kwargs['skillset']:
+                                sub_states[:] = []
+
 
                 # print(rank, "Training!")
                 # Train.
