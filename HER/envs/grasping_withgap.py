@@ -67,10 +67,12 @@ class BaxterEnv(reacher2d.BaxterEnv):
 
 
     def _get_obs(self):
+        # print("trying to get obs")
         ee_pos = self.sim.data.get_site_xpos('grip')
         obj_pos = self.sim.data.get_site_xpos('box')[:self.space_dim]
         target_pos = self.sim.data.get_site_xpos('target')[:self.space_dim]
         
+        # print("targetpos", target_pos, "qpos", self.data.get_joint_qpos('target'))
         dt = self.sim.nsubsteps * self.sim.model.opt.timestep
         # ee vel
         ee_velp = self.sim.data.get_site_xvelp('grip') * dt

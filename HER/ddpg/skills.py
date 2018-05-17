@@ -42,7 +42,7 @@ class SkillSet:
 
     def restore_skillset(self, sess):
         for skill in self.skillset:
-            skill.restore_skill(path = get_home_path(skill.restore_path), sess = sess)
+            skill.restore_skill(path = osp.expanduser(skill.restore_path), sess = sess)
 
     def pi(self, obs, primitive_params=None, primitive_id=0):
 
@@ -69,14 +69,14 @@ def mirror(*args, **kwargs):
 class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
         action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None,
-        action_func = None, obs_func = None, num_params=None, termination = None):
+        action_func = None, obs_func = None, num_params=None, termination = None,**kwargs):
         
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
         
         # Parameters.
         self.skill_name = skill_name
-        self.restore_path = restore_path
+        self.restore_path = osp.expanduser(restore_path)
         self.normalize_observations = normalize_observations
         self.action_range = action_range
         self.observation_range = observation_range
@@ -137,7 +137,7 @@ class DDPGSkill(object):
         print('Restore path : ',path)
         # checkpoint = tf.train.get_checkpoint_state(path)
         # if checkpoint and checkpoint.model_checkpoint_path:
-        model_checkpoint_path = read_checkpoint_local(path)
+        model_checkpoint_path = read_checkpoint_local(osp.join(path, "model"))
         if model_checkpoint_path:
             # model_checkpoint_path = osp.join(path, osp.basename(checkpoint.model_checkpoint_path))
             self.loader.restore(U.get_session(), model_checkpoint_path)

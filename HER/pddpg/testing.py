@@ -38,8 +38,12 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
         reward_scale=reward_scale)
     
-       
-    saver = tf.train.Saver()
+    
+    var_list_restore = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="actor") + \
+                            tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="obs_rms")
+
+    print(var_list_restore)
+    saver = tf.train.Saver(var_list = var_list_restore)
 
     with U.single_threaded_session() as sess:
         # Prepare everything.
@@ -81,21 +85,23 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
             print("Evaluating:%d"%(i+1))
             eval_episode_reward = 0.
             eval_obs = eval_env.reset()
+            print("start obs", eval_obs[:6], eval_obs[-3:])
+
+            # for _ in range(1000):
+            #     eval_env.render()
+            #     print(eval_env.sim.data.get_site_xpos('box'))
+            #     sleep(0.1)
+
             eval_done = False
             
             while(not eval_done):
                 eval_paction, eval_pq = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
-                # print("meta action",np.argmax(eval_paction[:my_skill_set.len]))
                 if(kwargs['skillset']):
                     ## break actions into primitives and their params    
                     eval_primitives_prob = eval_paction[:my_skill_set.len]
                     eval_primitive_id = np.argmax(eval_primitives_prob)
-                    # primitive_obs = eval_obs.copy()
-                    ## HACK. TODO: make it more general
-                    # primitive_obs[-3:] = eval_paction[kwargs['my_skill_set'].len:]
 
-                    # print(primitive_id)
-                    # eval_action, q = kwargs['my_skill_set'].pi(primitive_id=primitive_id, obs = primitive_obs)
+                    print("skill chosen%d"%eval_primitive_id)
                     eval_r = 0.
                     eval_skill_obs = eval_obs.copy()
                     for _ in range(kwargs['commit_for']):

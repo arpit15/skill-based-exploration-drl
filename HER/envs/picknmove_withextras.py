@@ -54,18 +54,20 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = np.array([0.5, 0.3,0.])
+        target_qpos[:2] = self.np_random.uniform(self.target_range_min[:2] + 0.05, self.target_range_max[:2] - 0.05, size=2) 
+        if(self.space_dim==3):
+            target_qpos[2] = self.np_random.rand()*0.1
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.05):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim) 
+            target_qpos[:2] = self.np_random.uniform(self.target_range_min[:2] + 0.05, self.target_range_max[:2] - 0.05, size=2) 
             if(self.space_dim==3):
-                target_qpos[2] = max(0.1, target_qpos[2])
+                target_qpos[2] = self.np_random.rand()*0.1
         
         object_qpos = self.sim.data.get_joint_qpos('box') 
         
         self.data.set_joint_qpos('target', target_qpos)
-        
+        # print("target pos", target_qpos[:3])
         object_qpos = self.sim.data.get_joint_qpos('box') 
-        
+        self.sim.forward()
         self.num_step = 1
         return self._get_obs()
 
