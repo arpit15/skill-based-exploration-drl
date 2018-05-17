@@ -28,6 +28,8 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
     if rank != 0:
         logger.set_level(logger.DISABLED)
+    else:
+        logger.set_level(logger.DEBUG)
 
     # Create envs.
     env = gym.make(env_id)
