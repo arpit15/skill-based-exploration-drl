@@ -370,7 +370,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # Train statistics.
                 combined_stats['train/loss_actor'] = normal_mean(epoch_actor_losses)
                 combined_stats['train/loss_critic'] = normal_mean(epoch_critic_losses)
-                combined_stats['train/param_noise_distance'] = normal_mean(epoch_adaptive_distances)
+                if param_noise is not None:
+                    combined_stats['train/param_noise_distance'] = normal_mean(epoch_adaptive_distances)
                 
                 if kwargs['look_ahead']: combined_stats['train/exploration'] = exploration.value(epoch*nb_epoch_cycles + cycle)
                 
