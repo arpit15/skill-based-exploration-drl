@@ -1,4 +1,4 @@
-[import argparse
+import argparse
 import time
 import os
 import logging
@@ -190,9 +190,9 @@ if __name__ == '__main__':
     args = parse_args()
    
     if MPI.COMM_WORLD.Get_rank() == 0:
-        logger.set_level(logger.DEBUG)
         logger.configure(dir=args["log_dir"])
-        logger.debug(str(args))
+        logger.set_level(logger.DEBUG)
+        logger.info(str(args))
         
     # Run actual script.
     try:
