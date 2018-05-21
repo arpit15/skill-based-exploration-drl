@@ -93,15 +93,15 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
     env = gym.make(env_id)
     observation_shape = env.observation_space.shape[-1]
     global in_size, out_size
-    in_size = 9#observation_shape
-    out_size = 6#observation_shape - 3
+    in_size = observation_shape
+    out_size = observation_shape - 3
 
     set_global_seeds(seed)
     env.seed(seed)
 
     
     with U.single_threaded_session() as sess:
-        actor_model = DDPGSkill(observation_shape= (observation_shape,), skill_name="skill", nb_actions = env.action_space.shape[-1])
+        actor_model = DDPGSkill(observation_shape= (observation_shape,), skill_name="skill", nb_actions = env.action_space.shape[-1], restore_path=restore_dir)
 
         print("Assumption: Goal is 3d target location")
         

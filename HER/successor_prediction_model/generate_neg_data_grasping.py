@@ -2,6 +2,7 @@ import gym
 import HER.envs
 import pandas as pd
 import csv
+from tqdm import tqdm
 
 if __name__ == '__main__':
 	env = gym.make("picknmovet-v2")
@@ -13,7 +14,7 @@ if __name__ == '__main__':
 	with open(out_csv_filename, 'w',newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
 
-            for _ in range(datapoints):
+            for _ in tqdm(range(datapoints)):
                 ob = env.reset()
                 writer.writerow(ob)
 

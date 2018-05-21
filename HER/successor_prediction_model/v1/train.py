@@ -19,8 +19,8 @@ import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
 
-def run(env_id, render, log_dir, restore_dir, commit_for, 
-            train_epoch, batch_size=32, lr = 1e-3, seed = 0, dataset_size=2000, whiten = False):
+def run(env_id, render, log_dir, commit_for, 
+            train_epoch, batch_size=32, lr = 1e-3, seed = 0, whiten = False):
     
     env = gym.make(env_id)
     observation_shape = env.observation_space.shape[-1]
@@ -91,11 +91,7 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=1e-4)
     
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
-    parser.add_argument('--restore-dir', type=str, default=None)
-
-    parser.add_argument('--dataset-size', type=int, default=2000)
-    # parser.add_argument('--skillset', type=str, default='set8')
-    # parser.add_argument('--skillname', type=str, default='transfer')
+    
     parser.add_argument('--commit-for', type=int, default=5)
     parser.add_argument('--train-epoch', type=int, default=10)
 
