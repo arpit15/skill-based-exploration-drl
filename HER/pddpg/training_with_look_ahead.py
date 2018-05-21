@@ -332,7 +332,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                                 eval_r += eval_skill_r
                                 # check for skill termination or episode termination
-                                eval_terminate_skill = my_skill_set.termination(eval_new_obs, eval_primitive_id)
+                                eval_terminate_skill = my_skill_set.termination(eval_new_obs, eval_primitive_id, primitive_params = eval_paction[my_skill_set.len:])
                                 if eval_done or eval_terminate_skill:
                                     break
 
