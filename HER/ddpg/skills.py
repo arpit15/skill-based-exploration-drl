@@ -56,8 +56,13 @@ class SkillSet:
             print(self.skillset[primitive_id].skill_name)
             return self.skillset[primitive_id].pi(obs=obs, primitive_params=None)
 
-    def termination(self, obs, primitive_id):
-        return self.skillset[primitive_id].termination(obs)
+    def termination(self, obs, primitive_id, primitive_params):
+        if primitive_params is not None:
+            starting_idx = self.params_start_idx[primitive_id]
+            curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
+            return self.skillset[primitive_id].termination(obs, curr_skill_params)
+        else:
+            NotImplementedError
 
 
 def mirror(*args, **kwargs):

@@ -58,20 +58,25 @@ def grasp_obs(obs, params):
 	return final_obs
 
 
-def end_transit(obs):
-	tmp = obs[dim:2*dim] + np.array([0.,0.,0.1])
-	final_obs = np.concatenate((obs[:dim] , tmp))
+def end_transit(obs, params):
+	skill_obs = transit_obs(obs,params)
+	tmp = skill_obs[dim:2*dim] + np.array([0.,0.,0.1])
+	final_obs = np.concatenate((skill_obs[:dim] , tmp))
+
 	return np.linalg.norm(final_obs[:dim] -  final_obs[-dim:]) < 0.05
 
-def end_transfer(obs):
-	tmp = obs[-dim:]
+def end_transfer(obs, params):
+	skill_obs = transit_obs(obs,params)
+	tmp = skill_obs[-dim:]
 	tmp[-1] += 0.1
-	final_obs = np.concatenate((obs[:dim] , tmp))
+	final_obs = np.concatenate((skill_obs[:dim] , tmp))
 	return np.linalg.norm(final_obs[:dim] - final_obs[-dim:]) < 0.05
 
-def end_grasp(obs):
-	obj_loc = obs[dim:2*dim]
-	target_loc = obs[-dim:]
+def end_grasp(obs, params):
+	skill_obs = grasp_obs(obs, params)
+
+	obj_loc = skill_obs[dim:2*dim]
+	target_loc = skill_obs[-dim:]
 	return np.linalg.norm(obj_loc-target_loc) < 0.03
 
 

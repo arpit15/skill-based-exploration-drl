@@ -1,4 +1,4 @@
-# v1.1 params
+# v2.1 params
 ## this file assumes the following
 # action: [delta_x, delta_y, delta_z, gap]
 # obs: [gripper_state, block_state, target_xyz]
