@@ -86,7 +86,7 @@ def mirror(*args, **kwargs):
 class DDPGSkill(object):
     def __init__(self, observation_shape=(1,), normalize_observations=True, observation_range=(-5., 5.), 
         action_range=(-1., 1.), nb_actions=3, layer_norm = True, skill_name = None, restore_path=None,
-        action_func = None, obs_func = None, num_params=None, termination = None, get_full_state_func=None):
+        action_func = None, obs_func = None, num_params=None, termination = None, get_full_state_func=None, next_state_query_idx=None):
         
         # Inputs.
         self.obs0 = tf.placeholder(tf.float32, shape=(None,) + observation_shape, name='obs0')
@@ -113,6 +113,11 @@ class DDPGSkill(object):
         self.memory = np.loadtxt(memory_filename , delimiter= ',')
         self.starting_state_goal = self.memory[:, :observation_shape[0]]
         self.ending_state = self.memory[:, observation_shape[0]:]
+
+        if next_state_query_idx is not None:
+            self.next_state_query_idx = next_state_query_idx
+        else:
+            self.next_state_query_idx = list(range(observation_shape[0]))
 
         if termination: 
             self.termination = termination
@@ -234,7 +239,7 @@ class DDPGSkill(object):
         skill_obs = self.get_obs(obs = obs, params = primitive_params)
 
         # do Nearest neighbour 
-        min_dist_idx = np.argmin( np.linalg.norm(self.starting_state_goal - skill_obs, axis=1))
+        min_dist_idx = np.argmin( np.linalg.norm(self.starting_state_goal[:,self.next_state_query_idx] - skill_obs[self.next_state_query_idx], axis=1))
         next_obs = self.ending_state[min_dist_idx].copy()
 
         # append target
