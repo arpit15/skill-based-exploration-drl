@@ -35,25 +35,22 @@ class BaxterEnv(reacher2d.BaxterEnv):
         ## parsing of primitive actions
         delta_x, delta_y, delta_z = action
         
-        # cap deltas to be between -1, 1
+        # cap the motions
         delta_x = max(-1, min(1, delta_x))
         delta_y = max(-1, min(1, delta_y))
         delta_z = max(-1, min(1, delta_z))
 
         x, y, z = self.get_mocap_state()
-        x += delta_x*0.05
-        y += delta_y*0.05
-        z += delta_z*0.05
         
-        out_of_bound = (x<0.3 or x>0.8) or (y<0.0 or y>0.6) or (z<0.1 or z>0.25)
-        
-        if not out_of_bound:
-            delta_pos = np.array([delta_x*0.05 , delta_y*0.05 , delta_z*0.05])
-            delta_quat = np.array([0.0, 0.0 , 1.0, 0.])
-            delta = np.concatenate((delta_pos, delta_quat))
-            mocap_set_action(self.sim, delta)
-            self.do_simulation()
-        
+        new_x = max(0.3, min(0.8, x + delta_x*0.05))
+        new_y = max(0.0, min(0.6, y+ delta_y*0.05))
+        new_z = max(0.11, min(0.25, z+ delta_z*0.05))
+
+        delta_pos = np.array([new_x - x, new_y - y, new_z - z])
+        delta_quat = np.array([0.0, 0.0 , 1.0, 0.])
+        delta = np.concatenate((delta_pos, delta_quat))
+        mocap_set_action(self.sim, delta)
+        self.do_simulation()
 
         ob = self._get_obs()
         total_reward = self.calc_reward(ob)

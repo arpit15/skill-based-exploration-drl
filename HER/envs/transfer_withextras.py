@@ -12,8 +12,8 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         # randomize gripper loc
 
         # gripper_pos = np.array([0.6 , 0.3 , 0.15])
-        gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim)        
-        self.apply_action(pos=gripper_pos)
+        gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim]  + [0.1, 0.1, 0.0], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.0], size=self.space_dim)        
+        self.apply_action(pos=gripper_pos, ctrl=np.array([0.04, -0.04]))
 
         # define one pose in hand 
         object_qpos = self.sim.data.get_joint_qpos('box') 
@@ -30,17 +30,16 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = np.array([0.5, 0.3,0.])
+        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
 
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.02):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim) 
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
             
         object_qpos = self.sim.data.get_joint_qpos('box') 
         
         self.data.set_joint_qpos('target', target_qpos)
         
-        object_qpos = self.sim.data.get_joint_qpos('box') 
-        
+        self.sim.forward()
         self.num_step = 1
         return self._get_obs()
 

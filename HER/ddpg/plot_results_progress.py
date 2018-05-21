@@ -13,16 +13,18 @@ if __name__ == "__main__":
 	try:
 		data = pd.read_csv(join(dirname , "progress.csv"))
 		data = data.fillna(0.0)
+		epochs = (data["total/epochs"]-1)%200
+		# set_trace()
 		print(data["eval/success"][-10:])
 		plt.subplot(2,1,1)
-		plt.plot(data["total/epochs"]%200, data["eval/return_history"], label='eval')
-		plt.plot(data["total/epochs"], data["rollout/return_history"], label='train')
+		plt.plot(epochs, data["eval/return_history"], label='eval')
+		plt.plot(epochs, data["rollout/return_history"], label='train')
 		plt.legend()
 		plt.xlabel('Epochs --->')
 		plt.ylabel('Episode Reward ---->')
 		
 		plt.subplot(2,1,2)
-		plt.plot(data["total/epochs"]%200, data["eval/success"], label='eval')
+		plt.plot(epochs, data["eval/success"], label='eval')
 		plt.legend()
 		plt.xlabel('Epochs --->')
 		plt.ylabel('Success ---->')

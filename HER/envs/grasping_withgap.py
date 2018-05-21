@@ -15,11 +15,16 @@ class BaxterEnv(reacher2d.BaxterEnv):
                     ctrl=np.array([0.04, -0.04])
         ):
         
-        
-        self.apply_action(pos=gripper_pos, ctrl=ctrl)
-
         # 0: random, 1: grasped
         sample = self.np_random.choice(2)
+        # print("sample:%d"%sample)
+        # randomizing the start state of gripper
+        if sample == 0 or self.test:
+            gripper_pos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, 0.0], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.0], size=self.space_dim)
+        # print("applied gripper pos", gripper_pos)
+        self.apply_action(pos=gripper_pos, ctrl=ctrl)
+
+
         if (sample == 1) and (not self.test):
             
             # define one pose in hand 
@@ -34,15 +39,16 @@ class BaxterEnv(reacher2d.BaxterEnv):
             object_qpos = self.sim.data.get_joint_qpos('box') 
             assert object_qpos.shape == (7,)
 
-            object_qpos[:2] = self.np_random.uniform(self.target_range_min[:2], self.target_range_max[:2], size=2)
+            object_qpos[:2] = self.np_random.uniform(self.target_range_min[:2] + [0.1, 0.1], self.target_range_max[:2] - [0.1, 0.1], size=2)
             object_qpos[2] = 0.0
 
             dim = 2
             while(np.linalg.norm(gripper_pos[:dim] - object_qpos[:dim]) > 0.1
                 or
                 np.linalg.norm(gripper_pos[:dim] - object_qpos[:dim]) < 0.05):
-                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim], self.target_range_max[:dim], size=dim)
+                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
 
+            # print("dist obj and gripper:%.4f"%(np.linalg.norm(gripper_pos[:dim] - object_qpos[:dim])))
 
         # spawning obj on ground
         if sample == 0: object_qpos[2] = 0.0
@@ -59,7 +65,7 @@ class BaxterEnv(reacher2d.BaxterEnv):
         
         #print("Setting target qpos to ", target_qpos[:self.space_dim])
         self.data.set_joint_qpos('target', target_qpos)
-        
+        self.sim.forward()
         self.num_step = 1
 
         return self._get_obs()
@@ -125,21 +131,7 @@ class BaxterEnv(reacher2d.BaxterEnv):
         delta = np.concatenate((delta_pos, delta_quat))
         mocap_set_action(self.sim, delta)
         self.close_gripper(gripper)
-        self.do_simulation()
-
-        # out_of_bound = (x<0.3 or x>0.8) or (y<0.0 or y>0.6) or (z<0.10 or z>0.25)
-        
-        # if not out_of_bound:
-        #     delta_pos = np.array([delta_x*0.05 , delta_y*0.05 , delta_z*0.05])
-        #     delta_quat = np.array([0.0, 0.0 , 1.0, 0.])
-        #     delta = np.concatenate((delta_pos, delta_quat))
-        #     mocap_set_action(self.sim, delta)
-        #     self.close_gripper(gripper)
-        #     self.do_simulation()
-        # else:
-        #     print("out of bound as x:%.4f, y:%.4f, z:%.4f"%(x,y,z))
-
-        
+        self.do_simulation()      
 
         ob = self._get_obs()
         total_reward = self.calc_reward(ob)
@@ -208,7 +200,7 @@ class BaxterEnv(reacher2d.BaxterEnv):
         target_pose = state[-self.space_dim:] 
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(obj_pose- target_pose) < 0.05
+        reward_reaching_goal = np.linalg.norm(obj_pose- target_pose) < 0.03
         total_reward = -1*(not reward_reaching_goal)
         return total_reward
 

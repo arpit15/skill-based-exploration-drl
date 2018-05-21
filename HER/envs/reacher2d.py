@@ -59,6 +59,10 @@ class BaxterEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             
             gripper_pos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim], self.target_range_max[:self.space_dim], size=self.space_dim)
             
+            while(np.linalg.norm(gripper_pos[:self.space_dim] - target_qpos[:self.space_dim]) <0.02):
+                gripper_pos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim], self.target_range_max[:self.space_dim], size=self.space_dim)
+                
+
         self.apply_action(gripper_pos, gripper_quat, ctrl)
         
         self.num_step = 1

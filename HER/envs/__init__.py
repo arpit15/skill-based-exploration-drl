@@ -16,6 +16,20 @@ register(
 )
 
 # Baxter envs
+
+register(
+    id='picknmove-v4',
+    entry_point='HER.envs.picknmove_withgap:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='picknmovet-v4',
+    entry_point='HER.envs.picknmove_withgap:BaxterEnv',
+    kwargs={'max_len':50, 'test':True}
+)
+
+
 register(
     id='putainb-v0',
     entry_point='HER.envs.putainb_withextras:BaxterEnv',

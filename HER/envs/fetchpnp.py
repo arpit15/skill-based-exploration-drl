@@ -14,6 +14,6 @@ class FetchPnp(FetchPickAndPlaceEnv):
 		obj_velr = obs[17:21]
 		grip_vel = obs[21:24]
 		gripper_vel = obs[24:26]
-		parent_dict['observation'] = np.concatenate((grip_pos, obj_pos, obj_rel_pos, gripper_state, obj_velp, grip_vel, gripper_vel))
+		parent_dict['observation'] = np.concatenate((grip_pos, obj_pos, gripper_state))
 
 		return parent_dict

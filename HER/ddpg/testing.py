@@ -70,14 +70,15 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
         eval_episode_rewards = []
         eval_episode_rewards_history = []
         eval_episode_success = []
-        for i in range(10):
+        for i in range(100):
             print("Evaluating:%d"%(i+1))
             eval_episode_reward = 0.
             eval_obs = eval_env.reset()
+            starting_obs = eval_obs.copy()
             eval_done = False
-            
-            # while(True):
-            #     eval_env.render()
+
+            # check the critic value
+            _, critic_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
 
             while(not eval_done):
                 eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
@@ -90,7 +91,11 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
                     
                 eval_episode_reward += eval_r
                 
-            print("episode reward::%f"%eval_episode_reward)
+            if(eval_info["done"]!="goal reached"):
+                print(eval_info)
+                eval_env.render()
+
+            print("episode reward:%f, critic:%.4f"%(eval_episode_reward, critic_q))
             
             eval_episode_rewards.append(eval_episode_reward)
             eval_episode_rewards_history.append(eval_episode_reward)

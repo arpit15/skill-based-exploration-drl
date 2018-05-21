@@ -11,14 +11,18 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
     def reset_model(self):
         # randomize gripper loc
 
-        # gripper_pos = np.array([0.6 , 0.3 , 0.15])
-        gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim)        
-        self.apply_action(pos=gripper_pos)
-
-
         # 0: random, 1: grasped
         sample = self.np_random.choice(2)
-        # print("sample", sample)
+        # print("sample:%d"%sample)
+        # randomizing the start state of gripper
+        if sample == 0 or self.test:
+            gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, 0.0], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.0], size=self.space_dim)
+        else:
+            gripper_pos = np.array([0.6 , 0.3 , 0.15])
+
+        # print("applied gripper pos", gripper_pos)
+        self.apply_action(pos=gripper_pos, ctrl=np.array([0.04, -0.04]))
+
         if sample == 1 and (not self.test):
             
             # define one pose in hand 
@@ -29,38 +33,37 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             self.data.ctrl[:] = np.array([0.,0.])
         else:
             
-            # spawn near gripper
+            # always start with a stable object location. spawning in air is weird
+
+            # print("gripper pos", gripper_pos)
             object_qpos = self.sim.data.get_joint_qpos('box') 
             assert object_qpos.shape == (7,)
 
             dim = 2
-            object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + 0.05, self.target_range_max[:dim] - 0.05 , size=dim) 
-            object_qpos[dim] = 0.1
+            object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
+            object_qpos[dim] = 0.
 
+            while(np.linalg.norm(gripper_pos[:2] - object_qpos[:2]) < 0.1):
+                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
+                object_qpos[dim] = 0.
             
-            while(np.linalg.norm(gripper_pos[:dim] - object_qpos[:dim]) < 0.05):
-                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + 0.05, self.target_range_max[:dim] - 0.05, size=dim)
+            # print("obj pos", object_qpos[:self.space_dim])
+            # print("dist b/w obj and gripper:%.4f"%(np.linalg.norm(gripper_pos[:2] - object_qpos[:2])))
 
-
-        # spawning obj on ground
-        if sample == 0: object_qpos[2] = 0.1
         object_qpos[3:] = np.array([1., 0.,0.,0.])
         self.sim.data.set_joint_qpos('box', object_qpos)  
 
-        # print("obj2grip", np.linalg.norm(gripper_pos[:2] - object_qpos[:2]))
         if sample == 1 and (not self.test):
             # the object drops a bit as the gripper is still adjusting its gap
             self.sim.step()
             object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:2] = self.np_random.uniform(self.target_range_min[:2] + 0.05, self.target_range_max[:2] - 0.05, size=2) 
-        if(self.space_dim==3):
-            target_qpos[2] = self.np_random.rand()*0.1
+        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
+
+        # reward threshold is 0.03
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.05):
-            target_qpos[:2] = self.np_random.uniform(self.target_range_min[:2] + 0.05, self.target_range_max[:2] - 0.05, size=2) 
-            if(self.space_dim==3):
-                target_qpos[2] = self.np_random.rand()*0.1
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim)
         
         object_qpos = self.sim.data.get_joint_qpos('box') 
         

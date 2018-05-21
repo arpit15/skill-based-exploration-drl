@@ -16,10 +16,10 @@ if __name__ == "__main__":
 
     try:
 
-        ob = env.reset()
+        # ob = env.reset()
         # print(ob)
-        while True:
-            env.render(mode = 'human')
+        # while True:
+        #     env.render(mode = 'human')
 
         # print("Crossed over")
             
@@ -29,15 +29,13 @@ if __name__ == "__main__":
             i =0
             random_r = 0
             ob = env.reset()
-            print(ob)
+            print(ob[:6], ob[-3:])
 
             # print("l joint", env.data.get_joint_qpos("l_gripper_l_finger_joint"))
             # print("r joint", env.data.get_joint_qpos("l_gripper_r_finger_joint"))
             # print("obj initial pos", env.data.get_joint_qpos("box"))
 
-            k =0
-            while k<50:
-                k += 1
+            for _ in range(50):
                 sleep(0.1)
                 env.render(mode='human')
             # set_trace()
@@ -56,14 +54,14 @@ if __name__ == "__main__":
                 # action = np.array([(obj_x - ee_x)/0.05, (obj_y -ee_y)/0.05])
                 # action = [0.,0., 0.1,-1.]
                 action = env.action_space.sample()
-                
+                # action = [0.,0.,1.]
                 # for checking grasping
-                # action = [0., 0., 1.0, 1]
+                # action = [0., 0., 0.0, -1]
                 
                 ob, reward, done, info = env.step(action)
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, reward) 
+                # print( i, ob,action) 
                 # print("target:x:%.4f,y:%.4f,z:%.4f"%(ob[-3], ob[-2], ob[-1]))
                 # print("gripper", env.data.get_site_xpos("grip_r"))   
                 i+=1
