@@ -54,8 +54,12 @@ class SkillSet:
             print(self.skillset[primitive_id].skill_name)
             return self.skillset[primitive_id].pi(obs=obs, primitive_params=None)
 
-    def termination(self, obs, primitive_id):
-        return self.skillset[primitive_id].termination(obs)
+    def termination(self, obs, primitive_id, primitive_params):
+        if primitive_params is not None:
+            curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
+            return self.skillset[primitive_id].termination(obs, primitive_params = curr_skill_params)
+        else:
+            NotImplementedError
 
     def get_terminal_state_from_memory(self, primitive_id, obs, primitive_params):
         return self.skillset[primitive_id].get_terminal_state_from_memory(obs = obs, primitive_params = primitive_params)

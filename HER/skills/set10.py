@@ -50,22 +50,24 @@ def grasp_obs(obs, params):
 	# params is the height the obj has to be raised above the ground
 	# [-1, 1] -> [0., 0.05]
 	obj_loc = obs[dim:2*dim]
-	target = [obj_loc[0], obj_loc[1], (params+1)*0.025]
-	# print("grasp params",target)
-	
+	target = [obj_loc[0], obj_loc[1], 0.05+(params+1)*0.015]
 	final_obs = np.concatenate((obs[:-3], target ))
 	# print("grasp ob", final_obs)
 	return final_obs
 
 
-def end_transit(obs):
-	tmp = obs[dim:2*dim] + np.array([0.,0.,0.1])
-	final_obs = np.concatenate((obs[:dim] , tmp))
+def end_transit(obs, params):
+	skill_obs = transit_obs(obs,params)
+	tmp = skill_obs[dim:2*dim] + np.array([0.,0.,0.1])
+	final_obs = np.concatenate((skill_obs[:dim] , tmp))
+
 	return np.linalg.norm(final_obs[:dim] -  final_obs[-dim:]) < 0.05
 
-def end_grasp(obs):
-	obj_loc = obs[dim:2*dim]
-	target_loc = obs[-dim:]
+def end_grasp(obs, params):
+	skill_obs = grasp_obs(obs, params)
+
+	obj_loc = skill_obs[dim:2*dim]
+	target_loc = skill_obs[-dim:]
 	return np.linalg.norm(obj_loc-target_loc) < 0.03
 
 end_transfer = end_grasp

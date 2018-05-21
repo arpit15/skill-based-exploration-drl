@@ -61,7 +61,7 @@ class BaxterEnv(reacher2d.BaxterEnv):
             object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = object_qpos[:self.space_dim] + np.array([0., 0., 0.05])
+        target_qpos[:self.space_dim] = object_qpos[:self.space_dim] + np.array([0., 0., 0.05 + 0.03*(sample==0)*(np.random.rand())])
         
         #print("Setting target qpos to ", target_qpos[:self.space_dim])
         self.data.set_joint_qpos('target', target_qpos)

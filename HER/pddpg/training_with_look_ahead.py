@@ -222,7 +222,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                                 curr_sub_states.append(new_obs.copy())
                              
                             skill_obs = new_obs
-                            if done or my_skill_set.termination(new_obs, primitive_id):
+                            if done or my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:]):
                                 break
                     else:
                         action = paction
