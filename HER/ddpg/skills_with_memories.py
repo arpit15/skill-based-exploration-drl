@@ -45,10 +45,12 @@ class SkillSet:
     def pi(self, obs, primitive_params=None, primitive_id=0):
 
         ## make obs for the skill
-        starting_idx = self.params_start_idx[primitive_id]
         if primitive_params is not None:
+            # print(self.params_start_idx)
+            starting_idx = self.params_start_idx[primitive_id]
             curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
-            #print(self.skillset[primitive_id].skill_name, curr_skill_params)
+            # print(primitive_params, starting_idx)
+            # print(self.skillset[primitive_id].skill_name, curr_skill_params)
             return self.skillset[primitive_id].pi(obs=obs, primitive_params=curr_skill_params)
         else:
             print(self.skillset[primitive_id].skill_name)
@@ -56,8 +58,9 @@ class SkillSet:
 
     def termination(self, obs, primitive_id, primitive_params):
         if primitive_params is not None:
+            starting_idx = self.params_start_idx[primitive_id]
             curr_skill_params = primitive_params[starting_idx : (starting_idx+self.skillset[primitive_id].num_params)]
-            return self.skillset[primitive_id].termination(obs, primitive_params = curr_skill_params)
+            return self.skillset[primitive_id].termination(obs, curr_skill_params)
         else:
             NotImplementedError
 
@@ -208,7 +211,8 @@ class DDPGSkill(object):
         
         actor_tf = self.actor_tf
         feed_dict = {self.obs0: [self.get_obs(obs=obs, params=primitive_params)]}
-        print('actual ob target',obs[-3:], 'changed obs target',(feed_dict[self.obs0])[0][-3:])
+        # print("params", primitive_params)
+        # print('actual ob target',obs[-3:], 'changed obs target',(feed_dict[self.obs0])[0][-3:])
         action = self.sess.run(actor_tf, feed_dict=feed_dict)
         action = action.flatten()
         action = np.clip(action, -1, 1)

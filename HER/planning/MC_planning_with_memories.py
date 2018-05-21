@@ -110,11 +110,11 @@ class Planning_with_memories:
 		starting_idx = self.skillset.params_start_idx[chosen_skill]
 		ending_idx = starting_idx + chosen_skill_params.size
 
-		paction[ starting_idx: ending_idx] = chosen_skill_params
+		paction[ self.skillset.len + starting_idx: self.skillset.len + ending_idx] = chosen_skill_params
 		
 		info['next_state'] = (curr_node.child.state)
 		info['prob'] = curr_node.prob
-		print("prob:%.4f, value:%.4f, goal"%(curr_node.prob, curr_node.value), chosen_skill_params)
+		# print("prob:%.4f, value:%.4f, goal"%(curr_node.prob, curr_node.child.value), chosen_skill_params)
 		
 		return paction.copy(), info
 

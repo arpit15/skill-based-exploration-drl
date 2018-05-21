@@ -24,9 +24,9 @@ def transfer_obs(obs, params):
 	# print("creating transfer obs ", obs.shape, params.shape)
 
 	x,y,z = params
-	x = 0.3 + (x+1)*0.25
-	y = 0. + (y+1)*0.3
-	z = 0.08 + (z+1)*0.125
+	x = 0.45 + (x+1)*0.1
+	y = 0.15 + (y+1)*0.15
+	z = 0.03 + (z+1)*0.035
 	params = np.array((x,y,z))
 	# print("transfer params",params)
 	final_obs = np.concatenate((obs[:-3] , params))
@@ -48,9 +48,9 @@ def transit_obs(obs,params):
 
 def grasp_obs(obs, params):
 	# params is the height the obj has to be raised above the ground
-	# [-1, 1] -> [0., 0.05]
+	# [-1, 1] -> [0.05, 0.08]
 	obj_loc = obs[dim:2*dim]
-	target = [obj_loc[0], obj_loc[1], 0.05+(params+1)*0.015]
+	target = [obj_loc[0], obj_loc[1], 0.05+(float(params[0])+1)*0.015]
 	final_obs = np.concatenate((obs[:-3], target ))
 	# print("grasp ob", final_obs)
 	return final_obs
@@ -114,7 +114,7 @@ transfer = {
 	"obs_func":transfer_obs,
 	"num_params": 3,
 	"termination": end_transfer,
-	"restore_path":"~/new_RL3/baseline_results_new/v1/transfer-v0/run1"
+	"restore_path":"~/new_RL3/baseline_results_new/clusters-v1/transfer-v0/run1"
 }
 
 skillset = [transit, transfer, grasp]

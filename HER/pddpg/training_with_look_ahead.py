@@ -201,7 +201,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
 
-                        print("skill chosen", primitive_id)
+                        # print("skill chosen", primitive_id)
                         r = 0.
                         skill_obs = obs.copy()
 
@@ -249,7 +249,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         pactions.append(paction.copy())
                         sub_states.append(curr_sub_states)
 
-                    print(planner_info['next_state'][:6], new_obs[:6])
+                    # print(planner_info['next_state'][:6], new_obs[:6])
                     
                     obs = new_obs
 
