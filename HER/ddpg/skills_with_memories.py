@@ -204,7 +204,7 @@ class DDPGSkill(object):
         
         actor_tf = self.actor_tf
         feed_dict = {self.obs0: [self.get_obs(obs=obs, params=primitive_params)]}
-        
+        print('actual ob target',obs[-3:], 'changed obs target',(feed_dict[self.obs0])[0][-3:])
         action = self.sess.run(actor_tf, feed_dict=feed_dict)
         action = action.flatten()
         action = np.clip(action, -1, 1)

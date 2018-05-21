@@ -15,7 +15,7 @@ class Node:
 
 class Planning_with_memories:
 	"""docstring for Planning_with_memories"""
-	def __init__(self, skillset, env, num_samples=2, max_height = 5, value_scale=0., reward_scale=1.):
+	def __init__(self, skillset, env, num_samples=2, max_height =3, value_scale=0., reward_scale=1.):
 		self.skillset = skillset
 		self.env = env
 		self.num_samples = num_samples
@@ -26,6 +26,8 @@ class Planning_with_memories:
 		self.reward_scale = reward_scale
 		
 	def create_plan(self, state, height = None):
+		
+		info = dict()
 		
 		openlist = []
 		leaflist = []
@@ -56,7 +58,7 @@ class Planning_with_memories:
 				next_state = self.skillset.get_terminal_state_from_memory(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
 				prob = self.skillset.get_prob_skill_success(primitive_id=sampled_skill_num,obs = state, primitive_params = sampled_params)
 				
-				print("prob:%.4f"%prob)
+				# print("prob:%.4f"%prob)
 				if curr_node.height == 1:
 					# creating a leaf node
 					child_reward = self.env.calc_reward(next_state)
@@ -108,9 +110,13 @@ class Planning_with_memories:
 		starting_idx = self.skillset.params_start_idx[chosen_skill]
 		ending_idx = starting_idx + chosen_skill_params.size
 
-		# print(chosen_skill_params.shape, paction.shape)
 		paction[ starting_idx: ending_idx] = chosen_skill_params
-		return paction.copy()
+		
+		info['next_state'] = (curr_node.child.state)
+		info['prob'] = curr_node.prob
+		print("prob:%.4f, value:%.4f, goal"%(curr_node.prob, curr_node.value), chosen_skill_params)
+		
+		return paction.copy(), info
 
 
 

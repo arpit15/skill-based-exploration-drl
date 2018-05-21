@@ -2,6 +2,7 @@ import os
 import time
 from collections import deque
 import pickle
+from time import sleep 
 
 from HER.pddpg.ddpg import DDPG
 from HER.pddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
@@ -191,7 +192,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Predict next action.
                     # exploration check
                     if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*nb_epoch_cycles + cycle)):
-                        paction = look_ahead_planner.create_plan(obs)
+                        paction, planner_info = look_ahead_planner.create_plan(obs)
                     else:
                         paction, _ = agent.pi(obs, apply_noise=True, compute_Q=True)
                     
@@ -200,6 +201,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
 
+                        print("skill chosen", primitive_id)
                         r = 0.
                         skill_obs = obs.copy()
 
@@ -210,6 +212,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=paction[my_skill_set.len:])
                             # Execute next action.
                             if rank == 0 and render:
+                                sleep(0.1)
                                 env.render()
                             assert max_action.shape == action.shape
                             new_obs, skill_r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
@@ -246,6 +249,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         pactions.append(paction.copy())
                         sub_states.append(curr_sub_states)
 
+                    print(planner_info['next_state'][:6], new_obs[:6])
+                    
                     obs = new_obs
 
                     if done:

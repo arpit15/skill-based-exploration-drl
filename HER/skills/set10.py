@@ -28,7 +28,7 @@ def transfer_obs(obs, params):
 	y = 0. + (y+1)*0.3
 	z = 0.08 + (z+1)*0.125
 	params = np.array((x,y,z))
-
+	# print("transfer params",params)
 	final_obs = np.concatenate((obs[:-3] , params))
 	return final_obs
 
@@ -39,7 +39,8 @@ def transit_obs(obs,params):
 	y = 0. + (y+1)*0.3
 	z = 0.08 + (z+1)*0.125 - 0.08
 	params = np.array((x,y,z))
-
+	# print("transit params",params)
+	
 	final_obs = np.concatenate((obs[:dim] , params))
 	# print("move obs", final_obs)
 	return final_obs
@@ -50,6 +51,8 @@ def grasp_obs(obs, params):
 	# [-1, 1] -> [0., 0.05]
 	obj_loc = obs[dim:2*dim]
 	target = [obj_loc[0], obj_loc[1], (params+1)*0.025]
+	# print("grasp params",target)
+	
 	final_obs = np.concatenate((obs[:-3], target ))
 	# print("grasp ob", final_obs)
 	return final_obs
