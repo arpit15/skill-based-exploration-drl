@@ -117,7 +117,7 @@ transfer = {
 	"obs_func":transfer_obs,
 	"num_params": 3,
 	"termination": end_transfer,
-	"next_state_query_idx":[3,4,5],
+	"next_state_query_idx":[25,26,27],
 	"restore_path":"~/new_RL3/baseline_results_new/clusters-v1/transfer-v0/run1"
 }
 
