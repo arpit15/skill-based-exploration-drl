@@ -158,7 +158,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             eval_episode_success = []
 
             for cycle in range(nb_epoch_cycles):
-                print("cycle:%d"%cycle)
+                # print("cycle:%d"%cycle)
                 # Perform rollouts.
                 for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
