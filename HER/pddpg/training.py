@@ -298,7 +298,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # Evaluate.
                 
                 
-                if (eval_env is not None) and rank==0:
+            if (eval_env is not None) and rank==0:
+                for _ in range(nb_eval_episodes):
                     eval_episode_reward = 0.
                     eval_obs = eval_env.reset()
                     eval_obs_start = eval_obs.copy()

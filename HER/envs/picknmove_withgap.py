@@ -11,10 +11,13 @@ class BaxterEnv(picknmove_withextras.BaxterEnv):
         obs = super(BaxterEnv, self)._get_obs()
         grip_pos = obs[:3]
         obj_pos = obs[3:6]
+        obj_rel_pos = obs[6:9]
         gripper_state = obs[9:11]
+        gripper_vel = obs[24:26]
         target_pos = obs[-3:]
 
-        visible_obs = np.concatenate((grip_pos, obj_pos, gripper_state, target_pos))
+
+        visible_obs = np.concatenate((grip_pos, obj_pos, obj_rel_pos, gripper_state, gripper_vel, target_pos))
 
         return visible_obs
     
