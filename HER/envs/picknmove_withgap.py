@@ -4,7 +4,7 @@ from gym.envs.robotics.utils import mocap_set_action
 
 class BaxterEnv(picknmove_withextras.BaxterEnv):
     
-    def __init__(self, max_len=50, test = False,obs_dim=11):
+    def __init__(self, max_len=50, test = False,obs_dim=16):
         super(BaxterEnv, self).__init__(max_len=max_len, test=test, obs_dim=obs_dim)
 
     def _get_obs(self):
