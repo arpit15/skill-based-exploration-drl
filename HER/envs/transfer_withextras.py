@@ -30,11 +30,11 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
+        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.05], size=self.space_dim) 
 
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.02):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
-            
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.05], size=self.space_dim) 
+
         object_qpos = self.sim.data.get_joint_qpos('box') 
         
         self.data.set_joint_qpos('target', target_qpos)
