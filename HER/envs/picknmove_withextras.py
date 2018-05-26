@@ -43,9 +43,14 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
             object_qpos[dim] = 0.
 
-            while(np.linalg.norm(gripper_pos[:2] - object_qpos[:2]) < 0.1):
+            tmp = 0
+            while(np.linalg.norm(gripper_pos[:2] - object_qpos[:2]) < 0.25):
+                tmp += 1
                 object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
                 object_qpos[dim] = 0.
+
+                if(tmp==100):
+                    break
             
             # print("obj pos", object_qpos[:self.space_dim])
             # print("dist b/w obj and gripper:%.4f"%(np.linalg.norm(gripper_pos[:2] - object_qpos[:2])))
@@ -59,11 +64,17 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
+        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.05], size=self.space_dim) 
 
         # reward threshold is 0.03
-        while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.05):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim)
+        tmp = 0
+        while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.25):
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.1], size=self.space_dim)
+            tmp += 1
+
+            if(tmp==100):
+                # print("dist:%.4f, obj:"%(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim])), object_qpos[:self.space_dim])
+                break
         
         object_qpos = self.sim.data.get_joint_qpos('box') 
         

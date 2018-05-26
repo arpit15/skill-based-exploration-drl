@@ -1,4 +1,4 @@
-# v2.2 params
+# v2.3 params
 ## this file assumes the following
 # action: [delta_x, delta_y, delta_z, gap]
 # obs: [gripper_state, block_state, target_xyz]
@@ -35,11 +35,11 @@ def transfer_obs(obs, params):
 	return final_obs
 
 def transit_obs(obs,params):
-	
+	# print(params)
 	x,y,z = params
 	x = 0.3 + (x+1)*0.25
 	y = 0. + (y+1)*0.3
-	z = 0.08 + (z+1)*0.125 - 0.08
+	z = 0.13 + (z+1)*0.035
 	params = np.array((x,y,z))
 	# print("transit params",params)
 	
@@ -60,10 +60,11 @@ def grasp_obs(obs, params):
 
 def end_transit(obs, params):
 	skill_obs = transit_obs(obs,params)
-	tmp = skill_obs[dim:2*dim] + np.array([0.,0.,0.1])
-	final_obs = np.concatenate((skill_obs[:dim] , tmp))
+	# tmp = skill_obs[dim:2*dim] + np.array([0.,0.,0.1])
+	# final_obs = np.concatenate((skill_obs[:dim] , tmp))
 
-	return np.linalg.norm(final_obs[:dim] -  final_obs[-dim:]) < 0.05
+	# print("transit end",skill_obs[:dim], skill_obs[-dim:])
+	return np.linalg.norm(skill_obs[:dim] -  skill_obs[-dim:]) < 0.05
 
 def end_grasp(obs, params):
 	skill_obs = grasp_obs(obs, params)
@@ -72,7 +73,12 @@ def end_grasp(obs, params):
 	target_loc = skill_obs[-dim:]
 	return np.linalg.norm(obj_loc-target_loc) < 0.03
 
-end_transfer = end_grasp
+def end_transfer(obs, params):
+	skill_obs = transfer_obs(obs, params)
+
+	obj_loc = skill_obs[dim:2*dim]
+	target_loc = skill_obs[-dim:]
+	return np.linalg.norm(obj_loc-target_loc) < 0.03
 
 def reacher_get_full_state_func(reacher_obs, prev_obs):
 	# assumption: the gripper vel and everything else is 0 for reacher
@@ -117,7 +123,7 @@ transfer = {
 	"obs_func":transfer_obs,
 	"num_params": 3,
 	"termination": end_transfer,
-	"next_state_query_idx":[25,26,27],
+	"next_state_query_idx":[0,1,2, 3,4,5,25,26,27],
 	"restore_path":"~/new_RL3/baseline_results_new/clusters-v1/transfer-v0/run1"
 }
 

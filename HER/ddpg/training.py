@@ -21,7 +21,7 @@ from ipdb import set_trace
 def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, param_noise, actor, critic,
     normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
     popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
-    tau=0.05, eval_env=None, param_noise_adaption_interval=50, **kwargs):
+    tau=0.05, eval_env=None, param_noise_adaption_interval=50, nb_eval_episodes=20, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
 
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
@@ -158,6 +158,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             eval_episode_success = []
 
             for cycle in range(nb_epoch_cycles):
+                # print("cycle:%d"%cycle)
                 # Perform rollouts.
                 for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
@@ -244,7 +245,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # Evaluate.
                 
                 
-                if (eval_env is not None) and rank==0:
+            if (eval_env is not None) and rank==0:
+                for _ in range(nb_eval_episodes):
                     eval_episode_reward = 0.
                     eval_obs = eval_env.reset()
                     eval_obs_start = eval_obs.copy()
@@ -253,6 +255,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
                         eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                         if render_eval:
+                            sleep(0.1)
                             print("Render!")
                             
                             eval_env.render()

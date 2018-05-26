@@ -43,21 +43,19 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
 
         episode = 0
         while(episode < num_ep):
-        # for episode in tqdm(range(num_ep)):
-            
-            done = False
             starting_ob = env.reset()
 
             ob = starting_ob
             i = 0
             while(not done or (i<commit_for)):
+                env.render()
                 action = actor.pi(ob, None)
                 ob, _, done, info = env.step(action)
                 i += 1
 
-            if(info["done"] != "goal reached"):
+            if (info['done']!= "goal reached"):
                 print("didn't succeed")
-                continue 
+                continue
 
             episode += 1
             #starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
@@ -180,7 +178,7 @@ def parse_args():
     parser.add_argument('--dataset-size', type=int, default=2000)
     # parser.add_argument('--skillset', type=str, default='set8')
     # parser.add_argument('--skillname', type=str, default='transfer')
-    parser.add_argument('--commit-for', type=int, default=5)
+    parser.add_argument('--commit-for', type=int, default=100)
     parser.add_argument('--train-epoch', type=int, default=10)
 
     parser.add_argument('--batch-size', type=int, default=64)
