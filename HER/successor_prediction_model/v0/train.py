@@ -41,7 +41,9 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
     with open(csv_filename, 'w',newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
 
-        for episode in tqdm(range(num_ep)):
+        episode = 0
+        while(episode < num_ep):
+        # for episode in tqdm(range(num_ep)):
             
             done = False
             starting_ob = env.reset()
@@ -50,9 +52,14 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
             i = 0
             while(not done or (i<commit_for)):
                 action = actor.pi(ob, None)
-                ob, _, done, _ = env.step(action)
+                ob, _, done, info = env.step(action)
                 i += 1
 
+            if(info["done"] != "goal reached"):
+                print("didn't succeed")
+                continue 
+
+            episode += 1
             #starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
             writer.writerow(np.concatenate((starting_ob, ob[:-3])).tolist())
 
