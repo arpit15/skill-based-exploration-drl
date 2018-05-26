@@ -124,7 +124,7 @@ transfer = {
 	"num_params": 3,
 	"termination": end_transfer,
 	"next_state_query_idx":[0,1,2, 3,4,5,25,26,27],
-	"restore_path":"~/new_RL3/baseline_results_new/clusters-v1/transfer-v0/run1"
+	"restore_path":"~/new_RL3/baseline_results_new/clusters-v1/transfer-v0/run2"
 }
 
 skillset = [transit, transfer, grasp]

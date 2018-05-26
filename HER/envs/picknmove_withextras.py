@@ -69,7 +69,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         # reward threshold is 0.03
         tmp = 0
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.25):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.1], size=self.space_dim)
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.05], size=self.space_dim)
             tmp += 1
 
             if(tmp==100):
