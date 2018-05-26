@@ -26,7 +26,7 @@ def get_home_path(path):
     curr_home_path = os.getenv("HOME")
     return path.replace("$HOME",curr_home_path)
 
-def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
+def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False):
     
     log_dir = osp.expanduser(log_dir)
     # get data for training and dump into csv
@@ -43,12 +43,17 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for):
 
         episode = 0
         while(episode < num_ep):
+            if((episode+1)%1000 == 0):
+                print("episodes done:%d"%(episode+1))
+
             starting_ob = env.reset()
 
             ob = starting_ob
             i = 0
-            while(not done or (i<commit_for)):
-                env.render()
+            done = False
+            while(not done and (i<commit_for)):
+                if render:
+                    env.render()
                 action = actor.pi(ob, None)
                 ob, _, done, info = env.step(action)
                 i += 1
@@ -126,7 +131,7 @@ def run(env_id, render, log_dir, restore_dir, commit_for,
         # restore actor
         actor_model.restore_skill(path = get_home_path(osp.expanduser(restore_dir)), sess = sess)
 
-        generate_data(env, env_id, log_dir, actor_model, dataset_size, commit_for)
+        generate_data(env, env_id, log_dir, actor_model, dataset_size, commit_for, render)
         
         exit(1)
         ## creating dataset tensors

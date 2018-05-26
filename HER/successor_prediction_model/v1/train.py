@@ -19,7 +19,7 @@ import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
 
-def run(env_id, render, log_dir, commit_for, 
+def run(env_id, render, log_dir, 
             train_epoch, batch_size=32, lr = 1e-3, seed = 0, whiten = False):
     
     env = gym.make(env_id)
@@ -92,7 +92,6 @@ def parse_args():
     
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
     
-    parser.add_argument('--commit-for', type=int, default=5)
     parser.add_argument('--train-epoch', type=int, default=10)
 
     parser.add_argument('--batch-size', type=int, default=64)
