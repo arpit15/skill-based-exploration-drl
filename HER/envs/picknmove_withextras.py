@@ -102,8 +102,9 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             state[-self.space_dim:] = goal.copy()    # copy the new goal into state
             # use all the sub states to calculate total reward
             reward = 0.
-            # don't account for the last state 
-            for sub_state in sub_states_list[i-1][:-1]:
+
+            # don't account for the first state : sub_states_list contains first state and last state
+            for sub_state in sub_states_list[i-1][1:]:
                 sub_state[-self.space_dim:] = goal.copy()    # copy the new goal into state
                 reward += self.calc_reward(sub_state)
             her_states.append(state)
