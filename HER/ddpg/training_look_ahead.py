@@ -190,10 +190,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         if skill_done:
                             paction, planner_info = look_ahead_planner.create_plan(obs)
                             skill_done = False
-                        else:
-                            primitives_prob = paction[:my_skill_set.len]
-                            primitive_id = np.argmax(primitives_prob)
-                            action = my_skill_set.pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[my_skill_set.len:])
+                        
+                        primitives_prob = paction[:my_skill_set.len]
+                        primitive_id = np.argmax(primitives_prob)
+                        action = my_skill_set.pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[my_skill_set.len:])
                             
                     else:
                         action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
@@ -201,7 +201,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Execute next action.
                     if rank == 0 and render:
                         env.render()
-                    assert max_action.shape == action.shape
+                    
                     new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     
                     if kwargs['look_ahead'] and my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:]):
@@ -216,7 +216,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                     # Book-keeping.
                     epoch_actions.append(action)
-                    epoch_qs.append(q)
+                    # epoch_qs.append(q)
                     agent.store_transition(obs, action, r, new_obs, done)
 
                     ## storing info for hindsight
@@ -239,7 +239,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
 
                             ## create hindsight experience replay
-                            her_states, her_rewards = env.env.apply_hindsight(states, actions, new_obs.copy())
+                            her_states, her_rewards = env.apply_hindsight(states, actions, new_obs.copy())
                             
                             ## store her transitions: her_states: n+1, her_rewards: n
                             for her_i in range(len(her_states)-2):

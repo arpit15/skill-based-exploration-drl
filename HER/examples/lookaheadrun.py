@@ -7,6 +7,7 @@ from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
+from HER.ddpg.skills_with_memories import SkillSet
 import HER.ddpg.training_look_ahead as training
 from HER.ddpg.models import Actor, Critic
 from HER.ddpg.memory import Memory
@@ -30,7 +31,6 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     logger.debug("Env info")
     logger.debug(env.__doc__)
     logger.debug("-"*20)
-    env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
     gym.logger.setLevel(logging.WARN)
 
     if evaluation and rank==0:
