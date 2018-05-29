@@ -13,7 +13,8 @@ if __name__ == "__main__":
 	try:
 		data = pd.read_csv(join(dirname , "progress.csv"))
 		data = data.fillna(0.0)
-		epochs = (data["total/epochs"]-1)%200
+		epochs = (data["total/epochs"])
+		epochs = epochs - epochs[0]
 		# set_trace()
 		print(data["eval/success"][-10:])
 		plt.subplot(2,1,1)
