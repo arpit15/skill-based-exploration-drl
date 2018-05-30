@@ -61,7 +61,7 @@ def get_perturbed_actor_updates(actor, perturbed_actor, param_noise_stddev):
 def choose_actions(action, skillset, W_select, return_mask = False):
     discrete_action = action[:, :skillset.len]
     cts_parameters = action[:, skillset.len:]
-    selection_mask = tf.matmul(discrete_action, W_select)
+    selection_mask = tf.stop_gradient(tf.matmul(discrete_action, W_select))
     # selected_cts_params = tf.multiply(selection_mask, cts_parameters)
     # choose_actions_tf = tf.concat(values=[discrete_action, selected_cts_params], axis=-1)
     choose_actions_tf = tf.multiply(selection_mask, action)
@@ -175,8 +175,8 @@ class DDPG(object):
         if self.select_action:
             self.actor_with_all_params_tf = actor(obs=normalized_obs0, temperature = self.temperature)
             # create np and then convert to tf.constant
-            actor_tf_with_chosen_action, selection_mask = choose_actions(self.actor_with_all_params_tf, skillset, self.W_select, True)
-            actor_tf_clone_with_chosen_action = grad_manipulation_op.py_func(grad_manipulation_op.my_identity_func, [actor_tf_with_chosen_action, selection_mask], self.actor_with_all_params_tf.dtype, name="MyIdentity", grad=grad_manipulation_op._custom_identity_grad)
+            _, selection_mask = choose_actions(self.actor_with_all_params_tf, skillset, self.W_select, True)
+            actor_tf_clone_with_chosen_action = grad_manipulation_op.py_func(grad_manipulation_op.my_identity_func, [self.actor_with_all_params_tf, selection_mask], self.actor_with_all_params_tf.dtype, name="MyIdentity", grad=grad_manipulation_op._custom_identity_grad)
             self.actor_tf = tf.reshape(actor_tf_clone_with_chosen_action, tf.shape(self.actor_with_all_params_tf)) 
         else:
             self.actor_tf = actor(normalized_obs0)
