@@ -292,7 +292,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             if kwargs['skillset']:
                                 sub_states[:] = []
 
-                print(rank, "Training!")
+                #print(rank, "Training!")
                 # Train.
                 for t_train in range(nb_train_steps):
                     # print(rank, t_train)
@@ -309,7 +309,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     if dologging and tf_sum_logging and rank==0:                   
                         writer_t.add_summary(current_summary, epoch*nb_epoch_cycles*nb_train_steps + cycle*nb_train_steps + t_train)
 
-            print("Evaluating!")
+            #print("Evaluating!")
             # Evaluate after training is done.
             if (eval_env is not None) and rank==0:
                 for _ in range(nb_eval_episodes):
