@@ -62,8 +62,9 @@ def choose_actions(action, skillset, W_select, return_mask = False):
     discrete_action = action[:, :skillset.len]
     cts_parameters = action[:, skillset.len:]
     selection_mask = tf.matmul(discrete_action, W_select)
-    selected_cts_params = tf.multiply(selection_mask, cts_parameters)
-    choose_actions_tf = tf.concat(values=[discrete_action, selected_cts_params], axis=-1)
+    # selected_cts_params = tf.multiply(selection_mask, cts_parameters)
+    # choose_actions_tf = tf.concat(values=[discrete_action, selected_cts_params], axis=-1)
+    choose_actions_tf = tf.multiply(selection_mask, action)
     if return_mask:
         return choose_actions_tf, selection_mask
     else:
@@ -138,7 +139,8 @@ class DDPG(object):
         # action selection constant
         if self.select_action:
             self.skillset = skillset
-            W_select = np.zeros((skillset.len, skillset.num_params))
+            W_select = np.zeros((skillset.len, skillset.num_params + skillset.len))
+            W_select[:skillset.len, :skillset.len] = 1.
             for i in range(skillset.len):
                 starting_idx = skillset.params_start_idx[i]
                 ending_idx = starting_idx + skillset.skillset[i].num_params
