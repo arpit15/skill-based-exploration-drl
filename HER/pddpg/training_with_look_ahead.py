@@ -38,10 +38,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     else:
         tf_sum_logging = False
         
-    if "invert_grad" in kwargs: 
-        invert_grad = kwargs["invert_grad"]
+    if "select_action" in kwargs: 
+        select_action = kwargs["select_action"]
+        # add temperature and anneal
     else:
-        invert_grad = False
+        select_action = False
 
     if "actor_reg" in kwargs:
         actor_reg = kwargs["actor_reg"]
@@ -63,6 +64,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
     if kwargs['skillset']:
         action_shape = (kwargs['my_skill_set'].len + kwargs['my_skill_set'].num_params,)
+        my_skill_set = kwargs['my_skill_set']
     else:
         action_shape = env.action_space.shape
 
@@ -71,7 +73,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
         actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
         reward_scale=reward_scale,
-        inverting_grad = invert_grad,
+        select_action = select_action,
+        skillset = my_skill_set if kwargs['skillset'] else None,
         actor_reg = actor_reg
         )
 
@@ -101,6 +104,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             for var in critic_trainable_vars:
                 tf.summary.histogram(var.name, var)
 
+            if my_skill_set:
+                tf.summary.histogram("discrete_action", agent.actor_tf[:, :my_skill_set.len])
+                
             tf.summary.histogram("actions_out", agent.actor_tf)
             tf.summary.histogram("critic_out", agent.critic_tf)
             tf.summary.histogram("target_Q", agent.target_Q)
@@ -117,7 +123,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         ## restore
         if kwargs['skillset']:
             ## restore skills
-            my_skill_set = kwargs['my_skill_set']
             my_skill_set.restore_skillset(sess=sess)
         ## restore current controller
         if kwargs["restore_dir"] is not None:
@@ -287,7 +292,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             if kwargs['skillset']:
                                 sub_states[:] = []
 
-                # print(rank, "Training!")
+                print(rank, "Training!")
                 # Train.
                 for t_train in range(nb_train_steps):
                     # print(rank, t_train)
@@ -304,7 +309,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     if dologging and tf_sum_logging and rank==0:                   
                         writer_t.add_summary(current_summary, epoch*nb_epoch_cycles*nb_train_steps + cycle*nb_train_steps + t_train)
 
-            # print("Evaluating!")
+            print("Evaluating!")
             # Evaluate after training is done.
             if (eval_env is not None) and rank==0:
                 for _ in range(nb_eval_episodes):

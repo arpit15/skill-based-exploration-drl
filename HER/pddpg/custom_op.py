@@ -14,7 +14,7 @@ def py_func(func, inp, Tout, stateful=True, name=None, grad=None):
     :return:
     """
     # Generate Random Gradient name in order to avoid conflicts with inbuilt names
-    rnd_name = 'PyFuncGrad' + 'ABC@a1b2c3'
+    rnd_name = 'ParamSelectorGrad' + 'ABC@a1b2c3'
 
     # Register Tensorflow Gradient
     tf.RegisterGradient(rnd_name)(grad)
@@ -23,25 +23,21 @@ def py_func(func, inp, Tout, stateful=True, name=None, grad=None):
     g = tf.get_default_graph()
 
     # Add gradient override map
-    with g.gradient_override_map({"PyFunc": rnd_name, "PyFuncStateless": rnd_name}):
+    with g.gradient_override_map({"ParamSelector": rnd_name, "ParamSelectorStateless": rnd_name}):
         return tf.py_func(func, inp, Tout, stateful=stateful, name=name)
 
 
 
-def my_identity_func(action, range_min, range_max):
+def my_identity_func(action, select_vec):
 	return action
 
 
 # @tf.RegisterGradient("MyIdentity")
 def _custom_identity_grad(op, grad):
 	action = op.inputs[0]
-	range_min = op.inputs[1]
-	range_max = op.inputs[2]
-
-	return tf.where( grad>0,
-                tf.multiply(grad, (range_max-action)/(range_max - range_min)),
-                tf.multiply(grad, (action- range_min)/(range_max - range_min))
-                ), tf.constant(0.), tf.constant(0.)
+	select_vec = op.inputs[1]
+	return tf.multiply(grad, select_vec), tf.zeros_like(grad)
+                
 
 if __name__ == "__main__":
 	with tf.Session() as sess:

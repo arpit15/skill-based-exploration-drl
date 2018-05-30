@@ -79,10 +79,10 @@ class EpsilonNormalParameterizedActionNoise(ActionNoise):
             action = np.concatenate((discrete_actions_prob, continuous_actions))
             return action
         else:
-            continuous_actions = np.random.uniform(-1. , 1., size= action.size - self.discrete_actions_dim)
             discrete_actions_prob = np.zeros((self.discrete_actions_dim,))
             chosen_action = np.random.choice(self.discrete_actions_dim)
             discrete_actions_prob[chosen_action] = 1.0
+            continuous_actions = np.random.uniform(-1. , 1., size= action.size - self.discrete_actions_dim)
             action = np.concatenate((discrete_actions_prob, continuous_actions))
             return action
 

@@ -56,6 +56,9 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     tf.reset_default_graph()
     ## NOTE: do tf things after this line
 
+    if kwargs['select_action']:
+        assert kwargs['skillset'], 'Skillset should be given for selecting action'
+
     # importing the current skill configs
     if kwargs['skillset']:
         # import HER.skills.set2 as skillset_file
@@ -164,17 +167,18 @@ def parse_args():
     parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=True)
-    boolean_flag(parser, 'invert-grad', default=False)
     
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
-    parser.add_argument('--skillset', type=str, default='set10')
+    parser.add_argument('--skillset', type=str, default='set13')
     parser.add_argument('--commit-for', type=int, default=1)
 
     boolean_flag(parser, 'look-ahead', default=True)
     parser.add_argument('--exploration-final-eps', type=float, default=0.001)
     parser.add_argument('--num-samples', type=int, default=5)
+
+    boolean_flag(parser, 'select-action', default=True)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them

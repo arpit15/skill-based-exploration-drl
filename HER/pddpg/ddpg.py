@@ -13,6 +13,8 @@ from HER.common.mpi_running_mean_std import RunningMeanStd
 from HER.ddpg.util import reduce_std, mpi_mean
 
 from HER.ddpg import custom_op as my_op
+from HER.pddpg import custom_op as grad_manipulation_op
+
 
 def normalize(x, stats):
     if stats is None:
@@ -56,13 +58,25 @@ def get_perturbed_actor_updates(actor, perturbed_actor, param_noise_stddev):
     return tf.group(*updates)
 
 
+def choose_actions(action, skillset, W_select, return_mask = False):
+    discrete_action = action[:, :skillset.len]
+    cts_parameters = action[:, skillset.len:]
+    selection_mask = tf.matmul(discrete_action, W_select)
+    selected_cts_params = tf.multiply(selection_mask, cts_parameters)
+    choose_actions_tf = tf.concat(values=[discrete_action, selected_cts_params], axis=-1)
+    if return_mask:
+        return choose_actions_tf, selection_mask
+    else:
+        return choose_actions_tf
+
+
 class DDPG(object):
     def __init__(self, actor, critic, memory, observation_shape, action_shape, param_noise=None, action_noise=None,
         gamma=0.99, tau=0.001, normalize_returns=False, enable_popart=False, normalize_observations=True,
         batch_size=128, observation_range=(-5., 5.), action_range=(-1., 1.), return_range=(-np.inf, np.inf),
         adaptive_param_noise=True, adaptive_param_noise_policy_threshold=.1,
         critic_l2_reg=0., actor_lr=1e-4, critic_lr=1e-3, clip_norm=None, reward_scale=1.,
-        inverting_grad = False, actor_reg=True):
+        actor_reg=True, select_action=False, skillset=None):
         
         logger.debug("Parameterized DDPG params")
         logger.debug(str(locals()))
@@ -75,6 +89,9 @@ class DDPG(object):
         self.actions = tf.placeholder(tf.float32, shape=(None,) + action_shape, name='actions')
         self.critic_target = tf.placeholder(tf.float32, shape=(None, 1), name='critic_target')
         self.param_noise_stddev = tf.placeholder(tf.float32, shape=(), name='param_noise_stddev')
+
+        if select_action:
+            self.temperature = tf.placeholder(tf.float32, shape=(), name = 'temperature')
 
         # Parameters.
         self.gamma = gamma
@@ -97,7 +114,7 @@ class DDPG(object):
         self.batch_size = batch_size
         self.stats_sample = None
         self.critic_l2_reg = critic_l2_reg
-        self.inverting_grad = inverting_grad
+        self.select_action = select_action
         self.actor_reg = actor_reg
 
         # Observation normalization.
@@ -118,6 +135,19 @@ class DDPG(object):
         else:
             self.ret_rms = None
 
+        # action selection constant
+        if self.select_action:
+            self.skillset = skillset
+            W_select = np.zeros((skillset.len, skillset.num_params))
+            for i in range(skillset.len):
+                starting_idx = skillset.params_start_idx[i]
+                ending_idx = starting_idx + skillset.skillset[i].num_params
+                W_select[i, starting_idx:ending_idx] = 1.
+
+            print("Selection matrix:%r"%W_select)
+            self.W_select = tf.constant(W_select, dtype= tf.float32, name="selection_mat")
+            
+
         # Create target networks.
         target_actor = copy(actor)
         target_actor.name = 'target_actor'
@@ -129,17 +159,26 @@ class DDPG(object):
         # Create networks and core TF parts that are shared across setup parts.
         self.normalized_critic_tf = critic(normalized_obs0, self.actions)
         self.critic_tf = denormalize(tf.clip_by_value(self.normalized_critic_tf, self.return_range[0], self.return_range[1]), self.ret_rms)
-        Q_obs1 = denormalize(target_critic(normalized_obs1, target_actor(normalized_obs1)), self.ret_rms)
+        if self.select_action:
+            Q_obs1 = denormalize(target_critic(normalized_obs1, choose_actions(target_actor(normalized_obs1), skillset, self.W_select)), self.ret_rms)
+        else:
+            Q_obs1 = denormalize(target_critic(normalized_obs1, target_actor(normalized_obs1)), self.ret_rms)
+        
         self.target_Q = self.rewards + (1. - self.terminals1) * gamma * Q_obs1
 
 
         # clip the target Q value
         self.target_Q = tf.clip_by_value(self.target_Q, -1/(1- gamma), 0)
         
-        self.actor_tf = actor(normalized_obs0)
-        if inverting_grad:
-            actor_tf_clone_with_invert_grad = my_op.py_func(my_op.my_identity_func, [self.actor_tf, -1., 1.], self.actor_tf.dtype, name="MyIdentity", grad=my_op._custom_identity_grad)
-            self.actor_tf = tf.reshape(actor_tf_clone_with_invert_grad, tf.shape(self.actor_tf)) 
+        if self.select_action:
+            self.actor_with_all_params_tf = actor(obs=normalized_obs0, temperature = self.temperature)
+            # create np and then convert to tf.constant
+            actor_tf_with_chosen_action, selection_mask = choose_actions(self.actor_with_all_params_tf, skillset, self.W_select, True)
+            actor_tf_clone_with_chosen_action = grad_manipulation_op.py_func(grad_manipulation_op.my_identity_func, [actor_tf_with_chosen_action, selection_mask], self.actor_with_all_params_tf.dtype, name="MyIdentity", grad=grad_manipulation_op._custom_identity_grad)
+            self.actor_tf = tf.reshape(actor_tf_clone_with_chosen_action, tf.shape(self.actor_with_all_params_tf)) 
+        else:
+            self.actor_tf = actor(normalized_obs0)
+        
         self.normalized_critic_with_actor_tf = critic(normalized_obs0, self.actor_tf, reuse=True)
         self.critic_with_actor_tf = denormalize(tf.clip_by_value(self.normalized_critic_with_actor_tf, self.return_range[0], self.return_range[1]), self.ret_rms)
         
@@ -275,22 +314,41 @@ class DDPG(object):
         self.stats_ops = ops
         self.stats_names = names
 
-    def pi(self, obs, apply_noise=True, compute_Q=True):
+    def pi(self, obs, apply_noise=True, compute_Q=True, temperature = 1.):
         if self.param_noise is not None and apply_noise:
             actor_tf = self.perturbed_actor_tf
+        elif self.action_noise is not None and apply_noise and self.select_action:
+            actor_tf = self.actor_with_all_params_tf
         else:
             actor_tf = self.actor_tf
         feed_dict = {self.obs0: [obs]}
+        if self.select_action:
+            feed_dict[self.temperature] = temperature
+
         if compute_Q:
             action, q = self.sess.run([actor_tf, self.critic_with_actor_tf], feed_dict=feed_dict)
         else:
             action = self.sess.run(actor_tf, feed_dict=feed_dict)
             q = None
         action = action.flatten()
+
         if self.action_noise is not None and apply_noise:
             action = self.action_noise(action)
 
+        if self.select_action:
+            # zero out the params of not taken actions
+            chosen_action = np.argmax(action[:self.skillset.len])
+
+            continuous_actions = np.zeros_like(action[self.skillset.len:])
+            starting_idx = self.skillset.params_start_idx[chosen_action]
+            ending_idx = starting_idx + self.skillset.skillset[chosen_action].num_params
+            continuous_actions[starting_idx:ending_idx] = action[self.skillset.len + starting_idx: 
+                                                                self.skillset.len + ending_idx]
+
+            action[self.skillset.len:] = continuous_actions.copy()
+
         action = np.clip(action, self.action_range[0], self.action_range[1])
+        
         return action, q
 
     def store_transition(self, obs0, action, reward, obs1, terminal1):
@@ -299,7 +357,7 @@ class DDPG(object):
         if self.normalize_observations:
             self.obs_rms.update(np.array([obs0]))
 
-    def train(self, summary_var):
+    def train(self, summary_var, temperature = 1.):
         # Get a batch.
         batch = self.memory.sample(batch_size=self.batch_size)
 
@@ -333,7 +391,7 @@ class DDPG(object):
 
         # Get all gradients and perform a synced update.
         ops = [summary_var, self.actor_grads, self.actor_loss, self.critic_grads, self.critic_loss, self.target_Q]
-        current_summary, actor_grads, actor_loss, critic_grads, critic_loss, _ = self.sess.run(ops, feed_dict={
+        feed_dict={
             self.obs0: batch['obs0'],
             self.actions: batch['actions'],
             self.critic_target: target_Q,
@@ -341,12 +399,15 @@ class DDPG(object):
             self.obs1: batch['obs1'],
             self.rewards: batch['rewards'],
             self.terminals1: batch['terminals1'].astype('float32'),
-        })
+        }
+
+        if self.select_action:
+            feed_dict.update({self.temperature: temperature})
+
+        current_summary, actor_grads, actor_loss, critic_grads, critic_loss, _ = self.sess.run(ops, feed_dict = feed_dict)
         self.actor_optimizer.update(actor_grads, stepsize=self.actor_lr)
         self.critic_optimizer.update(critic_grads, stepsize=self.critic_lr)
 
-        # from ipdb import set_trace
-        # set_trace()
         return critic_loss, actor_loss, current_summary
 
     def initialize(self, sess):
@@ -359,15 +420,22 @@ class DDPG(object):
     def update_target_net(self):
         self.sess.run(self.target_soft_updates)
 
-    def get_stats(self):
+    def get_stats(self, temperature = 1.0):
+
         if self.stats_sample is None:
             # Get a sample and keep that fixed for all further computations.
             # This allows us to estimate the change in value for the same set of inputs.
             self.stats_sample = self.memory.sample(batch_size=self.batch_size)
-        values = self.sess.run(self.stats_ops, feed_dict={
+
+        feed_dict={
             self.obs0: self.stats_sample['obs0'],
             self.actions: self.stats_sample['actions'],
-        })
+        }
+
+        if self.select_action:
+            feed_dict[self.temperature] = temperature
+
+        values = self.sess.run(self.stats_ops, feed_dict=feed_dict)
 
         names = self.stats_names[:]
         assert len(names) == len(values)
