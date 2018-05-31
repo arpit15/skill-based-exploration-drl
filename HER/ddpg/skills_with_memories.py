@@ -122,7 +122,7 @@ class DDPGSkill(object):
         if termination: 
             self.termination = termination
         else:
-            self.termination = lambda x,y : False
+            self.termination = lambda x,y: False
 
         # funcs
         self.get_action = action_func if action_func is not None else mirror
