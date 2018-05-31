@@ -114,7 +114,7 @@ def test(env, render_eval, reward_scale, param_noise, actor, critic,
                             eval_env.render()
                             sleep(0.1)
 
-                        if eval_done or my_skill_set.termination(eval_skill_new_obs, eval_primitive_id):
+                        if eval_done or my_skill_set.termination(eval_skill_new_obs, eval_primitive_id, primitive_params = eval_paction[my_skill_set.len:]):
                             break
 
                     eval_new_obs = eval_skill_new_obs
