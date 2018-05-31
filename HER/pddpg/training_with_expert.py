@@ -53,6 +53,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     
     if kwargs['look_ahead']:
         look_ahead = True
+        exploration = LinearSchedule(schedule_timesteps=int(nb_epochs * nb_epoch_cycles),
+                                     initial_p=1.0,
+                                     final_p=kwargs['exploration_final_eps'])
         
     else:
         look_ahead = False
@@ -191,21 +194,36 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                     # Predict next action.
                     # exploration check
-                    if kwargs['look_ahead']:
+                    if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*nb_epoch_cycles + cycle)):
                         goal_param = (obs[-3:]).tolist()
                         goal_param[0] = (goal_param[0]- 0.45)/0.1 - 1
                         goal_param[1] = (goal_param[1] - 0.15)/0.15 - 1
                         goal_param[2] = (goal_param[2] - 0.03)/0.035 -1
                         paction = np.array([0,1,0] + [0.]*3 + goal_param + [0.])
+                        on_policy = False
                     else:
                         paction, _ = agent.pi(obs, apply_noise=True, compute_Q=True)
+                        on_policy = True
                     
                     if(my_skill_set):
                         ## break actions into primitives and their params    
                         primitives_prob = paction[:kwargs['my_skill_set'].len]
                         primitive_id = np.argmax(primitives_prob)
 
-                        # print("skill chosen", primitive_id)
+                        if on_policy:
+                            x,y,z=paction[6:9]
+                            x = 0.45 + (x+1)*0.1
+                            y = 0.15 + (y+1)*0.15
+                            z = 0.03 + (z+1)*0.035
+                            # x = (x-0.45)/0.1 - 1
+                            # y = (y-0.15)/0.15 - 1
+                            # z = (z-0.03)/0.035 - 1
+                            params = np.array([x,y,z])
+                            if primitive_id==1:
+                                print("skill chosen:%d, transfer params:%r, orig params:%r"%(primitive_id, params, paction[6:9]))
+                            else:
+                                print("skill chosen:%d"%(primitive_id))
+
                         r = 0.
                         skill_obs = obs.copy()
 
@@ -215,7 +233,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         for _ in range(kwargs['commit_for']):
                             action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=paction[my_skill_set.len:])
                             # Execute next action.
-                            if rank == 0 and render:
+                            if rank == 0 and render and on_policy:
                                 sleep(0.1)
                                 env.render()
                             assert max_action.shape == action.shape
@@ -246,6 +264,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Book-keeping.
                     epoch_actions.append(paction)
                     agent.store_transition(obs, paction, r, new_obs, done)
+                    if on_policy:
+                        print("reward on policy:%.4f"%r)
 
                     # storing info for hindsight
                     if kwargs['her']:
@@ -382,7 +402,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 if param_noise is not None:
                     combined_stats['train/param_noise_distance'] = normal_mean(epoch_adaptive_distances)
                 
-                # if kwargs['look_ahead']: combined_stats['train/exploration'] = exploration.value(epoch*nb_epoch_cycles + cycle)
+                if kwargs['look_ahead']: combined_stats['train/exploration'] = exploration.value(epoch*nb_epoch_cycles + cycle)
                 
                 # Evaluation statistics.
                 if eval_env is not None:
