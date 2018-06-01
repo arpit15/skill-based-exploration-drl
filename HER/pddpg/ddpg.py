@@ -142,7 +142,7 @@ class DDPG(object):
             W_select = np.zeros((skillset.len, skillset.num_params + skillset.len))
             W_select[:skillset.len, :skillset.len] = 1.
             for i in range(skillset.len):
-                starting_idx = skillset.params_start_idx[i]
+                starting_idx = skillset.params_start_idx[i] + skillset.len
                 ending_idx = starting_idx + skillset.skillset[i].num_params
                 W_select[i, starting_idx:ending_idx] = 1.
 
