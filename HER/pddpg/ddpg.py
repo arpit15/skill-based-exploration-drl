@@ -12,10 +12,6 @@ import HER.common.tf_util as U
 from HER.common.mpi_running_mean_std import RunningMeanStd
 from HER.ddpg.util import reduce_std, mpi_mean
 
-from HER.ddpg import custom_op as my_op
-from HER.pddpg import custom_op as grad_manipulation_op
-
-
 def normalize(x, stats):
     if stats is None:
         return x
@@ -174,9 +170,13 @@ class DDPG(object):
         
         if self.select_action:
             self.actor_with_all_params_tf = actor(obs=normalized_obs0, temperature = self.temperature)
+            
             # create np and then convert to tf.constant
-            _, selection_mask = choose_actions(self.actor_with_all_params_tf, skillset, self.W_select, True)
-            actor_tf_clone_with_chosen_action = grad_manipulation_op.py_func(grad_manipulation_op.my_identity_func, [self.actor_with_all_params_tf, selection_mask], self.actor_with_all_params_tf.dtype, name="MyIdentity", grad=grad_manipulation_op._custom_identity_grad)
+            # _, selection_mask = choose_actions(self.actor_with_all_params_tf, skillset, self.W_select, True)
+            # actor_tf_clone_with_chosen_action = grad_manipulation_op.py_func(grad_manipulation_op.my_identity_func, [self.actor_with_all_params_tf, selection_mask], self.actor_with_all_params_tf.dtype, name="MyIdentity", grad=grad_manipulation_op._custom_identity_grad)
+            
+            # in backward pass discrete action for selection will be used as obtained using forward run
+            actor_tf_clone_with_chosen_action = choose_actions(self.actor_with_all_params_tf, skillset, self.W_select, False)
             self.actor_tf = tf.reshape(actor_tf_clone_with_chosen_action, tf.shape(self.actor_with_all_params_tf)) 
         else:
             self.actor_tf = actor(normalized_obs0)

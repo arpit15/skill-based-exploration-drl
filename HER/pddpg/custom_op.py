@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
         c = tf.constant([[-2.0, 0.5]])
         s = tf.constant([[1.0, 0.0]])
+        s3 = -tf.reduce_mean(tf.multiply(c,s))
 
         s1 = py_func(my_identity_func, [c, s], c.dtype, name="MyIdentity", grad=_custom_identity_grad)
         s2 = -tf.reduce_mean(s1)
@@ -53,6 +54,7 @@ if __name__ == "__main__":
         dels1 = tf.gradients(s2, s1)[0]
         dels = tf.gradients(s2, s)[0]
         delc = tf.gradients(s2, c)[0]
+        dels3 = tf.gradients(s3,c)[0]
 
         init = tf.global_variables_initializer()
         sess.run(init)
@@ -70,3 +72,6 @@ if __name__ == "__main__":
         
         # expected output : [[-0.5 -0.]]
         print(delc.eval())
+        
+        # expected output : [[-0.5 -0.]]
+        print(dels3.eval())

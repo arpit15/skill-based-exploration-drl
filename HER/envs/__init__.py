@@ -19,7 +19,7 @@ register(
 register(
     id='picknmove-v5',
     entry_point='HER.envs.picknmove_withextras_singlestart:BaxterEnv',
-    kwargs={'max_len':50}
+    kwargs={'max_len':10}
 )
 
 register(
