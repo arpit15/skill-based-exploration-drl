@@ -127,7 +127,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         ## restore current controller
         if kwargs["restore_dir"] is not None:
             restore_dir = osp.join(kwargs["restore_dir"], "model")
-            if (restore_dir is not None) and rank==0:
+            if (restore_dir is not None):
                 print('Restore path : ',restore_dir)
                 model_checkpoint_path = read_checkpoint_local(restore_dir)
                 if model_checkpoint_path:
