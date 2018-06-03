@@ -27,11 +27,11 @@ class Planning_with_memories:
 		
 	def get_curr_paction(self, skill_num, params):
 		paction = np.zeros((self.skillset.len + self.skillset.num_params, ))
-		paction[chosen_skill] = 1.0
-		starting_idx = self.skillset.params_start_idx[chosen_skill]
-		ending_idx = starting_idx + chosen_skill_params.size
+		paction[skill_num] = 1.0
+		starting_idx = self.skillset.params_start_idx[skill_num]
+		ending_idx = starting_idx + params.size
 
-		paction[ self.skillset.len + starting_idx: self.skillset.len + ending_idx] = chosen_skill_params
+		paction[ self.skillset.len + starting_idx: self.skillset.len + ending_idx] = params
 		return paction
 		
 
@@ -124,9 +124,9 @@ class Planning_with_memories:
 		info['plan'] = list()
 		while(curr_node.child is not None):
 			curr_state = curr_node.state
-			paction = self.get_curr_paction(curr_node.child.skill_num, curr_node.child.parms)
+			paction = self.get_curr_paction(curr_node.child.skill_num, curr_node.child.params)
 			next_state = curr_node.child.state
-			reward = self.calc_reward(next_state)
+			reward = self.env.calc_reward(next_state)
 			done = (reward==0)
 			info['plan'].append((curr_state, paction, reward, next_state, done))
 
