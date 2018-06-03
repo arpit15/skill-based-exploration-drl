@@ -53,10 +53,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     
     if kwargs['look_ahead']:
         look_ahead = True
+        look_ahead_planner = Planning_with_memories(skillset=kwargs['my_skill_set'], 
+                                                        env=env, 
+                                                        num_samples= kwargs['num_samples'])
         exploration = LinearSchedule(schedule_timesteps=int(nb_epochs * nb_epoch_cycles),
                                      initial_p=1.0,
                                      final_p=kwargs['exploration_final_eps'])
-        
     else:
         look_ahead = False
 
@@ -125,7 +127,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         ## restore current controller
         if kwargs["restore_dir"] is not None:
             restore_dir = osp.join(kwargs["restore_dir"], "model")
-            if (restore_dir is not None) and rank==0:
+            if (restore_dir is not None):
                 print('Restore path : ',restore_dir)
                 model_checkpoint_path = read_checkpoint_local(restore_dir)
                 if model_checkpoint_path:
@@ -161,6 +163,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         episode_reward = 0.
         episode_step = 0
         
+        # planner containers
+        curr_plan = list()
 
         ## containers for hierarchical hindsight
         if kwargs["her"]: 
@@ -193,69 +197,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # print(rank, t_rollout)
 
                     # Predict next action.
-                    # exploration check
-                    if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*nb_epoch_cycles + cycle)):
-                        goal_param = (obs[-3:]).tolist()
-                        goal_param[0] = (goal_param[0]- 0.45)/0.1 - 1
-                        goal_param[1] = (goal_param[1] - 0.15)/0.15 - 1
-                        goal_param[2] = (goal_param[2] - 0.03)/0.035 -1
-                        paction = np.array([0,1,0] + [0.]*3 + goal_param + [0.])
-                        on_policy = False
-                    else:
-                        paction, _ = agent.pi(obs, apply_noise=True, compute_Q=True)
-                        on_policy = True
+                    if not curr_plan:
+                        paction, planner_info = look_ahead_planner.create_plan(obs)
+                        curr_plan = list(planner_info['plan'])
+
+                    obs, paction, r, new_obs, done = curr_plan.pop(0)
+
                     
-                    if(my_skill_set):
-                        ## break actions into primitives and their params    
-                        primitives_prob = paction[:kwargs['my_skill_set'].len]
-                        primitive_id = np.argmax(primitives_prob)
-
-                        if on_policy:
-                            x,y,z=paction[6:9]
-                            x = 0.45 + (x+1)*0.1
-                            y = 0.15 + (y+1)*0.15
-                            z = 0.03 + (z+1)*0.035
-                            # x = (x-0.45)/0.1 - 1
-                            # y = (y-0.15)/0.15 - 1
-                            # z = (z-0.03)/0.035 - 1
-                            params = np.array([x,y,z])
-                            if primitive_id==1:
-                                print("skill chosen:%d, transfer params:%r, orig params:%r"%(primitive_id, params, paction[6:9]))
-                            else:
-                                print("skill chosen:%d"%(primitive_id))
-
-                        r = 0.
-                        skill_obs = obs.copy()
-
-                        if kwargs['her']:
-                            curr_sub_states = [skill_obs.copy()]
-
-                        for _ in range(kwargs['commit_for']):
-                            action = my_skill_set.pi(primitive_id=primitive_id, obs = skill_obs.copy(), primitive_params=paction[my_skill_set.len:])
-                            # Execute next action.
-                            if rank == 0 and render and on_policy:
-                                sleep(0.1)
-                                env.render()
-                            assert max_action.shape == action.shape
-                            new_obs, skill_r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
-                            r += skill_r
-
-                            if kwargs['her']:
-                                curr_sub_states.append(new_obs.copy())
-                             
-                            skill_obs = new_obs
-                            if done or my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:]):
-                                break
-                    else:
-                        action = paction
-                        # Execute next action.
-                        if rank == 0 and render:
-                            env.render()
-                        assert max_action.shape == action.shape
-                        new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
-                    
-                    assert action.shape == env.action_space.shape
-
                     t += 1
                     
                     episode_reward += r
@@ -264,8 +212,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Book-keeping.
                     epoch_actions.append(paction)
                     agent.store_transition(obs, paction, r, new_obs, done)
-                    if on_policy:
-                        print("reward on policy:%.4f"%r)
 
                     # storing info for hindsight
                     if kwargs['her']:
@@ -331,7 +277,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             #print("Evaluating!")
             # Evaluate after training is done.
             if (eval_env is not None) and rank==0:
-                for eval_episode_num in range(nb_eval_episodes):
+                for _ in range(nb_eval_episodes):
                     eval_episode_reward = 0.
                     eval_obs = eval_env.reset()
                     eval_obs_start = eval_obs.copy()
@@ -344,7 +290,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             eval_primitives_prob = eval_paction[:kwargs['my_skill_set'].len]
                             eval_primitive_id = np.argmax(eval_primitives_prob)
                             
-                            # print("eval epi:%d, skill chosen:%d"%(eval_episode_num, eval_primitive_id))
                             eval_r = 0.
                             eval_skill_obs = eval_obs.copy()
                             for _ in range(kwargs['commit_for']):
@@ -362,8 +307,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                                     break
 
                                 eval_skill_obs = eval_new_obs
-
-                            # sleep(1)
 
                         else:
                             eval_action, _ = eval_paction, eval_pq

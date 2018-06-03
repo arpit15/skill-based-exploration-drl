@@ -20,4 +20,14 @@ class BaxterEnv(picknmove_withextras.BaxterEnv):
         visible_obs = np.concatenate((grip_pos, obj_pos, obj_rel_pos, gripper_state, gripper_vel, target_pos))
 
         return visible_obs
+
+
+    def calc_dense_reward(self, state):
+        # this functions calculates reward on the current state
+        gripper_pose = state[:self.space_dim]
+        obj_pose = state[self.space_dim:2*self.space_dim]
+        target_pose = state[-self.space_dim:] 
+        
+        ## reward function definition
+        return - np.linalg.norm(obj_pose- target_pose)
     

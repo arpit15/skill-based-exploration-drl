@@ -8,6 +8,15 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         super(BaxterEnv, self).__init__(max_len=max_len, test=test, obs_dim=obs_dim)
 
     
+    def calc_dense_reward(self, state):
+        # this functions calculates reward on the current state
+        gripper_pose = state[:self.space_dim]
+        obj_pose = state[self.space_dim:2*self.space_dim]
+        target_pose = state[-self.space_dim:] 
+        
+        ## reward function definition
+        return - np.linalg.norm(obj_pose- target_pose)
+        
     def reset_model(self):
         # randomize gripper loc
 
