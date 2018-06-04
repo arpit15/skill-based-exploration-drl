@@ -93,7 +93,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
         start_time = time.time()
     training.train(env=env, eval_env=eval_env, param_noise=param_noise,
-        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, **kwargs)
+        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, nb_eval_episodes= kwargs['nb_eval_episodes'] , **kwargs)
     env.close()
     if eval_env is not None:
         eval_env.close()
@@ -122,7 +122,7 @@ def parse_args():
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
     parser.add_argument('--nb-epoch-cycles', type=int, default=20)
     parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
+    parser.add_argument('--nb-eval-episodes', type=int, default=20) 
     parser.add_argument('--nb-rollout-steps', type=int, default=800)  # per epoch cycle and MPI worker
     parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
     parser.add_argument('--num-timesteps', type=int, default=None)
@@ -141,6 +141,7 @@ def parse_args():
 
     # look ahead
     boolean_flag(parser, 'look-ahead', default=True)
+    parser.add_argument('--commit-for', type=int, default=10)
     parser.add_argument('--exploration-final-eps', type=float, default=0.001)
     parser.add_argument('--num-samples', type=int, default=5)
     parser.add_argument('--skillset', type=str, default='set13')

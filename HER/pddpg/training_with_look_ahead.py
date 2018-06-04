@@ -2,7 +2,7 @@ import os
 import time
 from collections import deque
 import pickle
-from time import sleep 
+from time import sleep
 
 from HER.pddpg.ddpg import DDPG
 from HER.pddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
@@ -197,7 +197,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Predict next action.
                     # exploration check
                     if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*nb_epoch_cycles + cycle)):
+                        # start = time.time()
                         paction, planner_info = look_ahead_planner.create_plan(obs)
+                        # print("time for planning:%.4f"%(time.time()-start))
+                        # exit()
                     else:
                         paction, _ = agent.pi(obs, apply_noise=True, compute_Q=True)
                     

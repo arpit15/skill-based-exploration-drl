@@ -22,7 +22,7 @@ from ipdb import set_trace
 
 def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, param_noise, actor, critic,
     normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
-    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
+    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, batch_size, memory,
     tau=0.05, eval_env=None, param_noise_adaption_interval=50, nb_eval_episodes=20, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
 
@@ -148,6 +148,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
         # skill 
         skill_done = True
+        num_skill_steps = 0
         paction = None
 
         epoch = 0
@@ -190,11 +191,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         if skill_done:
                             paction, planner_info = look_ahead_planner.create_plan(obs)
                             skill_done = False
+                            num_skill_steps = 0
                         
                         primitives_prob = paction[:my_skill_set.len]
                         primitive_id = np.argmax(primitives_prob)
                         action = my_skill_set.pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[my_skill_set.len:])
-                            
+                        num_skill_steps += 1
                     else:
                         action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
                     
@@ -204,7 +206,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     
                     new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     
-                    if kwargs['look_ahead'] and my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:]):
+                    if kwargs['look_ahead'] and (num_skill_steps == kwargs['commit_for'] or 
+                                        my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:])):
                         skill_done = True
 
                     t += 1

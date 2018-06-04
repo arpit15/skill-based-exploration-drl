@@ -74,4 +74,13 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         reward_reaching_goal = (np.linalg.norm(obj_pose[:2]- target_pose[:2]) < 0.065) and ((obj_pose[2]- target_pose[2]) < 0.02)
         total_reward = -1*(not reward_reaching_goal)
         return total_reward
+
+    def calc_dense_reward(self, state):
+        # this functions calculates reward on the current state
+        gripper_pose = state[:self.space_dim]
+        obj_pose = state[self.space_dim:2*self.space_dim]
+        target_pose = state[-self.space_dim:] 
+        
+        ## reward function definition
+        return - np.linalg.norm(obj_pose- target_pose)
     
