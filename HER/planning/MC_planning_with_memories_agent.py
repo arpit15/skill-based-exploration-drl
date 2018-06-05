@@ -35,7 +35,7 @@ class Planning_with_memories:
 		return paction
 		
 
-	def create_plan(self, state, height = None):
+	def create_plan(self, state, height = None, agent=None):
 		
 		info = dict()
 		
@@ -45,7 +45,7 @@ class Planning_with_memories:
 		if height is None:
 			# root call
 			height = self.max_height
-			openlist.append(Node(state=state.copy(), height=height, prob=1.))
+			openlist.append(Node(state=state, height=height, prob=1.))
 
 		while(openlist):
 			curr_node = openlist.pop(0)
@@ -57,11 +57,21 @@ class Planning_with_memories:
 
 			# create child node
 			# sample skills
-			sampled_skills = np.random.choice(self.skillset.len, size = self.num_samples)
+			# sampled_skills = np.random.choice(self.skillset.len, size = self.num_samples)
 			# print(sampled_skills)
-			for node_id, sampled_skill_num in enumerate(sampled_skills):
-				sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
+			# for node_id, sampled_skill_num in enumerate(sampled_skills):
+			for node_id in range(self.num_samples):
+				paction, _ = agent.pi(obs=curr_node.state, apply_noise=True)
+				## break actions into primitives and their params    
+                primitives_prob = paction[:self.skillset.len]
+                primitive_id = np.argmax(primitives_prob)
+                starting_idx = self.skillset.len + self.skillset.params_start_idx[primitive_id]
+                ending_idx = (starting_idx+self.skillset.skillset[primitive_id].num_params)
 
+                # final vars to take
+                sampled_skill_num = int(primitive_id)
+                sampled_params = paction[starting_idx: ending_idx].copy()
+				
 				# print("skill:%d, goal"%sampled_skill_num, sampled_params)
 				
 				critic_value = self.skillset.get_critic_value(primitive_id=sampled_skill_num, obs = curr_node.state, primitive_params = sampled_params)
@@ -75,7 +85,7 @@ class Planning_with_memories:
 				else:
 					child_reward = 0.
 
-				new_node = Node(state = next_state, 
+				new_node = Node(state = next_state.copy(), 
 								value= critic_value + curr_node.value, 
 								reward = child_reward + curr_node.reward, 
 								skill_num = sampled_skill_num, params = sampled_params, 
