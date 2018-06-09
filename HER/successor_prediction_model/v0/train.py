@@ -28,6 +28,8 @@ def get_home_path(path):
 
 def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False):
     
+    trajectories_data = list()
+
     log_dir = osp.expanduser(log_dir)
     # get data for training and dump into csv
     csv_filename = osp.join(log_dir, "%s.csv"%env_id)
@@ -40,6 +42,8 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
     # dump the data if the file doesn't exists
     with open(csv_filename, 'w',newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
+
+        curr_episode_traj = list()
 
         episode = 0
         while(episode < num_ep):
@@ -55,8 +59,12 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
                 if render:
                     env.render()
                 action = actor.pi(ob, None)
-                ob, _, done, info = env.step(action)
+                next_ob, _, done, info = env.step(action)
                 i += 1
+
+            curr_episode_traj.append((ob[-3:],action, next_ob[-3:]))
+
+            ob = next_ob
 
             if (info['done']!= "goal reached"):
                 print("didn't succeed")
@@ -65,7 +73,11 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
             episode += 1
             #starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
             writer.writerow(np.concatenate((starting_ob, ob[:-3])).tolist())
+            trajectories_data.append(curr_episode_traj)
 
+
+    np.save(osp.join(log_dir, "%s.npy"%env_id), np.array(trajectories_data))
+    
     print("DATA logging done!")
     # data input generator
     return csv_filename
