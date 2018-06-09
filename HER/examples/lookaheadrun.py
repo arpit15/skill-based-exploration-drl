@@ -93,7 +93,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
         start_time = time.time()
     training.train(env=env, eval_env=eval_env, param_noise=param_noise,
-        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, nb_eval_episodes= kwargs['nb_eval_episodes'] , **kwargs)
+        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set, **kwargs)
     env.close()
     if eval_env is not None:
         eval_env.close()
