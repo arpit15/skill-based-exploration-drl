@@ -118,11 +118,12 @@ class DDPGSkill(object):
         self.ending_state = self.memory[:, observation_shape[0]:]
 
         # load the trajectories
-        print("searching for traj in %s"%osp.join(self.restore_path, 'traj'))
-        memory_filename = glob.glob(osp.join(self.restore_path, 'traj' , '*.csv'))[0]
+        print("traj in %s"%osp.join(self.restore_path, 'traj'))
+        self.traj_dir_path = osp.join(self.restore_path, 'traj')
+        # memory_filename = glob.glob(osp.join(self.restore_path, 'traj' , '*.csv'))[0]
 
         # 
-        self.trajectories = np.loadtxt(traj_filename, delimiter=',')
+        # self.trajectories = np.loadtxt(traj_filename, delimiter=',')
 
         if next_state_query_idx is not None:
             self.next_state_query_idx = next_state_query_idx
@@ -157,7 +158,9 @@ class DDPGSkill(object):
         
     
     def get_traj(self, id_in_memory, obs):
-        curr_traj = self.trajectories[id_in_memory]
+        curr_traj_path = osp.join(self.traj_dir_path, '%d.csv'%id_in_memory)
+        curr_traj = np.load(curr_traj_path)
+        # curr_traj = self.trajectories[id_in_memory]
 
         # append target
         target = obs[-3:]

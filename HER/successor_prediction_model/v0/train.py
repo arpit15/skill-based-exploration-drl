@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from time import sleep
 
 from HER.common.misc_util import (
     set_global_seeds,
@@ -28,7 +29,7 @@ def get_home_path(path):
 
 def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False):
     
-    trajectories_data = list()
+    # trajectories_data = list()
 
     log_dir = osp.expanduser(log_dir)
     # get data for training and dump into csv
@@ -62,18 +63,25 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
                 next_ob, _, done, info = env.step(action)
                 i += 1
 
-            curr_episode_traj.append((ob[-3:],action, next_ob[-3:]))
+                curr_episode_traj.append((ob[-3:],action, next_ob[-3:]))
 
-            ob = next_ob
+                ob = next_ob
 
             if (info['done']!= "goal reached"):
+                for _ in range(100):
+                    sleep(0.1)
+                    env.render()
                 print("didn't succeed")
                 continue
 
-            episode += 1
+            
             #starting_ob = np.concatenate((starting_ob[:6], starting_ob[-3:]))
             writer.writerow(np.concatenate((starting_ob, ob[:-3])).tolist())
-            trajectories_data.append(curr_episode_traj)
+
+            np.save(osp.join(log_dir, "%s/%d.npy"%(env_id, episode)), np.array(curr_episode_traj))
+
+            episode += 1
+            # trajectories_data.append(curr_episode_traj)
 
 
     np.save(osp.join(log_dir, "%s.npy"%env_id), np.array(trajectories_data))
