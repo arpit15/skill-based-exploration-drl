@@ -172,9 +172,9 @@ class DDPGSkill(object):
             s_n_full = np.concatenate((s_n, target))
             s_n_full = self.get_full_state(s_n_full, prev_obs = obs)
 
-            curr_traj[i] = [s_full,a,s_n_full]
+            a_full = self.get_action(a, obs)
 
-        print(self.skill_name)
+            curr_traj[i] = [s_full,a_full,s_n_full]
 
         return curr_traj
 
@@ -272,9 +272,6 @@ class DDPGSkill(object):
 
         # do Nearest neighbour 
         min_dist_idx = np.argmin( np.linalg.norm(self.starting_state_goal[:,self.next_state_query_idx] - skill_obs[self.next_state_query_idx], axis=1))
-        
-        # for debugging 
-        min_dist_idx = 10
 
         next_obs = self.ending_state[min_dist_idx].copy()
 
