@@ -175,7 +175,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
             for cycle in range(nb_epoch_cycles):
                 # print("cycle:%d"%cycle)
                 # Perform rollouts.
-                for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
+
+                t_rollout = 0
+                total_rollouts_required = int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())
+
+                while(t_rollout < total_rollouts_required):
+                # for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
                     
                     # Predict next action.
@@ -189,13 +194,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         
                         assert obs.shape[0] == env.observation_space.shape[0], 'obs shape is bad'
                         assert new_obs.shape[0] == env.observation_space.shape[0], 'new obs shape is bad'
-                        assert action.shape[0] == env.action_shape.shape[0], 'action shape is bad'
+                        # assert action.shape[0] == env.action_space.shape[0], 'action shape is bad'
                         
                         r = env.calc_reward(new_obs)
                         done = (r==0) or (episode_step>=env.max_num_steps)
 
                         t += 1
                         
+                        t_rollout += 1
                         episode_reward += r
                         episode_step += 1
 
@@ -264,10 +270,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         
                         writer_t.add_summary(current_summary, epoch*nb_epoch_cycles*nb_train_steps + cycle*nb_train_steps + t_train)
 
-                # print("Evaluating!")
-                # Evaluate.
-                
-                
+            
+            # print("Evaluating!")
+            # Evaluate.  
             if (eval_env is not None) and rank==0:
                 for _ in range(nb_eval_episodes):
                     eval_episode_reward = 0.

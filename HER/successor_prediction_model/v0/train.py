@@ -69,9 +69,6 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
                 ob = next_ob
 
             if (info['done']!= "goal reached"):
-                #for _ in range(100):
-                 #   sleep(0.1)
-                  #  env.render()
                 print("didn't succeed")
                 continue
 
