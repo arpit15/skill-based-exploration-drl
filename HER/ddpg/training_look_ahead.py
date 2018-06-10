@@ -9,7 +9,7 @@ from HER.ddpg.ddpg import DDPG
 from HER.ddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
 import HER.common.tf_util as U
 from HER.ddpg.util import read_checkpoint_local
-from HER.planning.MC_planning_with_memories import Planning_with_memories
+from HER.planning.MC_planning_with_memories_traj import Planning_with_memories
 from HER.common.schedules import LinearSchedule
 
 from HER import logger
@@ -25,6 +25,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, batch_size, memory,
     tau=0.05, eval_env=None, param_noise_adaption_interval=50, nb_eval_episodes=20, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
+
+    np.set_printoptions(precision=4)
 
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
     max_action = env.action_space.high
@@ -140,6 +142,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         agent.reset()
         obs = env.reset()
         
+        for _ in range(10):
+            env.render()
+            sleep(0.1)
+
         done = False
         episode_reward = 0.
         episode_step = 0
@@ -189,13 +195,17 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Predict next action.
                     if kwargs['look_ahead'] and (np.random.rand() < exploration.value(epoch*nb_epoch_cycles + cycle)):
                         if skill_done:
-                            paction, planner_info = look_ahead_planner.create_plan(obs)
+                            paction, planner_info = look_ahead_planner.create_plan(env, obs)
                             skill_done = False
                             num_skill_steps = 0
+                            print("skill:%d"%np.argmax(paction[:my_skill_set.len]))
+                            print(planner_info['sequence'])
+                            print(paction)
+                            set_trace()
                         
                         primitives_prob = paction[:my_skill_set.len]
                         primitive_id = np.argmax(primitives_prob)
-                        action = my_skill_set.pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[my_skill_set.len:])
+                        action = my_skill_set.pi(primitive_id=primitive_id, obs = obs.copy(), primitive_params=paction[my_skill_set.len:].copy())
                         num_skill_steps += 1
                     else:
                         action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
@@ -206,8 +216,23 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     
                     new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     
+                    # print("len of traj:%d, skill step:%d"%(len(planner_info["trajectories"]), num_skill_steps))
+                    # traj_idx = min(len(planner_info["trajectories"])-1, num_skill_steps)
+
+                    # print("start")
+                    # print(obs[[0,1,2,3,4,5,-3,-2,-1]])
+                    # print(planner_info['trajectories'][traj_idx][0][[0,1,2,3,4,5,-3,-2,-1]])
+
+                    # print("action")
+                    # print(action)
+                    # print(planner_info['trajectories'][traj_idx][1])
+
+                    # print("end")
+                    # print(new_obs[[0,1,2,3,4,5,-3,-2,-1]])
+                    # print(planner_info['trajectories'][traj_idx][2][[0,1,2,3,4,5,-3,-2,-1]])
+
                     if kwargs['look_ahead'] and (num_skill_steps == kwargs['commit_for'] or 
-                                        my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:])):
+                                        my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:].copy())):
                         skill_done = True
 
                     t += 1

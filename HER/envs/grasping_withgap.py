@@ -2,6 +2,7 @@ from HER.envs import reacher2d
 import numpy as np 
 from gym.envs.robotics.utils import mocap_set_action
 from gym.envs.robotics import rotations
+from time import sleep
 
 class BaxterEnv(reacher2d.BaxterEnv):
     
@@ -108,6 +109,25 @@ class BaxterEnv(reacher2d.BaxterEnv):
         self.data.ctrl[0] = (gap+1)*0.04
         self.data.ctrl[1] = -(gap+1)*0.04
         
+    def obj_grasped(self, ob):
+        # test if obj is grasped
+        assert ob.shape[0]==28, 'obj grasped test if only valid for 28 dim state space'
+        gap = ob[9]/0.04 - 1
+        self.close_gripper(gap=-1)
+        self.do_simulation(n_frames=2)
+
+        new_ob = self._get_obs()
+        new_gap = (new_ob[9] - new_ob[10])
+
+        # restore the old gap
+        self.close_gripper(gap=gap)
+        self.do_simulation(n_frames=2)
+
+        # print(new_gap)
+        return (new_gap > 1e-2)
+
+
+
     def step(self, action):
         
         self.num_step += 1

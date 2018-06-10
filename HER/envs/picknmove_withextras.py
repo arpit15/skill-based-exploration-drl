@@ -14,6 +14,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         obj_pose = state[self.space_dim:2*self.space_dim]
         target_pose = state[-self.space_dim:] 
         
+        # print(obj_pose, target_pose)
         ## reward function definition
         return - np.linalg.norm(obj_pose- target_pose)
         

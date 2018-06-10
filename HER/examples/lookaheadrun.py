@@ -7,7 +7,9 @@ from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
-from HER.ddpg.skills_with_memories import SkillSet
+# from HER.ddpg.skills_with_memories import SkillSet
+from HER.ddpg.skills_with_memories_traj import SkillSet
+
 import HER.ddpg.training_look_ahead as training
 from HER.ddpg.models import Actor, Critic
 from HER.ddpg.memory import Memory

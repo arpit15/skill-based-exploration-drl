@@ -53,12 +53,13 @@ if __name__ == "__main__":
                 
                 # action = np.array([(obj_x - ee_x)/0.05, (obj_y -ee_y)/0.05])
                 # action = [0.,0., 0.1,-1.]
-                action = env.action_space.sample()
+                # action = env.action_space.sample()
                 # action = [0.,0.,1.]
                 # for checking grasping
-                # action = [0., 0., 0.0, -1]
+                action = [0., 0., 0.0, -1]
                 
                 ob, reward, done, info = env.step(action)
+                print(ob[9]-ob[10])
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
                 # print( i, ob,action) 

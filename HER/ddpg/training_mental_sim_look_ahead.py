@@ -186,7 +186,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     # Predict next action.
                     if kwargs['mental_sim']:
                         if not done:
-                            _, planner_info = look_ahead_planner.create_plan(obs)
+                            _, planner_info = look_ahead_planner.create_plan(env, obs)
                        
 
                     # take the planner trajectories and do the rest of the stuff
@@ -221,6 +221,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     obs = new_obs
 
                     if done:
+                        print("reset")
                         # Episode done.
                         epoch_episode_rewards.append(episode_reward)
                         episode_rewards_history.append(episode_reward)
