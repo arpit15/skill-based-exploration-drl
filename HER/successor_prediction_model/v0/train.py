@@ -68,9 +68,9 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
                 ob = next_ob
 
             if (info['done']!= "goal reached"):
-                for _ in range(100):
-                    sleep(0.1)
-                    env.render()
+                #for _ in range(100):
+                 #   sleep(0.1)
+                  #  env.render()
                 print("didn't succeed")
                 continue
 
@@ -84,7 +84,7 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
             # trajectories_data.append(curr_episode_traj)
 
 
-    np.save(osp.join(log_dir, "%s.npy"%env_id), np.array(trajectories_data))
+    #np.save(osp.join(log_dir, "%s.npy"%env_id), np.array(trajectories_data))
     
     print("DATA logging done!")
     # data input generator
