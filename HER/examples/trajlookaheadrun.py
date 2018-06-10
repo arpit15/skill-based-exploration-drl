@@ -7,7 +7,7 @@ from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
-from HER.ddpg.skills_with_memories import SkillSet
+from HER.ddpg.skills_with_memories_traj import SkillSet
 import HER.ddpg.training_mental_sim_look_ahead as training
 from HER.ddpg.models import Actor, Critic
 from HER.ddpg.memory import Memory
@@ -77,7 +77,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     tf.reset_default_graph()
 
     # importing the current skill configs
-    if kwargs['look_ahead'] and kwargs['skillset']:
+    if kwargs['mental_sim'] and kwargs['skillset']:
         skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
         my_skill_set = SkillSet(skillset_file.skillset)
     else:

@@ -44,7 +44,7 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
     with open(csv_filename, 'w',newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
 
-        curr_episode_traj = list()
+        
 
         episode = 0
         while(episode < num_ep):
@@ -56,6 +56,7 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
             ob = starting_ob
             i = 0
             done = False
+            curr_episode_traj = list()
             while(not done and (i<commit_for)):
                 if render:
                     env.render()
@@ -63,7 +64,7 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
                 next_ob, _, done, info = env.step(action)
                 i += 1
 
-                curr_episode_traj.append((ob[-3:],action, next_ob[-3:]))
+                curr_episode_traj.append((ob[:-3],action, next_ob[:-3]))
 
                 ob = next_ob
 
@@ -84,7 +85,6 @@ def generate_data(env, env_id, log_dir, actor, num_ep, commit_for, render=False)
             # trajectories_data.append(curr_episode_traj)
 
 
-    #np.save(osp.join(log_dir, "%s.npy"%env_id), np.array(trajectories_data))
     
     print("DATA logging done!")
     # data input generator

@@ -137,9 +137,10 @@ class Planning_with_memories:
 
 			# create trajectory
 			curr_traj = self.skillset.get_traj_from_memory(curr_node.child.skill_num, curr_node.child.id_in_memory, curr_node.state)
+	
 			# first state should be replaced by the real state observed because memory retrieved state is approx
-			curr_traj[0] = (curr_state.copy(), curr_traj[0][1],curr_traj[0][2])
-			info['trajectory'].append(curr_traj)
+			curr_traj[0] = [curr_state.copy(), curr_traj[0][1],curr_traj[0][2]]
+			info['trajectories'].extend(curr_traj)
 
 			curr_node = curr_node.child
 
