@@ -158,20 +158,23 @@ class DDPGSkill(object):
         
     
     def get_traj(self, id_in_memory, obs):
-        curr_traj_path = osp.join(self.traj_dir_path, '%d.csv'%id_in_memory)
-        curr_traj = np.load(curr_traj_path)
+        curr_traj_path = osp.join(self.traj_dir_path, '%d.npy'%id_in_memory)
+        curr_traj = np.load(curr_traj_path).tolist()
         # curr_traj = self.trajectories[id_in_memory]
 
         # append target
         target = obs[-3:]
         # s, s_n doesn't have target
         for i, (s,a,s_n) in enumerate(curr_traj):
-            s = np.concatenate((s, target))
+            s_full = np.concatenate((s, target))
+            s_full = self.get_full_state(s_full, prev_obs = obs)
 
-            s_n = np.concatenate((s_n, target))
-            s_n = self.get_full_state(s_n, prev_obs = obs)
+            s_n_full = np.concatenate((s_n, target))
+            s_n_full = self.get_full_state(s_n_full, prev_obs = obs)
 
-            curr_traj[i] = (s,a,s_n)
+            curr_traj[i] = [s_full,a,s_n_full]
+
+        print(self.skill_name)
 
         return curr_traj
 
@@ -269,6 +272,10 @@ class DDPGSkill(object):
 
         # do Nearest neighbour 
         min_dist_idx = np.argmin( np.linalg.norm(self.starting_state_goal[:,self.next_state_query_idx] - skill_obs[self.next_state_query_idx], axis=1))
+        
+        # for debugging 
+        min_dist_idx = 10
+
         next_obs = self.ending_state[min_dist_idx].copy()
 
         # append target

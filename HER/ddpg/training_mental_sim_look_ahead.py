@@ -53,6 +53,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
     if kwargs['mental_sim']:
         mental_sim = True
+        look_ahead_planner = Planning_with_memories(skillset=kwargs['my_skill_set'], 
+                                                        env=env, 
+                                                        num_samples= kwargs['num_samples'])
     else:
         mental_sim = False
 
@@ -183,8 +186,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                     # take the planner trajectories and do the rest of the stuff
                     for (obs,action,new_obs) in planner_info['trajectories']:
+                        
+                        assert obs.shape[0] == env.observation_space.shape[0], 'obs shape is bad'
+                        assert new_obs.shape[0] == env.observation_space.shape[0], 'new obs shape is bad'
+                        assert action.shape[0] == env.action_shape.shape[0], 'action shape is bad'
+                        
                         r = env.calc_reward(new_obs)
-                        done = (r==0) or (episode_step>=env.max_num_steps):
+                        done = (r==0) or (episode_step>=env.max_num_steps)
 
                         t += 1
                         
