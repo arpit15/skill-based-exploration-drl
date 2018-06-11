@@ -17,6 +17,30 @@ register(
 
 # Baxter envs
 register(
+    id='putaoutb-v0',
+    entry_point='HER.envs.putaoutb_withextras:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='putaoutbt-v0',
+    entry_point='HER.envs.putaoutb_withextras:BaxterEnv',
+    kwargs={'max_len':50, 'test':True}
+)
+
+register(
+    id='putaonb-v0',
+    entry_point='HER.envs.putaonb_withextras:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='putaonbt-v0',
+    entry_point='HER.envs.putaonb_withextras:BaxterEnv',
+    kwargs={'max_len':50, 'test':True}
+)
+
+register(
     id='picknmove-v5',
     entry_point='HER.envs.picknmove_withextras_singlestart:BaxterEnv',
     kwargs={'max_len':10}
