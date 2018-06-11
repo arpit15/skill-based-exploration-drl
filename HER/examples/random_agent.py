@@ -35,9 +35,9 @@ if __name__ == "__main__":
             # print("r joint", env.data.get_joint_qpos("l_gripper_r_finger_joint"))
             # print("obj initial pos", env.data.get_joint_qpos("box"))
 
-            # for _ in range(50):
-            #     sleep(0.1)
-            #     env.render(mode='human')
+            for _ in range(50):
+                sleep(0.1)
+                env.render(mode='human')
             # set_trace()
             # grip_pos = env.env.sim.data.get_site_xpos('robot0:grip')
             # grip_velp = env.env.sim.data.get_site_xvelp('robot0:grip')
