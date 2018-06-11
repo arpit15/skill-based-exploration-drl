@@ -25,6 +25,7 @@ def transfer_obs(obs, params):
 	## domain knowledge: move to object
 	# print("creating transfer obs ", obs.shape, params.shape)
 
+	# print("orig params",params)
 	x,y,z = params
 	x = 0.45 + (x+1)*0.1
 	y = 0.15 + (y+1)*0.15

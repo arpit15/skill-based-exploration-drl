@@ -114,17 +114,20 @@ class BaxterEnv(reacher2d.BaxterEnv):
         assert ob.shape[0]==28, 'obj grasped test if only valid for 28 dim state space'
         gap = ob[9]/0.04 - 1
         self.close_gripper(gap=-1)
-        self.do_simulation(n_frames=2)
+        self.do_simulation(n_frames=4)
 
         new_ob = self._get_obs()
         new_gap = (new_ob[9] - new_ob[10])
 
-        # restore the old gap
-        self.close_gripper(gap=gap)
-        self.do_simulation(n_frames=2)
+        obj_grasped = (new_gap > 1e-2)
+
+        if not obj_grasped:
+            # restore the old gap
+            self.close_gripper(gap=gap)
+            self.do_simulation(n_frames=2)
 
         # print(new_gap)
-        return (new_gap > 1e-2)
+        return obj_grasped
 
 
 

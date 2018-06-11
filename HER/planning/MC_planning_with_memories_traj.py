@@ -61,7 +61,7 @@ class Planning_with_memories:
 
             obj_grasped = env.obj_grasped(state)
             if obj_grasped:
-                available_skill_set = [1,2]
+                available_skill_set = [1]
             else:
                 available_skill_set = [0,2]
             # create child node
@@ -79,7 +79,12 @@ class Planning_with_memories:
                     # convert to skill coordinates
                     sampled_params[0] = (sampled_params[0]- 0.3)/0.25 - 1
                     sampled_params[1] = (sampled_params[1] - 0.)/0.3 - 1
-                    sampled_params[2] = (sampled_params[2] - 0.13)/0.035 -1
+                    sampled_params[2] = (sampled_params[2] + 0.13 - 0.13)/0.035 -1
+
+                    # make them between -1,1
+                    sampled_params[0] = max(min(1, sampled_params[0]), -1)
+                    sampled_params[1] = max(min(1, sampled_params[1]), -1)
+                    sampled_params[2] = max(min(1, sampled_params[2]), -1)
 
                 elif sampled_skill_num == 1:
                     # sample near target
@@ -91,12 +96,21 @@ class Planning_with_memories:
                     sampled_params[0] = (sampled_params[0]- 0.45)/0.1 - 1
                     sampled_params[1] = (sampled_params[1] - 0.15)/0.15 - 1
                     sampled_params[2] = (sampled_params[2] - 0.03)/0.035 -1
+
+                    # make them between -1,1
+                    sampled_params[0] = max(min(1, sampled_params[0]), -1)
+                    sampled_params[1] = max(min(1, sampled_params[1]), -1)
+                    sampled_params[2] = max(min(1, sampled_params[2]), -1)
                     
                 else:
                     # sample any height for grasping
                     sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
 
                 # print("skill:%d, goal"%sampled_skill_num, sampled_params)
+                # if (np.any(sampled_params>1) or np.any(sampled_params<-1) ):
+                #     print("skill:%d, goal"%sampled_skill_num, sampled_params)
+                #     from ipdb import set_trace
+                #     set_trace()
                 
                 critic_value = self.skillset.get_critic_value(primitive_id=sampled_skill_num, obs = curr_node.state, primitive_params = sampled_params)
                 next_state, id_in_memory = self.skillset.get_terminal_state_from_memory(primitive_id=sampled_skill_num,obs = curr_node.state, primitive_params = sampled_params)
