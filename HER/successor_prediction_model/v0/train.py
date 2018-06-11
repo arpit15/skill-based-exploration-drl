@@ -21,6 +21,7 @@ import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
 
+# python train.py --env-id=graspingt-v2 --restore-dir=~/new_RL3/baseline_results_new/v1/grasping-v2/run2 --dataset-size=100000
 # train_fraction = 0.8
 
 def get_home_path(path):
