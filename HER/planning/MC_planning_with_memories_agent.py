@@ -124,7 +124,7 @@ class Planning_with_memories:
 
         # create paction and return
         # print("suggested skill id:%d, utility:%.4f,goal:"%(chosen_skill, max_utility), chosen_skill_params)
-        paction = self.get_curr_paction(chosen_skill, chosen_skill_params)
+        paction_orig = self.get_curr_paction(chosen_skill, chosen_skill_params)
 
         info['next_state'] = (curr_node.child.state)
         info['prob'] = curr_node.prob
@@ -142,7 +142,7 @@ class Planning_with_memories:
 
             curr_node = curr_node.child
 
-        return paction.copy(), info
+        return paction_orig.copy(), info
 
 
 
