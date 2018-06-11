@@ -142,9 +142,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         agent.reset()
         obs = env.reset()
         
-        for _ in range(10):
-            env.render()
-            sleep(0.1)
+        # for _ in range(10):
+        #     env.render()
+        #     sleep(0.1)
 
         done = False
         episode_reward = 0.
@@ -198,10 +198,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             paction, planner_info = look_ahead_planner.create_plan(env, obs)
                             skill_done = False
                             num_skill_steps = 0
-                            print("skill:%d"%np.argmax(paction[:my_skill_set.len]))
-                            print(planner_info['sequence'])
-                            print(paction)
-                            set_trace()
+                            # print("skill:%d"%np.argmax(paction[:my_skill_set.len]))
+                            # print(planner_info['sequence'])
+                            # print(paction)
+                            # set_trace()
                         
                         primitives_prob = paction[:my_skill_set.len]
                         primitive_id = np.argmax(primitives_prob)
