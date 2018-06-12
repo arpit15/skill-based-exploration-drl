@@ -14,9 +14,10 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         self.close_gripper(gap=0)
         gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + 0.05, self.target_range_max[:self.space_dim] - 0.05, size=self.space_dim)        
         
-        target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = np.array([0.5, 0.3,0.])
-        self.data.set_joint_qpos('target', target_qpos)
+        # target_qpos = self.data.get_joint_qpos('target')
+        # target_qpos[:self.space_dim] = np.array([0.5, 0.3,0.])
+        # self.data.set_joint_qpos('target', target_qpos)
+        target_qpos = self.data.get_site_xpos('target')
 
 
         # 0: random, 1: grasped
