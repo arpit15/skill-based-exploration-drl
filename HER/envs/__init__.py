@@ -62,13 +62,13 @@ register(
 register(
     id='putainb-v0',
     entry_point='HER.envs.putainb_withextras:BaxterEnv',
-    kwargs={'max_len':50}
+    kwargs={'max_len':100}
 )
 
 register(
     id='putainbt-v0',
     entry_point='HER.envs.putainb_withextras:BaxterEnv',
-    kwargs={'max_len':50,
+    kwargs={'max_len':100,
             'test':True}
 )
 

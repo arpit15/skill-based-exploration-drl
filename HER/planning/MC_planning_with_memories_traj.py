@@ -4,7 +4,7 @@ import math
 class Node:
     def __init__(self, state, reward =0., value=0., 
                  skill_num = -1, params = None, parent = None, 
-                 height=-1, prob = 0., id_in_memory = None):
+                 height=-1, prob = 0., id_in_memory = None, obj_in_grasp = False):
         self.state = state
         self.child = None
         self.reward = reward
@@ -15,6 +15,7 @@ class Node:
         self.height = height
         self.prob = prob
         self.id_in_memory = id_in_memory
+        self.obj_in_grasp = obj_in_grasp
 
 class Planning_with_memories:
     """docstring for Planning_with_memories"""
@@ -49,7 +50,7 @@ class Planning_with_memories:
         if height is None:
             # root call
             height = self.max_height
-            openlist.append(Node(state=state.copy(), height=height, prob=1.))
+            openlist.append(Node(state=state.copy(), height=height, prob=1., obj_in_grasp = env.obj_grasped(state)))
 
         while(openlist):
             curr_node = openlist.pop(0)
@@ -59,7 +60,7 @@ class Planning_with_memories:
                 leaflist.append(curr_node)
                 continue
 
-            obj_grasped = env.obj_grasped(state)
+            obj_grasped = curr_node.obj_in_grasp
             if obj_grasped:
                 available_skill_set = [1]
             else:
@@ -73,6 +74,8 @@ class Planning_with_memories:
 
             for node_id, sampled_skill_num in enumerate(sampled_skills):
                 
+                obj_in_grasp = False
+
                 if sampled_skill_num == 0:
                     # sample near obj
                     sampled_params = curr_node_obj_loc + np.random.uniform(low=-0.03,high=0.03, size = curr_node_obj_loc.size)
@@ -90,7 +93,7 @@ class Planning_with_memories:
                     # sample near target
                     # print(state[-3:], curr_node.state[-3:])
 
-                    sampled_params = curr_node.state[-3:] + np.random.uniform(low=-0.03,high=0.03, size = 3)
+                    sampled_params = curr_node.state[-3:] + np.random.uniform(low=-0.1,high=0.1, size = 3)
 
                     # convert to skill coordinates
                     sampled_params[0] = (sampled_params[0]- 0.45)/0.1 - 1
@@ -105,6 +108,8 @@ class Planning_with_memories:
                 else:
                     # sample any height for grasping
                     sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
+                    ## assume in hallucination that after this skill is performed we will have obj in grasp
+                    obj_in_grasp = True
 
                 # print("skill:%d, goal"%sampled_skill_num, sampled_params)
                 # if (np.any(sampled_params>1) or np.any(sampled_params<-1) ):
@@ -139,7 +144,8 @@ class Planning_with_memories:
                                 skill_num = sampled_skill_num, params = sampled_params, 
                                 parent = curr_node, height = curr_node.height -1,
                                 prob = curr_node.prob*prob,
-                                id_in_memory = id_in_memory)
+                                id_in_memory = id_in_memory,
+                                obj_in_grasp = obj_in_grasp)
 
                 # no need to sort as we want all the paths to be explored
                 if add_to_openlist: 

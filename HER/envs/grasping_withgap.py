@@ -110,7 +110,13 @@ class BaxterEnv(reacher2d.BaxterEnv):
         self.data.ctrl[1] = -(gap+1)*0.04
         
     def obj_grasped(self, ob):
-        # test if obj is grasped
+        # test if obj is grasped. can only be performed on the current state
+        # print("checking for grasping")
+        # for _ in range(50):
+        #     sleep(0.1)
+        #     self.render()
+
+        
         assert ob.shape[0]==28, 'obj grasped test if only valid for 28 dim state space'
         gap = ob[9]/0.04 - 1
         self.close_gripper(gap=-1)
@@ -127,6 +133,7 @@ class BaxterEnv(reacher2d.BaxterEnv):
             self.do_simulation(n_frames=2)
 
         # print(new_gap)
+        # print("obj grasped ", obj_grasped)
         return obj_grasped
 
 

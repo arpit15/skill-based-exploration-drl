@@ -17,7 +17,7 @@
         </body>
 
         <!-- Container -->
-        <body name="container" pos="0.5 0.3 0.0">
+        <body name="container" pos="0.55 0.3 0.0">
             <geom name="side1" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" pos="0.1 0. 0."/>
             <geom name="side2" type="box"  rgba="1.0 1.0 0.0 1" size="0.01 0.09 0.03" contype="3" conaffinity="3" pos="-0.1 0. 0."/>
             <geom name="side3" type="box"  rgba="1.0 1.0 0.0 1" size="0.09 0.01 0.03" contype="3" conaffinity="3" pos="0 0.1 0."/>
