@@ -160,6 +160,7 @@ class DDPGSkill(object):
     def get_traj(self, id_in_memory, obs):
         curr_traj_path = osp.join(self.traj_dir_path, '%d.npy'%id_in_memory)
         curr_traj = np.load(curr_traj_path).tolist()
+
         # curr_traj = self.trajectories[id_in_memory]
 
         # append target

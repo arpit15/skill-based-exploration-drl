@@ -137,6 +137,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         agent.reset()
         obs = env.reset()
         
+        # for _ in range(50):
+        #     env.render()
+        #     sleep(0.1)
+
         done = False
         episode_reward = 0.
         episode_step = 0
@@ -179,6 +183,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 t_rollout = 0
                 total_rollouts_required = int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())
 
+                # print(total_rollouts_required)
+
                 while(t_rollout < total_rollouts_required):
                 # for t_rollout in range(int(nb_rollout_steps/MPI.COMM_WORLD.Get_size())):
                     # print(rank, t_rollout)
@@ -189,6 +195,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             _, planner_info = look_ahead_planner.create_plan(env, obs)
                        
 
+                    # print("traj meta action",planner_info['sequence'])
+                    # print("traj len:%d"%len(planner_info['trajectories']))
                     # take the planner trajectories and do the rest of the stuff
                     for (obs,action,new_obs) in planner_info['trajectories']:
                         
@@ -198,6 +206,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         
                         r = env.calc_reward(new_obs)
                         done = (r==0) or (episode_step>=env.max_num_steps)
+                        if done:
+                            # print('reward:%.4f'%r)
+                            break
 
                         t += 1
                         
@@ -221,7 +232,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     obs = new_obs
 
                     if done:
-                        print("reset")
+                        # print("reset")
                         # Episode done.
                         epoch_episode_rewards.append(episode_reward)
                         episode_rewards_history.append(episode_reward)
@@ -250,6 +261,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                         agent.reset()
                         obs = env.reset()
+                        done = False
+
+                        # for _ in range(50):
+                        #     env.render()
+                        #     sleep(0.1)
                         #print(obs)
 
                 # print(rank, "Training!")

@@ -42,6 +42,9 @@ class Planning_with_memories:
     def create_plan(self, env, state, height = None):
         
         # print("CREATING PLAN")
+        # np.set_printoptions(precision=3)
+        # print(state[[0,1,2,3,4,5,-3,-2,-1]])
+
         info = dict()
         
         openlist = []
@@ -219,11 +222,12 @@ class Planning_with_memories:
             if first_skill:
                 # create trajectory
                 curr_traj = self.skillset.get_traj_from_memory(curr_node.child.skill_num, curr_node.child.id_in_memory, curr_node.state)
-        
+                
+                # print("length of curr traj:%d"%len(curr_traj))
                 # first state should be replaced by the real state observed because memory retrieved state is approx
                 curr_traj[0] = [curr_state.copy(), curr_traj[0][1],curr_traj[0][2]]
                 info['trajectories'].extend(curr_traj)
-                first_skill = False
+                # first_skill = False
 
             curr_node = curr_node.child
 
