@@ -14,7 +14,7 @@ from HER.common.misc_util import (
     boolean_flag,
 )
 
-from HER.successor_prediction_model.v0.models import regressor
+from HER.successor_prediction_model.v2.models import regressor
 import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
@@ -52,10 +52,11 @@ def run(env_id, render, log_dir,
         ## 
         base_dataset = np.loadtxt(csv_filename, delimiter=',')
         train, test = train_test_split(base_dataset, test_size=0.2)
-        train_feat = train[:,:-1]
-        train_labels = train[:,-1]
+        # train_feat = train[:,:-1]
+        # train_labels = train[:,-1]
         # print(train.shape, test.shape)
-
+        # from ipdb import set_trace
+        # set_trace()
         # whiten
         if whiten:
             train_feat_mean = np.mean(train_feat, axis=0)
@@ -77,8 +78,9 @@ def run(env_id, render, log_dir,
 
             print(train_dataset.shape, test_dataset[0].shape)
         else:
-            train_dataset = pd.DataFrame(np.concatenate((train_feat, train_labels[:, np.newaxis]),axis=1))
-            test_dataset = [test[:, :-1], test[:,[-1]]]
+            # train_dataset = pd.DataFrame(np.concatenate((train_feat, train_labels[:, np.newaxis]),axis=1))
+            train_dataset = pd.DataFrame(train)
+            test_dataset = test#pd.DataFrame(test)#[test[:, :-1], test[:,[-1]]]
 
         pred_model.train(train_epoch, batch_size, lr, train_dataset , test_dataset)
         pred_model.save()

@@ -84,7 +84,10 @@ class regressor:
         self.saver.save(self.sess, path)
 
     def test(self, test_dataset):
-        test_feats, test_label = test_dataset
+        # test_feats, test_label = test_dataset
+        test_feats = test_dataset[:, :self.in_shape]
+        test_label = test_dataset[:, self.in_shape:]
+        
         test_summary = self.sess.run(self.sum, feed_dict={
                                         self.in_tensor: test_feats,
                                         self.target_tensor: test_label
