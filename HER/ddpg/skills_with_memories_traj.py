@@ -163,7 +163,7 @@ class DDPGSkill(object):
         # curr_traj = self.trajectories[id_in_memory]
 
         # append target
-        target = obs[-3:]
+        target = obs[-3:].copy()
         # s, s_n doesn't have target
         for i, (s,a,s_n) in enumerate(curr_traj):
             s_full = np.concatenate((s, target))

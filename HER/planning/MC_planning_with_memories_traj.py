@@ -190,6 +190,8 @@ class Planning_with_memories:
         # print("suggested skill id:%d, utility:%.4f,goal:"%(chosen_skill, max_utility), chosen_skill_params)
         paction_orig = self.get_curr_paction(chosen_skill, chosen_skill_params)
 
+        # print("suggested meta action",paction_orig)
+        
         info['next_state'] = (curr_node.child.state)
         info['prob'] = curr_node.prob
         # print("prob:%.4f, value:%.4f, goal"%(curr_node.prob, curr_node.child.value), chosen_skill_params)

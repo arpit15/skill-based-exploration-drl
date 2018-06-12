@@ -200,7 +200,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             num_skill_steps = 0
                             # print("skill:%d"%np.argmax(paction[:my_skill_set.len]))
                             # print(planner_info['sequence'])
-                            # print(paction)
+                            # print("received meta action",paction)
                             # set_trace()
                         
                         primitives_prob = paction[:my_skill_set.len]
@@ -217,7 +217,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     
                     # print("len of traj:%d, skill step:%d"%(len(planner_info["trajectories"]), num_skill_steps))
-                    # traj_idx = min(len(planner_info["trajectories"])-1, num_skill_steps)
+                    # traj_idx = min(len(planner_info["trajectories"])-1, num_skill_steps-1)
 
                     # print("start")
                     # print(obs[[0,1,2,3,4,5,-3,-2,-1]])
