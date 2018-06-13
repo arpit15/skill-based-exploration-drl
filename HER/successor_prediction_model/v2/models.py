@@ -5,49 +5,62 @@ from HER.ddpg.models import Model
 from HER.deepq.models import _mlp
 
 class regressor:
-    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp", whiten_data = None):
+    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp", train=True, whiten_data = None, in_tensor = None):
         # properties
         self.in_shape = in_shape
         self.out_shape = out_shape
 
         # tf
-        self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
-        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[256,512,1024, 512, 256],scope=name, num_actions= out_shape,layer_norm=True)
+        if in_tensor is None:
+            self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
+        else:
+            self.in_tensor = in_tensor
+            
+        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[1000,1000,1000],scope=name, num_actions= out_shape,layer_norm=True)
         self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
         
         self.sess = sess
         self.log_dir = log_dir
-        # loss function 
-        self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1))
 
-        if whiten_data is None:
-            self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1)))
-        else:
-            self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square((self.target_tensor - self.out_tensor)*whiten_data[1] + whiten_data[0]), axis=1)))
-        
-        # summary
-        tf.summary.histogram("input", self.in_tensor)
-        tf.summary.histogram("output", self.out_tensor)
-        tf.summary.histogram("outputVstarget", self.target_tensor - self.out_tensor)
-        tf.summary.scalar("loss", self.loss)
-        tf.summary.scalar("sqrt loss", self.sqrt_loss)
-        self.sum = tf.summary.merge_all()
+        if train:
+            # loss function 
+            self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1))
 
-        # optim
-        self.lr = tf.placeholder(tf.float32,(),'learning_rate')
-        self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        self.optim = tf.train.AdamOptimizer(self.lr) \
-                          .minimize(self.loss, var_list=(self.vars))
+            if whiten_data is None:
+                self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1)))
+            else:
+                self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square((self.target_tensor - self.out_tensor)*whiten_data[1] + whiten_data[0]), axis=1)))
+            
+            # summary
+            tf.summary.histogram("input", self.in_tensor)
+            tf.summary.histogram("output", self.out_tensor)
+            tf.summary.histogram("outputVstarget", self.target_tensor - self.out_tensor)
+            tf.summary.scalar("loss", self.loss)
+            tf.summary.scalar("sqrt loss", self.sqrt_loss)
+            self.sum = tf.summary.merge_all()
 
-        # saver
-        self.saver = tf.train.Saver(var_list = self.vars, max_to_keep=5, 
-                                        name="%s_suc_pred_net"%name, 
-                                        keep_checkpoint_every_n_hours=1,
-                                        save_relative_paths=True)
+            # optim
+            self.lr = tf.placeholder(tf.float32,(),'learning_rate')
+            self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+            self.optim = tf.train.AdamOptimizer(self.lr) \
+                              .minimize(self.loss, var_list=(self.vars))
 
-        self.writer_t = tf.summary.FileWriter(osp.join(self.log_dir ,'tfsum' ,'train'), sess.graph)
-        self.writer_v = tf.summary.FileWriter(osp.join(self.log_dir , 'tfsum', 'test'), sess.graph)
+            # saver
+            self.saver = tf.train.Saver(var_list = self.vars, max_to_keep=5, 
+                                            name="%s_suc_pred_net"%name, 
+                                            keep_checkpoint_every_n_hours=1,
+                                            save_relative_paths=True)
 
+            self.writer_t = tf.summary.FileWriter(osp.join(self.log_dir ,'tfsum' ,'train'), sess.graph)
+            self.writer_v = tf.summary.FileWriter(osp.join(self.log_dir , 'tfsum', 'test'), sess.graph)
+
+
+    def prediction(self, obs):
+        next_state = self.sess.run(self.out_tensor, feed_dict={
+                                        self.in_tensor: obs
+                                        })
+
+        return next_state
 
     def train(self, num_epochs, batch_size, lr=1e-3, train_dataset = None, test_dataset=None, test_freq = 1, save_freq=10, log=True):
         feed_dict = {self.lr :lr}
@@ -96,25 +109,5 @@ class regressor:
                                         self.in_tensor: test_feats,
                                         self.target_tensor: test_label
                                         })
-        # test_loss = 0.
-        # i = 0
-        # while True:
-        #     try:
-        #         i += 1
-        #         test_feats, test_label = self.sess.run(test_dataset)
-
-        #         test_loss += self.sess.run(self.loss, feed_dict={
-        #                                 self.in_tensor: test_feats,
-        #                                 self.target_tensor: test_label
-        #                                 })
-
-        #         print(test_feats.shape, test_loss)
-
-
-        #     except tf.errors.OutOfRangeError:
-        #         break
-        
-        # print("test loss:%f, %.4f"%(test_loss, test_loss))
-        # test_summary = tf.Summary(value=[tf.Summary.Value(tag="loss",simple_value=test_loss/i)])
         return test_summary
 

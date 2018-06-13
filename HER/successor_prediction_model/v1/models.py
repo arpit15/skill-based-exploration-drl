@@ -103,7 +103,7 @@ class classifier:
 
     def prediction(self, obs):
         predict_prob = self.sess.run(self.prob, feed_dict={
-                                        self.in_tensor: test_feats
+                                        self.in_tensor: obs
                                         })
 
         return predict_prob
