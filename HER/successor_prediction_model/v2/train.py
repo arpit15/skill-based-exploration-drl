@@ -18,8 +18,23 @@ from HER.successor_prediction_model.v2.models import regressor
 import HER.envs
 
 import HER.common.tf_util as U
+from scipy import spatial
 
 eps = 1e-10
+
+def get_nn_error(train, test, in_size):
+    state_goal_train = train[:, :in_size]
+    state_goal_test = test[:, :in_size]
+
+    tree = spatial.KDTree(state_goal_train)
+    results = tree.query(state_goal_test,k=1)[1][:,0]
+
+    memory_goal = train[:,in_size:][results]
+    real_goal = test[:, in_size:]
+
+    return np.mean(memory_goal - real_goal)
+
+
 
 def run(env_id, render, log_dir, 
             train_epoch, batch_size=32, lr = 1e-3, seed = 0, whiten = False):
@@ -42,6 +57,11 @@ def run(env_id, render, log_dir,
         ## 
         base_dataset = np.loadtxt(csv_filename, delimiter=',')
         train, test = train_test_split(base_dataset, test_size=0.2)
+
+        # NN error
+        nn_error = get_nn_error(train, test, in_size)
+
+        print("memory based nn error", nn_error)
         
         # whiten
         if whiten:
