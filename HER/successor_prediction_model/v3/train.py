@@ -47,7 +47,7 @@ def run(env_id, render, log_dir,
         sess.run(init_op)
 
         ## creating dataset tensors
-        csv_filename = osp.join(log_dir, "%s.csv"%env_id)
+        csv_filename = osp.join(log_dir, "%s-delta.csv"%env_id)
 
         ## 
         base_dataset = np.loadtxt(csv_filename, delimiter=',')
