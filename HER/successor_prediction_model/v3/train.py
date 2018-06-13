@@ -14,7 +14,7 @@ from HER.common.misc_util import (
     boolean_flag,
 )
 
-from HER.successor_prediction_model.v2.models import regressor
+from HER.successor_prediction_model.v3.models import regressor
 import HER.envs
 from HER.ddpg.skills import DDPGSkill
 import HER.common.tf_util as U
@@ -25,7 +25,7 @@ def run(env_id, render, log_dir,
     env = gym.make(env_id)
     observation_shape = env.observation_space.shape[-1]
     global in_size, out_size
-    in_size = observation_shape
+    in_size = observation_shape*2 - 3
     out_size = observation_shape-3
 
     set_global_seeds(seed)
