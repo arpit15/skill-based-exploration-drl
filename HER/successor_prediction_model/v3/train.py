@@ -34,29 +34,13 @@ def run(env_id, render, log_dir,
     
     with U.single_threaded_session() as sess:
         
-        pred_model = regressor(in_shape = in_size, 
-                            out_shape = out_size,
-                            name = "succmodel", sess=sess,
-                            log_dir=log_dir)
-        
-
-
-        init_op = tf.group(tf.global_variables_initializer(),
-                               tf.local_variables_initializer(), 
-                               )
-        sess.run(init_op)
-
         ## creating dataset tensors
         csv_filename = osp.join(log_dir, "%s-delta.csv"%env_id)
 
         ## 
         base_dataset = np.loadtxt(csv_filename, delimiter=',')
         train, test = train_test_split(base_dataset, test_size=0.2)
-        # train_feat = train[:,:-1]
-        # train_labels = train[:,-1]
-        # print(train.shape, test.shape)
-        # from ipdb import set_trace
-        # set_trace()
+        
         # whiten
         if whiten:
             train_feat_mean = np.mean(train, axis=0)
@@ -68,18 +52,33 @@ def run(env_id, render, log_dir,
                 np.save(f, statistics)
 
             # create pd
-            train_dataset = ( ( train - train_feat_mean)/train_feat_std)
+            train_dataset = ( ( train - train_feat_mean)/(train_feat_std + eps))
             # print(train_dataset.shape, train_labels[:, np.newaxis].shape)
             train_dataset = pd.DataFrame(train_dataset)
             
-            test_dataset = ( ( test - train_feat_mean)/train_feat_std)
+            test_dataset = ( ( test - train_feat_mean)/(train_feat_std + eps))
             ####
 
             print(train_dataset.shape, test_dataset[0].shape)
+            whiten_data = [train_feat_mean[in_size:], train_feat_std[in_size:]]
         else:
             # train_dataset = pd.DataFrame(np.concatenate((train_feat, train_labels[:, np.newaxis]),axis=1))
             train_dataset = pd.DataFrame(train)
             test_dataset = test#pd.DataFrame(test)#[test[:, :-1], test[:,[-1]]]
+            whiten_data = None
+
+        pred_model = regressor(in_shape = in_size, 
+                            out_shape = out_size,
+                            name = "succmodel", sess=sess,
+                            log_dir=log_dir,
+                            whiten_data = whiten_data)
+        
+
+
+        init_op = tf.group(tf.global_variables_initializer(),
+                               tf.local_variables_initializer(), 
+                               )
+        sess.run(init_op)
 
         pred_model.train(train_epoch, batch_size, lr, train_dataset , test_dataset)
         pred_model.save()

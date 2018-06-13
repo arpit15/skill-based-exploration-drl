@@ -5,7 +5,7 @@ from HER.ddpg.models import Model
 from HER.deepq.models import _mlp
 
 class regressor:
-    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp"):
+    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp", whiten_data = None):
         # properties
         self.in_shape = in_shape
         self.out_shape = out_shape
@@ -20,7 +20,11 @@ class regressor:
         # loss function 
         self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1))
 
-        self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1)))
+        if whiten_data is None:
+            self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1)))
+        else:
+            self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square((self.target_tensor - self.out_tensor)*whiten_data[1] + whiten_data[0]), axis=1)))
+        
         # summary
         tf.summary.histogram("input", self.in_tensor)
         tf.summary.histogram("output", self.out_tensor)
