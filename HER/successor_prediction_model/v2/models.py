@@ -12,7 +12,7 @@ class regressor:
 
         # tf
         self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
-        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[1000,1000,1000],scope=name, num_actions= out_shape,layer_norm=True)
+        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[256,512,1024, 512, 256],scope=name, num_actions= out_shape,layer_norm=True)
         self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
         
         self.sess = sess

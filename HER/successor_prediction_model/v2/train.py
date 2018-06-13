@@ -16,8 +16,10 @@ from HER.common.misc_util import (
 
 from HER.successor_prediction_model.v2.models import regressor
 import HER.envs
-from HER.ddpg.skills import DDPGSkill
+
 import HER.common.tf_util as U
+
+eps = 1e-10
 
 def run(env_id, render, log_dir, 
             train_epoch, batch_size=32, lr = 1e-3, seed = 0, whiten = False):
@@ -68,11 +70,11 @@ def run(env_id, render, log_dir,
                 np.save(f, statistics)
 
             # create pd
-            train_dataset = ( ( train - train_feat_mean)/train_feat_std)
+            train_dataset = ( ( train - train_feat_mean)/(train_feat_std + eps))
             # print(train_dataset.shape, train_labels[:, np.newaxis].shape)
             train_dataset = pd.DataFrame(train_dataset)
             
-            test_dataset = ( ( test - train_feat_mean)/train_feat_std)
+            test_dataset = ( ( test - train_feat_mean)/(train_feat_std + eps))
             ####
 
             print(train_dataset.shape, test_dataset[0].shape)
