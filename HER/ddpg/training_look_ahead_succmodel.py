@@ -9,7 +9,7 @@ from HER.ddpg.ddpg import DDPG
 from HER.ddpg.util import normal_mean, normal_std, mpi_max, mpi_sum
 import HER.common.tf_util as U
 from HER.ddpg.util import read_checkpoint_local
-from HER.planning.MC_planning_with_memories_traj import Planning_with_memories
+from HER.planning.MC_planning_with_biased_sampling_succmodel import Planning_with_memories
 from HER.common.schedules import LinearSchedule
 
 from HER import logger
@@ -198,10 +198,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             paction, planner_info = look_ahead_planner.create_plan(env, obs)
                             skill_done = False
                             num_skill_steps = 0
-                            print("skill:%d"%np.argmax(paction[:my_skill_set.len]))
-                            print(planner_info['sequence'])
-                            print("received meta action",paction)
-                            set_trace()
+                            # print("skill:%d"%np.argmax(paction[:my_skill_set.len]))
+                            # print(planner_info['sequence'])
+                            # print("received meta action",paction)
+                            # set_trace()
                         
                         primitives_prob = paction[:my_skill_set.len]
                         primitive_id = np.argmax(primitives_prob)
@@ -234,6 +234,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     if kwargs['look_ahead'] and (num_skill_steps == kwargs['commit_for'] or 
                                         my_skill_set.termination(new_obs, primitive_id, primitive_params = paction[my_skill_set.len:].copy())):
                         skill_done = True
+
+                        # print("succ model pred", planner_info['next_state'][:6])
+                        # print("actual end state",new_obs[:6], new_obs[-3:])
+
+                        # print("diff succ model",np.linalg.norm(planner_info['next_state'][:6] - new_obs[:6]))
+                        # print("diff nn model",np.linalg.norm(planner_info['next_state_nn'][:6] - new_obs[:6]))
+                        # set_trace()
 
                     t += 1
                     if rank == 0 and render:

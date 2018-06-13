@@ -142,7 +142,7 @@ class Planning_with_memories:
 
             curr_node = curr_node.child
 
-        return paction.copy(), info
+        return paction_orig.copy(), info
 
 
 

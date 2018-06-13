@@ -4,8 +4,8 @@ import os.path as osp
 from HER.ddpg.models import Model
 from HER.deepq.models import _mlp
 
-class classifier:
-    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp", train=True, in_tensor = None):
+class regressor:
+    def __init__(self, name, in_shape, out_shape, sess=None, log_dir="/tmp", train=True, whiten_data = None, in_tensor = None):
         # properties
         self.in_shape = in_shape
         self.out_shape = out_shape
@@ -13,30 +13,30 @@ class classifier:
         # tf
         if in_tensor is None:
             self.in_tensor = tf.placeholder(tf.float32, shape=(None,) + (in_shape,), name='state_goal')
-        else: 
+        else:
             self.in_tensor = in_tensor
             
-        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[50,10],scope=name, num_actions= out_shape,layer_norm=True)
-        self.prob = tf.sigmoid(self.out_tensor)
-        self.pred = self.prob > 0.5
-        self.pred = tf.cast(self.pred, tf.float32)
+        self.out_tensor = _mlp(inpt=self.in_tensor, hiddens=[1000,1000,1000],scope=name, num_actions= out_shape,layer_norm=True)
+        self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
         
         self.sess = sess
+        self.log_dir = log_dir
 
         if train:
-            self.target_tensor = tf.placeholder(tf.float32, shape=(None,) + (out_shape,), name='final_state')
-            self.log_dir = log_dir
             # loss function 
-            self.loss = tf.losses.sigmoid_cross_entropy(self.target_tensor, self.out_tensor)
-            # self.accuracy, _ = tf.metrics.accuracy(self.target_tensor, self.pred)
-            self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.pred, self.target_tensor), tf.float32))
+            self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1))
 
+            if whiten_data is None:
+                self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.target_tensor - self.out_tensor), axis=1)))
+            else:
+                self.sqrt_loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square((self.target_tensor - self.out_tensor)*whiten_data[1] + whiten_data[0]), axis=1)))
+            
             # summary
             tf.summary.histogram("input", self.in_tensor)
             tf.summary.histogram("output", self.out_tensor)
-            tf.summary.histogram("outputVstarget", self.target_tensor - self.pred)
+            tf.summary.histogram("outputVstarget", self.target_tensor - self.out_tensor)
             tf.summary.scalar("loss", self.loss)
-            tf.summary.scalar("accuracy", self.accuracy)
+            tf.summary.scalar("sqrt loss", self.sqrt_loss)
             self.sum = tf.summary.merge_all()
 
             # optim
@@ -55,6 +55,13 @@ class classifier:
             self.writer_v = tf.summary.FileWriter(osp.join(self.log_dir , 'tfsum', 'test'), sess.graph)
 
 
+    def prediction(self, obs):
+        next_state = self.sess.run(self.out_tensor, feed_dict={
+                                        self.in_tensor: obs
+                                        })
+
+        return next_state
+
     def train(self, num_epochs, batch_size, lr=1e-3, train_dataset = None, test_dataset=None, test_freq = 1, save_freq=10, log=True):
         feed_dict = {self.lr :lr}
         
@@ -64,7 +71,7 @@ class classifier:
             curr_train_data = train_dataset.sample(batch_size, axis=0).as_matrix()
             
             feed_dict[self.in_tensor] = curr_train_data[:, :self.in_shape]
-            feed_dict[self.target_tensor] = curr_train_data[:,[-1]]
+            feed_dict[self.target_tensor] = curr_train_data[:,self.in_shape:]
 
             train_summary, train_loss, _ = self.sess.run([self.sum, self.loss, self.optim], feed_dict)
             if log:
@@ -94,17 +101,13 @@ class classifier:
         self.saver.save(self.sess, path)
 
     def test(self, test_dataset):
-        test_feats, test_label = test_dataset
+        # test_feats, test_label = test_dataset
+        test_feats = test_dataset[:, :self.in_shape]
+        test_label = test_dataset[:, self.in_shape:]
+        
         test_summary = self.sess.run(self.sum, feed_dict={
                                         self.in_tensor: test_feats,
                                         self.target_tensor: test_label
                                         })
         return test_summary
-
-    def prediction(self, obs):
-        predict_prob = self.sess.run(self.prob, feed_dict={
-                                        self.in_tensor: obs
-                                        })
-
-        return predict_prob
 
