@@ -59,8 +59,8 @@ def run(env_id, render, log_dir,
         # set_trace()
         # whiten
         if whiten:
-            train_feat_mean = np.mean(train_feat, axis=0)
-            train_feat_std = np.std(train_feat, axis=0)
+            train_feat_mean = np.mean(train, axis=0)
+            train_feat_std = np.std(train, axis=0)
 
             # save mean and var
             statistics = np.concatenate((train_feat_mean, train_feat_std))
@@ -68,12 +68,11 @@ def run(env_id, render, log_dir,
                 np.save(f, statistics)
 
             # create pd
-            train_feat_dataset = ( ( train_feat - train_feat_mean)/train_feat_std)
-            print(train_feat_dataset.shape, train_labels[:, np.newaxis].shape)
-            train_dataset = pd.DataFrame(np.concatenate((train_feat_dataset, train_labels[:, np.newaxis]),axis=1))
+            train_dataset = ( ( train - train_feat_mean)/train_feat_std)
+            # print(train_dataset.shape, train_labels[:, np.newaxis].shape)
+            train_dataset = pd.DataFrame(train_dataset)
             
-            test_feat_dataset = ( ( test[:, :-1] - train_feat_mean)/train_feat_std)
-            test_dataset = [test_feat_dataset, test[:,[-1]]]
+            test_dataset = ( ( test - train_feat_mean)/train_feat_std)
             ####
 
             print(train_dataset.shape, test_dataset[0].shape)
@@ -92,12 +91,12 @@ def parse_args():
     boolean_flag(parser, 'render', default=False)
     parser.add_argument('--lr', type=float, default=1e-4)
     
-    parser.add_argument('--log-dir', type=str, default='/tmp/her')
+    parser.add_argument('--log-dir', type=str, default='/tmp/succmodel')
     
     parser.add_argument('--train-epoch', type=int, default=10)
 
     parser.add_argument('--batch-size', type=int, default=64)
-    boolean_flag(parser, 'whiten', default=False)
+    boolean_flag(parser, 'whiten', default=True)
 
     
     args = parser.parse_args()
