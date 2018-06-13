@@ -242,7 +242,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         epoch_episodes += 1
                         episodes += 1
 
-                        if kwargs["her"]:
+                        if len(states)>1 and kwargs["her"]:
                             # logger.info("-"*50 +'\nCreating HER\n' + "-"*50)
 
                             ## create hindsight experience replay
