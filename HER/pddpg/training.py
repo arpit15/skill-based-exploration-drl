@@ -57,7 +57,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
         actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
         reward_scale=reward_scale,
-        inverting_grad = invert_grad,
+        # inverting_grad = invert_grad,
         actor_reg = actor_reg
         )
 
@@ -329,7 +329,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                                 eval_r += eval_skill_r
                                 eval_skill_obs = eval_new_obs
 
-                                eval_terminate_skill = my_skill_set.termination(eval_new_obs, eval_primitive_id)
+                                eval_terminate_skill = my_skill_set.termination(eval_new_obs, eval_primitive_id, primitive_params = paction[my_skill_set.len:])
 
                                 if eval_done or eval_terminate_skill:
                                     break
