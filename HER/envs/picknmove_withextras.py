@@ -95,30 +95,30 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         self.num_step = 1
         return self._get_obs()
 
-    def apply_hierarchical_hindsight(self, states, actions, goal_state, sub_states_list):
-        '''generates hierarchical hindsight rollout based on the goal
-        '''
-        goal = goal_state[self.space_dim:2*self.space_dim]    ## this is the absolute goal location = obj last loc
-        # enter the last state in the list
-        states.append(goal_state)
-        num_tuples = len(actions)
+    # def apply_hierarchical_hindsight(self, states, actions, goal_state, sub_states_list):
+    #     '''generates hierarchical hindsight rollout based on the goal
+    #     '''
+    #     goal = goal_state[self.space_dim:2*self.space_dim]    ## this is the absolute goal location = obj last loc
+    #     # enter the last state in the list
+    #     states.append(goal_state)
+    #     num_tuples = len(actions)
 
-        her_states, her_rewards = [], []
-        # make corrections in the first state 
-        states[0][-self.space_dim:] = goal.copy()
-        her_states.append(states[0])
-        for i in range(1, num_tuples + 1):
-            state = states[i]
-            state[-self.space_dim:] = goal.copy()    # copy the new goal into state
-            # use all the sub states to calculate total reward
-            reward = 0.
+    #     her_states, her_rewards = [], []
+    #     # make corrections in the first state 
+    #     states[0][-self.space_dim:] = goal.copy()
+    #     her_states.append(states[0])
+    #     for i in range(1, num_tuples + 1):
+    #         state = states[i]
+    #         state[-self.space_dim:] = goal.copy()    # copy the new goal into state
+    #         # use all the sub states to calculate total reward
+    #         reward = 0.
 
-            # don't account for the first state : sub_states_list contains first state and last state
-            for sub_state in sub_states_list[i-1][1:]:
-                sub_state[-self.space_dim:] = goal.copy()    # copy the new goal into state
-                reward += self.calc_reward(sub_state)
-            her_states.append(state)
-            her_rewards.append(reward)
+    #         # don't account for the first state : sub_states_list contains first state and last state
+    #         for sub_state in sub_states_list[i-1][1:]:
+    #             sub_state[-self.space_dim:] = goal.copy()    # copy the new goal into state
+    #             reward += self.calc_reward(sub_state)
+    #         her_states.append(state)
+    #         her_rewards.append(reward)
 
-        return her_states, her_rewards
+    #     return her_states, her_rewards
 
