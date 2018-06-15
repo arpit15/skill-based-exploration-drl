@@ -26,7 +26,7 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         # print("sample:%d"%sample)
         # randomizing the start state of gripper
         if sample == 0 or self.test:
-            gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, 0.0], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.0], size=self.space_dim)
+            gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0., 0., 0.0], self.target_range_max[:self.space_dim] - [0., 0., 0.0], size=self.space_dim)
         else:
             gripper_pos = np.array([0.6 , 0.3 , 0.15])
 
@@ -50,13 +50,13 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             assert object_qpos.shape == (7,)
 
             dim = 2
-            object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
+            object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.05, 0.05], self.target_range_max[:dim] - [0.05, 0.05], size=dim)
             object_qpos[dim] = 0.
 
             tmp = 0
             while(np.linalg.norm(gripper_pos[:2] - object_qpos[:2]) < 0.25):
                 tmp += 1
-                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.1, 0.1], self.target_range_max[:dim] - [0.1, 0.1], size=dim)
+                object_qpos[:dim] = self.np_random.uniform(self.target_range_min[:dim] + [0.05, 0.05], self.target_range_max[:dim] - [0.05, 0.05], size=dim)
                 object_qpos[dim] = 0.
 
                 if(tmp==100):
@@ -74,12 +74,12 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
             object_qpos = self.data.get_joint_qpos('box')
 
         target_qpos = self.data.get_joint_qpos('target')
-        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim) 
+        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.1], size=self.space_dim) 
 
         # reward threshold is 0.03
         tmp = 0
         while(np.linalg.norm(target_qpos[:self.space_dim] - object_qpos[:self.space_dim]) < 0.25):
-            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.1, 0.1, -0.1], self.target_range_max[:self.space_dim] - [0.1, 0.1, 0.1], size=self.space_dim)
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.1], size=self.space_dim)
             tmp += 1
 
             if(tmp==100):
