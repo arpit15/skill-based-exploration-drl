@@ -16,6 +16,19 @@ register(
 )
 
 # Baxter envs
+
+register(
+    id='putaoutb-v1',
+    entry_point='HER.envs.putacompleteoutb_withextras:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='putaoutbt-v1',
+    entry_point='HER.envs.putacompleteoutb_withextras:BaxterEnv',
+    kwargs={'max_len':50, 'test':True}
+)
+
 register(
     id='putaoutb-v0',
     entry_point='HER.envs.putaoutb_withextras:BaxterEnv',

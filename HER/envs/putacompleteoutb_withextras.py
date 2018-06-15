@@ -5,7 +5,7 @@ from time import sleep
 
 class BaxterEnv(grasping_withgap.BaxterEnv):
     
-    def __init__(self, max_len=50, test = False, filename = "mjc/putaoutb.xml"):
+    def __init__(self, max_len=50, test = False, filename = "mjc/putcompleteaoutb.xml"):
         super(BaxterEnv, self).__init__(max_len=max_len, test=test, filename = filename)
 
     
@@ -16,9 +16,14 @@ class BaxterEnv(grasping_withgap.BaxterEnv):
         gripper_pos = self.np_random.uniform(self.target_range_min[:self.space_dim], self.target_range_max[:self.space_dim], size=self.space_dim)        
         
         
-        target_x, target_y = 0.08*self.np_random.uniform(-1,1, size=2) 
-        self.data.set_joint_qpos('target_x', target_x)
-        self.data.set_joint_qpos('target_y', target_y)
+        target_qpos = self.data.get_joint_qpos('target')
+        # sample once to change from prev episode target loc
+        target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.1], size=self.space_dim) 
+
+        while((target_qpos[0]>0.5 and target_qpos[0]<0.7) or (target_qpos[1]>0.2 and target_qpos[1]<0.4)):
+            target_qpos[:self.space_dim] = self.np_random.uniform(self.target_range_min[:self.space_dim] + [0.05, 0.05, -0.1], self.target_range_max[:self.space_dim] - [0.05, 0.05, 0.1], size=self.space_dim) 
+
+        self.data.set_joint_qpos('target', target_qpos)
 
 
         # 0: random, 1: grasped
