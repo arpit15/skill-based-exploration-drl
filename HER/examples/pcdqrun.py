@@ -87,8 +87,11 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     memory = Memory(limit=int(1e6), action_shape=(nb_actions,), observation_shape=env.observation_space.shape)
     if kwargs['newarch']:
         critic = Critic(layer_norm=layer_norm, hidden_unit_list=[400,300])
+        critic1 = Critic(layer_norm=layer_norm, name='critic1', hidden_unit_list=[400,300])
     else:
         critic = Critic(layer_norm=layer_norm)
+        critic1 = Critic(layer_norm=layer_norm, name='critic1')
+    
     
     if kwargs['skillset'] is None:
         if kwargs['newarch']:

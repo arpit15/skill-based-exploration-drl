@@ -7,11 +7,10 @@ from HER.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
-from HER.ddpg.skills import SkillSet
-import HER.pddpg.training as training
-from HER.pddpg.models import Actor, Critic
-from HER.pddpg.memory import Memory
-from HER.pddpg.noise import *
+import HER.cdq.training as training
+from HER.cdq.models import Actor, Critic
+from HER.cdq.memory import Memory
+from HER.cdq.noise import *
 
 import gym
 import tensorflow as tf
@@ -28,11 +27,10 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Create envs.
     env = gym.make(env_id)
-
-    # print(env.action_space.shape)
-    logger.info("Env info")
-    logger.info(env.__doc__)
-    logger.info("-"*20)
+    logger.debug("Env info")
+    logger.debug(env.__doc__)
+    logger.debug("-"*20)
+    env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
     gym.logger.setLevel(logging.WARN)
 
     if evaluation and rank==0:
@@ -49,18 +47,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     # Parse noise_type
     action_noise = None
     param_noise = None
-
-    tf.reset_default_graph()
-    ## this is a HACK
-    if kwargs['skillset']:
-        # import HER.skills.set2 as skillset_file
-        skillset_file = __import__("HER.skills.%s"%kwargs['skillset'], fromlist=[''])
-        my_skill_set = SkillSet(skillset_file.skillset)
-        nb_actions = my_skill_set.params +  my_skill_set.len
-
-    else:
-        nb_actions = env.action_space.shape[-1]
-
+    nb_actions = env.action_space.shape[-1]
     for current_noise_type in noise_type.split(','):
         current_noise_type = current_noise_type.strip()
         if current_noise_type == 'none':
@@ -77,37 +64,24 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         elif 'epsnorm' in current_noise_type:
             _, stddev, epsilon  = current_noise_type.split('_')
             action_noise = EpsilonNormalActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions), epsilon= float(epsilon))
-        elif 'pepsnorm' in current_noise_type:
-            _, stddev, epsilon = current_noise_type.split('_')
-            action_noise = EpsilonNormalParameterizedActionNoise(mu=np.zeros(my_skill_set.num_params), sigma=float(stddev) * np.ones(my_skill_set.num_params), epsilon= float(epsilon),discrete_actions_dim=my_skill_set.len)
         else:
             raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
 
     # Configure components.
-    memory = Memory(limit=int(1e6), action_shape=(nb_actions,), observation_shape=env.observation_space.shape)
+    memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
+    
     if kwargs['newarch']:
         critic = Critic(layer_norm=layer_norm, hidden_unit_list=[400,300])
+        critic1 = Critic(layer_norm=layer_norm, name='critic1', hidden_unit_list=[400,300])
+        actor = Actor(nb_actions, layer_norm=layer_norm, hidden_unit_list=[400,300])
     else:
         critic = Critic(layer_norm=layer_norm)
-    
-    if kwargs['skillset'] is None:
-        if kwargs['newarch']:
-            actor = Actor(discrete_action_size = env.env.discrete_action_size, cts_action_size = nb_actions - env.env.discrete_action_size, layer_norm=layer_norm, hidden_unit_list=[400,300])
-        else:
-            actor = Actor(discrete_action_size = env.env.discrete_action_size, cts_action_size = nb_actions - env.env.discrete_action_size, layer_norm=layer_norm)
-        my_skill_set = None
-    else:
-        # pass
-        # get the skillset and make actor accordingly
-        if kwargs['newarch']:
-            actor = Actor(discrete_action_size = my_skill_set.len , cts_action_size = nb_actions - my_skill_set.len, layer_norm=layer_norm, hidden_unit_list=[400,300])
-        else:
-            actor = Actor(discrete_action_size = my_skill_set.len , cts_action_size = nb_actions - my_skill_set.len, layer_norm=layer_norm)
+        critic1 = Critic(layer_norm=layer_norm, name='critic1')
+        actor = Actor(nb_actions, layer_norm=layer_norm)
 
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
-    logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
-    
+    tf.reset_default_graph()
     set_global_seeds(seed)
     env.seed(seed)
     if eval_env is not None:
@@ -115,11 +89,10 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Disable logging for rank != 0 to avoid noise.
     if rank == 0:
+        logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
         start_time = time.time()
-    
     training.train(env=env, eval_env=eval_env, param_noise=param_noise,
-        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set,**kwargs)
-
+        action_noise=action_noise, actor=actor, critic=critic, additional_critic=critic1, memory=memory, **kwargs)
     env.close()
     if eval_env is not None:
         eval_env.close()
@@ -130,8 +103,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--env-id', type=str, default='picknmove-v3')
-    parser.add_argument('--eval-env-id', type=str, default=None)
+    parser.add_argument('--env-id', type=str, default='picknmove-v2')
     boolean_flag(parser, 'render-eval', default=False)
     boolean_flag(parser, 'layer-norm', default=True)
     boolean_flag(parser, 'render', default=False)
@@ -149,28 +121,24 @@ def parse_args():
     parser.add_argument('--nb-epochs', type=int, default=200)  # with default settings, perform 1M steps total
     parser.add_argument('--nb-epoch-cycles', type=int, default=20)
     parser.add_argument('--nb-train-steps', type=int, default=40)  # per epoch cycle and MPI worker
-    parser.add_argument('--nb-eval-episodes', type=int, default=20)  # per epoch cycle
-    parser.add_argument('--nb-rollout-steps', type=int, default=320)  # per epoch cycle and MPI worker
+    parser.add_argument('--nb-eval-steps', type=int, default=100)  # per epoch cycle and MPI worker
+    parser.add_argument('--nb-rollout-steps', type=int, default=800)  # per epoch cycle and MPI worker
     parser.add_argument('--noise-type', type=str, default='epsnorm_0.01_0.2')  # choices are adaptive-param_xx, ou_xx, normal_xx, none
     parser.add_argument('--num-timesteps', type=int, default=None)
     boolean_flag(parser, 'evaluation', default=True)
+    parser.add_argument('--eval-env-id', type=str, default=None)
 
     ## saving and restoring param parser
     parser.add_argument('--log-dir', type=str, default='/tmp/her')
-    boolean_flag(parser, 'her', default=True)
     parser.add_argument('--save-freq', type=int, default=1)
     parser.add_argument('--restore-dir', type=str, default=None)
     boolean_flag(parser, 'dologging', default=True)
     boolean_flag(parser, 'invert-grad', default=False)
-    
+    boolean_flag(parser, 'her', default=True)
     boolean_flag(parser, 'actor-reg', default=True)
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
-    parser.add_argument('--skillset', type=str, default='set8')
-    parser.add_argument('--commit-for', type=int, default=1)
-
     boolean_flag(parser, 'newarch', default=False)
-
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
@@ -188,7 +156,7 @@ if __name__ == '__main__':
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.configure(dir=args["log_dir"])
         
-        logger.info(str(args))
+        logger.debug(str(args))
         
     # Run actual script.
     try:

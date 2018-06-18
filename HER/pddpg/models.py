@@ -53,22 +53,29 @@ class Model(object):
 
 
 class Actor(Model):
-    def __init__(self, discrete_action_size, cts_action_size, name='actor', layer_norm=True, select_action = True):
+    def __init__(self, discrete_action_size, cts_action_size, name='actor', layer_norm=True, select_action = True, hidden_unit_list=None):
         super(Actor, self).__init__(name=name)
         self.discrete_action_size = discrete_action_size
         self.cts_action_size = cts_action_size
         self.layer_norm = layer_norm
         self.select_action = select_action
+        self.hidden_unit_list = hidden_unit_list
 
     def __call__(self, obs, reuse=False, num_layers=3, hidden_units=64, temperature = 1.):
+        
+        hidden_unit_list = self.hidden_unit_list
+
+        if hidden_unit_list is None:
+            hidden_unit_list = [hidden_units]*num_layers
+
         with tf.variable_scope(self.name) as scope:
             if reuse:
                 scope.reuse_variables()
 
             x = obs
 
-            for _ in range(num_layers):
-                x = tf.layers.dense(x, hidden_units)
+            for hidden_neurons in hidden_unit_list:
+                x = tf.layers.dense(x, hidden_neurons)
                 if self.layer_norm:
                     x = tc.layers.layer_norm(x, center=True, scale=True)
                 x = tf.nn.relu(x)
@@ -91,25 +98,66 @@ class Actor(Model):
 
 
 class Critic(Model):
-    def __init__(self, name='critic', layer_norm=True):
+    def __init__(self, name='critic', layer_norm=True, hidden_unit_list=None):
         super(Critic, self).__init__(name=name)
         self.layer_norm = layer_norm
+        self.hidden_unit_list = hidden_unit_list
 
     def __call__(self, obs, action, reuse=False, num_layers=3, hidden_units=64):
+       
+        hidden_unit_list = self.hidden_unit_list
+
+        if hidden_unit_list is None:
+            hidden_unit_list = [hidden_units]*num_layers
+
         with tf.variable_scope(self.name) as scope:
             if reuse:
                 scope.reuse_variables()
 
             x = obs
-            x = tf.layers.dense(x, hidden_units)
+            x = tf.layers.dense(x, hidden_unit_list[0])
             if self.layer_norm:
                 x = tc.layers.layer_norm(x, center=True, scale=True)
             x = tf.nn.relu(x)
 
             x = tf.concat([x, action], axis=-1)
 
-            for _ in range(num_layers-1):
-                x = tf.layers.dense(x, 64)
+            for hidden_neurons in hidden_unit_list[1:]:
+                x = tf.layers.dense(x, hidden_neurons)
+                if self.layer_norm:
+                    x = tc.layers.layer_norm(x, center=True, scale=True)
+                x = tf.nn.relu(x)
+
+            x = tf.layers.dense(x, 1, kernel_initializer=tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3))
+        return x
+
+    @property
+    def output_vars(self):
+        output_vars = [var for var in self.trainable_vars if 'output' in var.name]
+        return output_vars
+
+
+class NewCritic(Model):
+    def __init__(self, name='critic', layer_norm=True, hidden_unit_list=None):
+        super(Critic, self).__init__(name=name)
+        self.layer_norm = layer_norm
+        self.hidden_unit_list = hidden_unit_list
+
+    def __call__(self, obs, action, reuse=False, num_layers=3, hidden_units=64):
+        hidden_unit_list = self.hidden_unit_list
+        
+        if hidden_unit_list is None:
+            hidden_unit_list = [hidden_units]*num_layers
+
+        with tf.variable_scope(self.name) as scope:
+            if reuse:
+                scope.reuse_variables()
+
+            x = tf.concat([obs, action], axis=-1)
+
+
+            for hidden_neurons in hidden_unit_list:
+                x = tf.layers.dense(x, hidden_neurons)
                 if self.layer_norm:
                     x = tc.layers.layer_norm(x, center=True, scale=True)
                 x = tf.nn.relu(x)
