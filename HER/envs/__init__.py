@@ -1,6 +1,13 @@
 from gym.envs.registration import register
 import HER
 
+# joint space envs
+register(
+    id='Reacher3dj-v0',
+    entry_point='HER.envs.joint_space_reacher3d:BaxterEnv',
+    kwargs={'max_len':20}
+)
+
 # Fetch envs
 register(
     id='transfer-v0',

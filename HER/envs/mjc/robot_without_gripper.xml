@@ -76,8 +76,7 @@
                                                     <body name="l_gripper_l_finger" pos="0 -0.0015 0.02">
                                                         
                                                         <inertial pos="0 0 0" quat="0 0 0 -1" mass="0.02" diaginertia="0.01 0.01 0.01" />
-                                                        <!-- <joint name="l_gripper_l_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="0 0.04"/> -->
-
+                                                        
                                                         <geom size="0.005 0.00675 0.05635" pos="0 0.01725 0.0615" quat="0 0 0 -1" type="box" rgba="0.1 0.1 0.1 1"/>
                                                         <geom size="0.005 0.025 0.0085" pos="-0.005 -0.003 0.0083" quat="0 0 0 -1" type="box" rgba="0.1 0.1 0.1 1"/>
                                                         <body name="l_gripper_l_finger_tip" pos="0 0.01725 0.1127">
@@ -93,8 +92,6 @@
                                                     </body>
                                                      <body name="l_gripper_r_finger" pos="0 0.0015 0.02">
                                                         <inertial pos="0 0 0" mass="0.02" diaginertia="0.01 0.01 0.01" />
-                                                        <!-- <joint name="l_gripper_r_finger_joint" pos="0 0 0" axis="0 1 0" type="slide" range="-0.04 0"/> -->
-                                                        <!-- extended narrow finger-->
                                                         
                                                         <geom size="0.005 0.00675 0.05635" pos="0 -0.01725 0.0615" type="box" rgba="0.1 0.1 0.1 1"/>
                                                         <geom size="0.005 0.025 0.0085" pos="0.005 0.003 0.0083" type="box" rgba="0.1 0.1 0.1 1"/>

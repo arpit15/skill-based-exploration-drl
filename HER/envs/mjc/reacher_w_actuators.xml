@@ -18,5 +18,13 @@
 
 	</worldbody>
 
-	<actuator></actuator>
+	<actuator>
+		<position joint="left_s0" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+        <position joint="left_s1" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+        <position joint="left_e0" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+        <position joint="left_e1" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+        <position joint="left_w0" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+        <position joint="left_w1" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+        <position joint="left_w2" ctrlrange="-1 1" ctrllimited="true" kp="100"/>
+	</actuator>
 </mujoco>

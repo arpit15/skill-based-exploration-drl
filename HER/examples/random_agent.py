@@ -16,8 +16,9 @@ if __name__ == "__main__":
 
     try:
 
-        # ob = env.reset()
-        # print(ob)
+        ob = env.reset()
+        print(ob)
+        # set_trace()
         # while True:
         #     env.render(mode = 'human')
 
@@ -56,17 +57,20 @@ if __name__ == "__main__":
                 # action = env.action_space.sample()
                 # action = [0.,0.,1.]
                 # for checking grasping
-                action = [0., 0., 0.0, -1]
+                # action = [0., 0., 0.0, -1]
+                action = [0]*7
+                action[0] = 0.1
                 
                 ob, reward, done, info = env.step(action)
-                print(ob[9]-ob[10])
+                # print(ob[9]-ob[10])
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
-                # print( i, ob,action) 
+                print( i, ob,action) 
+                set_trace()
                 # print("target:x:%.4f,y:%.4f,z:%.4f"%(ob[-3], ob[-2], ob[-1]))
                 # print("gripper", env.data.get_site_xpos("grip_r"))   
                 i+=1
-                sleep(0.1)
+                sleep(0.01)
                 env.render(mode='human')
                 random_r += reward
 
