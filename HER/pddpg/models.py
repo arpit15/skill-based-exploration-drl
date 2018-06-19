@@ -139,7 +139,7 @@ class Critic(Model):
 
 class NewCritic(Model):
     def __init__(self, name='critic', layer_norm=True, hidden_unit_list=None):
-        super(Critic, self).__init__(name=name)
+        super(NewCritic, self).__init__(name=name)
         self.layer_norm = layer_norm
         self.hidden_unit_list = hidden_unit_list
 
