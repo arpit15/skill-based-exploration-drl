@@ -71,8 +71,15 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
 
     # Configure components.
     memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
-    critic = Critic(layer_norm=layer_norm)
-    actor = Actor(nb_actions, layer_norm=layer_norm)
+    if kwargs['newarch']:
+        critic = Critic(layer_norm=layer_norm, hidden_unit_list=[400,300])
+        actor = Actor(nb_actions, layer_norm=layer_norm, hidden_unit_list=[400,300])
+    elif kwargs['newcritic']:
+        critic = NewCritic(layer_norm=layer_norm)
+        actor = Actor(nb_actions, layer_norm=layer_norm)
+    else:
+        critic = Critic(layer_norm=layer_norm)
+        actor = Actor(nb_actions, layer_norm=layer_norm)
 
     # Seed everything to make things reproducible.
     seed = seed + 1000000 * rank
@@ -148,6 +155,9 @@ def parse_args():
     parser.add_argument('--num-samples', type=int, default=5)
     parser.add_argument('--skillset', type=str, default='set13')
     
+    boolean_flag(parser, 'newarch', default=False)
+    boolean_flag(parser, 'newcritic', default=False)
+
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
