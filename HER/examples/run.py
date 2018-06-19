@@ -158,7 +158,7 @@ if __name__ == '__main__':
     if MPI.COMM_WORLD.Get_rank() == 0:
         logger.configure(dir=args["log_dir"])
         
-        logger.debug(str(args))
+        logger.info(str(args))
         
     # Run actual script.
     try:
