@@ -9,7 +9,7 @@ from HER.common.misc_util import (
 )
 from HER.ddpg.skills import SkillSet
 import HER.pddpg.training as training
-from HER.pddpg.models import Actor, Critic
+from HER.pddpg.models import Actor, Critic, NewCritic
 from HER.pddpg.memory import Memory
 from HER.pddpg.noise import *
 
@@ -87,6 +87,8 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     memory = Memory(limit=int(1e6), action_shape=(nb_actions,), observation_shape=env.observation_space.shape)
     if kwargs['newarch']:
         critic = Critic(layer_norm=layer_norm, hidden_unit_list=[400,300])
+    elif kwargs['newcritic']:
+        critic = NewCritic(layer_norm=layer_norm)
     else:
         critic = Critic(layer_norm=layer_norm)
     
@@ -170,7 +172,7 @@ def parse_args():
     parser.add_argument('--commit-for', type=int, default=1)
 
     boolean_flag(parser, 'newarch', default=False)
-
+    boolean_flag(parser, 'newcritic', default=False)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them

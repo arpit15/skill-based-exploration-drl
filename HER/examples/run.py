@@ -8,7 +8,7 @@ from HER.common.misc_util import (
     boolean_flag,
 )
 import HER.ddpg.training as training
-from HER.ddpg.models import Actor, Critic
+from HER.ddpg.models import Actor, Critic, NewCritic
 from HER.ddpg.memory import Memory
 from HER.ddpg.noise import *
 
@@ -73,6 +73,9 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
     if kwargs['newarch']:
         critic = Critic(layer_norm=layer_norm, hidden_unit_list=[400,300])
         actor = Actor(nb_actions, layer_norm=layer_norm, hidden_unit_list=[400,300])
+    elif kwargs['newcritic']:
+        critic = NewCritic(layer_norm=layer_norm)
+        actor = Actor(nb_actions, layer_norm=layer_norm)
     else:
         critic = Critic(layer_norm=layer_norm)
         actor = Actor(nb_actions, layer_norm=layer_norm)
@@ -137,6 +140,7 @@ def parse_args():
     boolean_flag(parser, 'tf-sum-logging', default=False)
 
     boolean_flag(parser, 'newarch', default=False)
+    boolean_flag(parser, 'newcritic', default=False)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
