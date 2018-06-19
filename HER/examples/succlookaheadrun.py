@@ -11,7 +11,7 @@ from HER.common.misc_util import (
 from HER.ddpg.skills_with_memories_succ_model import SkillSet
 
 import HER.ddpg.training_look_ahead_succmodel as training
-from HER.ddpg.models import Actor, Critic
+from HER.ddpg.models import Actor, Critic, NewCritic
 from HER.ddpg.memory import Memory
 from HER.ddpg.noise import *
 
