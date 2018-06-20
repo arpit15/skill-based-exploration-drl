@@ -17,6 +17,9 @@ if __name__ == "__main__":
 		epochs = epochs - epochs[0]
 		# set_trace()
 		print(data["eval/success"][-10:])
+		print(data['eval/return_history'][-10:])
+
+		# set_trace()
 		plt.subplot(2,1,1)
 		plt.plot(epochs, data["eval/return_history"], label='eval')
 		plt.plot(epochs, data["rollout/return_history"], label='train')

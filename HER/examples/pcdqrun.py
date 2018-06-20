@@ -174,6 +174,8 @@ def parse_args():
 
     boolean_flag(parser, 'newarch', default=False)
 
+    boolean_flag(parser, 'select-action', default=False)
+
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
