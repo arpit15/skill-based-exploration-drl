@@ -134,10 +134,11 @@ class CDQ(object):
         self.target_critic1 = target_critic1
 
         # Create networks and core TF parts that are shared across setup parts.
+        target_actor_prediction_next_state_tf = target_actor(normalized_obs1)
+        
         # for critic
         self.normalized_critic_tf = critic(normalized_obs0, self.actions)
         self.critic_tf = denormalize(tf.clip_by_value(self.normalized_critic_tf, self.return_range[0], self.return_range[1]), self.ret_rms)
-        target_actor_prediction_next_state_tf = target_actor(normalized_obs1)
         Q_obs1_0 = denormalize(target_critic(normalized_obs1, target_actor_prediction_next_state_tf), self.ret_rms)
 
         # for critic1

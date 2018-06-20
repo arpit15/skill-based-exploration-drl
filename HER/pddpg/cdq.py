@@ -67,7 +67,7 @@ def choose_actions(action, skillset, W_select, return_mask = False):
         return choose_actions_tf
 
 
-class DDPG(object):
+class CDQ(object):
     def __init__(self, actor, critic, additional_critic, memory, observation_shape, action_shape, param_noise=None, action_noise=None,
         gamma=0.99, tau=0.001, normalize_returns=False, enable_popart=False, normalize_observations=True,
         batch_size=128, observation_range=(-5., 5.), action_range=(-1., 1.), return_range=(-np.inf, np.inf),
@@ -160,9 +160,14 @@ class DDPG(object):
         self.target_critic1 = target_critic1
 
         # Create networks and core TF parts that are shared across setup parts.
+        target_actor_prediction_next_state_tf = target_actor(normalized_obs1)
+        
+        # critic 
         self.normalized_critic_tf = critic(normalized_obs0, self.actions)
         self.critic_tf = denormalize(tf.clip_by_value(self.normalized_critic_tf, self.return_range[0], self.return_range[1]), self.ret_rms)
-        target_actor_prediction_next_state_tf = target_actor(normalized_obs1)
+        # additional_critic
+        self.normalized_critic_tf1 = additional_critic(normalized_obs0, self.actions)
+        self.critic_tf1 = denormalize(tf.clip_by_value(self.normalized_critic_tf1, self.return_range[0], self.return_range[1]), self.ret_rms)
         
         if self.select_action:
             Q_obs1_0 = denormalize(target_critic(normalized_obs1, choose_actions(target_actor_prediction_next_state_tf, skillset, self.W_select)), self.ret_rms)
@@ -271,7 +276,7 @@ class DDPG(object):
         critic_nb_params = sum([reduce(lambda x, y: x * y, shape) for shape in critic_shapes])
         logger.info('  critic shapes: {}'.format(critic_shapes))
         logger.info('  critic params: {}'.format(critic_nb_params))
-        self.critic_grads = U.flatgrad(self.critic_loss, (self.critic.trainable_vars + self.critic1.trainable_vars)s, clip_norm=self.clip_norm)
+        self.critic_grads = U.flatgrad(self.critic_loss, (self.critic.trainable_vars + self.critic1.trainable_vars), clip_norm=self.clip_norm)
         self.critic_optimizer = MpiAdam(var_list=(self.critic.trainable_vars + self.critic1.trainable_vars),
             beta1=0.9, beta2=0.999, epsilon=1e-08)
 

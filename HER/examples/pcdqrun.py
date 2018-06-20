@@ -8,7 +8,7 @@ from HER.common.misc_util import (
     boolean_flag,
 )
 from HER.ddpg.skills import SkillSet
-import HER.pddpg.training as training
+import HER.pddpg.training_cdq as training
 from HER.pddpg.models import Actor, Critic
 from HER.pddpg.memory import Memory
 from HER.pddpg.noise import *
@@ -121,7 +121,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, **kwargs):
         start_time = time.time()
     
     training.train(env=env, eval_env=eval_env, param_noise=param_noise,
-        action_noise=action_noise, actor=actor, critic=critic, memory=memory, my_skill_set=my_skill_set,**kwargs)
+        action_noise=action_noise, actor=actor, critic=critic, memory=memory, additional_critic=critic1, my_skill_set=my_skill_set,**kwargs)
 
     env.close()
     if eval_env is not None:
