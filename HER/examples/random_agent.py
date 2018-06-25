@@ -19,8 +19,8 @@ if __name__ == "__main__":
         ob = env.reset()
         print(ob)
         # set_trace()
-        # while True:
-        #     env.render(mode = 'human')
+        while True:
+            env.render(mode = 'human')
 
         # print("Crossed over")
             

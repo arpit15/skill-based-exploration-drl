@@ -17,7 +17,7 @@
         </body>
 		
 		<body name="target" pos="0.0 0.0 0.0">
-            <site name="target" pos="0.0 0.0 0" rgba="1 0 0 1" size="0.02 0.02 0.02"/>
+            <site name="target" pos="0.0 0.0 0" rgba="0 1 0 1" size="0.02 0.02 0.02"/>
             <joint name="target" type="free" limited="false" damping="1"/>
             <inertial pos="0 0 0" mass="0.000001" diaginertia="1 1 1"/>
         </body>
