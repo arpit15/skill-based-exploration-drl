@@ -4,8 +4,8 @@ from gym.envs.robotics.utils import mocap_set_action
 
 class BaxterEnv(grasping_withgap.BaxterEnv):
     
-    def __init__(self, max_len=50, test = False, obs_dim=28):
-        super(BaxterEnv, self).__init__(max_len=max_len, test=test, obs_dim=obs_dim)
+    def __init__(self, max_len=50, test = False,filename="mjc/gripper.xml", obs_dim=28):
+        super(BaxterEnv, self).__init__(max_len=max_len, filename = filename, test=test, obs_dim=obs_dim)
 
     
     def calc_dense_reward(self, state):
