@@ -1,0 +1,46 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sys import argv
+import numpy as np
+from os.path import join
+from scipy import signal
+
+from ipdb import set_trace
+
+if __name__ == "__main__":
+	dirname = argv[1]
+
+	b, a = signal.butter(1, 0.15)
+
+	print("checking the dir %s"%dirname)
+	try:
+		data = pd.read_csv(join(dirname , "progress.csv"))
+		data = data.fillna(0.0)
+		epochs = (data["total/epochs"])
+		epochs = epochs - epochs[0]
+		# set_trace()
+		print(data["eval/success"][-10:])
+		print(data['eval/return_history'][-10:])
+
+		# set_trace()
+		# plt.subplot(2,1,1)
+		# plt.plot(epochs, data["eval/return_history"], label='eval')
+		# plt.plot(epochs, data["rollout/return_history"], label='train')
+		# plt.legend()
+		# plt.xlabel('Epochs --->')
+		# plt.ylabel('Episode Reward ---->')
+		
+		# plt.subplot(2,1,1)
+		filtered_data = signal.filtfilt(b,a, data["eval/success"])
+		plt.plot(epochs, filtered_data)
+		# plt.legend()
+		plt.xlabel('Epochs --->')
+		plt.ylabel('Success ---->')
+	
+		plt.show()
+
+		# print("last reward in train:",data["rollout/return_history"][-1])
+
+	except Exception as e:
+		print(e)
+

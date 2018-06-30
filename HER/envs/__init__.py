@@ -24,6 +24,23 @@ register(
 
 # Baxter envs
 register(
+    id='putainb-v3',
+    entry_point='HER.envs.putainb_withextras:BaxterEnv',
+    kwargs={'max_len':100, 
+            'filename':"mjc/putainb4.xml"
+            }
+)
+
+register(
+    id='putainbt-v3',
+    entry_point='HER.envs.putainb_withextras:BaxterEnv',
+    kwargs={'max_len':100,
+            'test':True,
+            'filename':"mjc/putainb4.xml"
+            }
+)
+
+register(
     id='putainb-v2',
     entry_point='HER.envs.putainb_withextras:BaxterEnv',
     kwargs={'max_len':100, 
