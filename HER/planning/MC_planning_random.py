@@ -34,8 +34,44 @@ class Planning_with_memories:
         available_skill_set = list(range(self.skillset.len))
         sampled_skills = np.random.choice(available_skill_set, size = self.num_samples)
         chosen_skill = sampled_skills[0]
-        chosen_skill_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(chosen_skill))
-                 
+        sampled_skill_num = chosen_skill
+
+        if sampled_skill_num == 0:
+            # sample near obj
+            sampled_params = state[3:6] + np.random.uniform(low=-0.03,high=0.03, size = 3)
+            # convert to skill coordinates
+            sampled_params[0] = (sampled_params[0]- 0.3)/0.25 - 1
+            sampled_params[1] = (sampled_params[1] - 0.)/0.3 - 1
+            sampled_params[2] = (sampled_params[2] + 0.13 - 0.13)/0.035 -1
+
+            # make them between -1,1
+            sampled_params[0] = max(min(1, sampled_params[0]), -1)
+            sampled_params[1] = max(min(1, sampled_params[1]), -1)
+            sampled_params[2] = max(min(1, sampled_params[2]), -1)
+
+        elif sampled_skill_num == 1:
+            # sample near target
+            # print(state[-3:], curr_node.state[-3:])
+
+            sampled_params = state[-3:] + np.random.uniform(low=-0.1,high=0.1, size = 3)
+
+            # convert to skill coordinates
+            sampled_params[0] = (sampled_params[0]- 0.45)/0.1 - 1
+            sampled_params[1] = (sampled_params[1] - 0.15)/0.15 - 1
+            sampled_params[2] = (sampled_params[2] - 0.03)/0.035 -1
+
+            # make them between -1,1
+            sampled_params[0] = max(min(1, sampled_params[0]), -1)
+            sampled_params[1] = max(min(1, sampled_params[1]), -1)
+            sampled_params[2] = max(min(1, sampled_params[2]), -1)
+            
+        else:
+            # sample any height for grasping
+            sampled_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
+            ## assume in hallucination that after this skill is performed we will have obj in grasp
+            
+        chosen_skill_params = sampled_params
+
         # create paction and return
         # print("suggested skill id:%d, utility:%.4f,goal:"%(chosen_skill, max_utility), chosen_skill_params)
         paction_orig = self.get_curr_paction(chosen_skill, chosen_skill_params)
