@@ -31,6 +31,7 @@ class Planning_with_memories:
         
 
         info = dict()
+        available_skill_set = list(range(self.skillset.len))
         sampled_skills = np.random.choice(available_skill_set, size = self.num_samples)
         chosen_skill = sampled_skills[0]
         chosen_skill_params = np.random.uniform(low=-1,high=1, size=self.skillset.num_skill_params(sampled_skill_num))
