@@ -31,7 +31,7 @@
         <!-- Target object -->
         <body name="targetbox" pos="0.6 0.3 0.0">
             <!-- <geom name="target" type="box"  rgba="1.0 0.0 1.0 1" size="0.03 0.03 0.03" contype="3" conaffinity="3" friction="1 0.005 0.0001" mass="1"/> -->
-            <site name="target" pos="0.0 0.0 0.05" rgba="0 1 0 0.5" size="0.02 0.02 0.02"/>
+            <site name="target" pos="0.0 0.0 0.0" rgba="0 1 0 0.5" size="0.02 0.02 0.02"/>
             <joint name="target" type="free" limited="false" damping="1"/>
             <inertial pos="0 0 0" mass="100000" diaginertia="100 100 100"/>
            
