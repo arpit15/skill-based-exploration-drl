@@ -75,6 +75,18 @@ register(
 )
 
 register(
+    id='putaoutb-v2',
+    entry_point='HER.envs.putaoutbtable_withextras:BaxterEnv',
+    kwargs={'max_len':50}
+)
+
+register(
+    id='putaoutbt-v2',
+    entry_point='HER.envs.putaoutbtable_withextras:BaxterEnv',
+    kwargs={'max_len':50, 'test':True}
+)
+
+register(
     id='putaoutb-v1',
     entry_point='HER.envs.putacompleteoutb_withextras:BaxterEnv',
     kwargs={'max_len':50}
