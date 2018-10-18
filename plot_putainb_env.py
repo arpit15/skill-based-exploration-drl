@@ -6,7 +6,7 @@ from sys import argv
 
 b, a = signal.butter(1, 0.15)
 
-agent_name_list = ['DDPG+HER', 'DDPG+HER+SL1']
+agent_name_list = ['HER', 'HER+Skill Set 1']
 
 # 
 dir_list = ['/Users/virtualworld/new_RL3/corl_paper_results/clusters-v1/putainb-v1/run21',

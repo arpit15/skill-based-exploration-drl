@@ -6,13 +6,13 @@ from sys import argv
 
 b, a = signal.butter(1, 0.15)
 
-agent_name_list = ['DDPG+HER', 'DDPG+HER+Skill Library 1','DDPG+HER+Skill Library 2']
+agent_name_list = ['HER', 'HER+Skill Set 1','HER+Skill Set 2']
 
 # putinb
 env_name = argv[1]
 env_name = env_name.split('-')
 
-dir_list = ['/Users/virtualworld/new_RL3/corl_paper_results/clusters-v1/%s-%s/run11'%(env_name[0], env_name[1]),
+dir_list = ['/Users/virtualworld/new_RL3/corl_paper_results/clusters-v1/%s-%s/run1'%(env_name[0], env_name[1]),
 			'/Users/virtualworld/new_RL3/corl_paper_results/clusters-v1/%sflat-%s/run1'%(env_name[0], env_name[1]),
 			'/Users/virtualworld/new_RL3/corl_paper_results/clusters-v1/%sflat-%s/run16'%(env_name[0], env_name[1])]
 for dirname in dir_list:

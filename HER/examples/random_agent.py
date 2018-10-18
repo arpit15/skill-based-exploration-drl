@@ -19,11 +19,14 @@ if __name__ == "__main__":
         ob = env.reset()
         print(ob)
         # set_trace()
-        while True:
-            env.render(mode = 'human')
+        # while True:
+        #     env.render(mode = 'human')
 
         # print("Crossed over")
-            
+        
+        action3 = [0., 0., 0.1, -1]
+        action1 = [0, 1., 0., -1]
+        action2 = [1.,0.,0., 1]
         for l in range(EVAL_EPISODE):
             print("Evaluating:%d"%(l+1))
             done = False
@@ -54,19 +57,25 @@ if __name__ == "__main__":
                 
                 # action = np.array([(obj_x - ee_x)/0.05, (obj_y -ee_y)/0.05])
                 # action = [0.,0., 0.1,-1.]
-                action = env.action_space.sample()
+                # action = env.action_space.sample()
                 # action = [0.,0.,1.]
                 # for checking grasping
                 # action = [0., 0., 0.0, -1]
                 # action = [0]*7
                 # action[0] = 0.1
+                if(i<5):
+                    action = action3
+                elif(i>=5 and i<10):
+                    action = action1
+                else:
+                    action = action2
                 
                 ob, reward, done, info = env.step(action)
                 # print(ob[9]-ob[10])
                 # print(i, action, ob, reward)
                 # print(i, ob, reward, info)
                 print( i, ob,action) 
-                set_trace()
+                # set_trace()
                 # print("target:x:%.4f,y:%.4f,z:%.4f"%(ob[-3], ob[-2], ob[-1]))
                 # print("gripper", env.data.get_site_xpos("grip_r"))   
                 i+=1

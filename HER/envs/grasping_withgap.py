@@ -17,7 +17,8 @@ class BaxterEnv(reacher2d.BaxterEnv):
         ):
         
         # 0: random, 1: grasped
-        sample = self.np_random.choice(2)
+        # sample = self.np_random.choice(2)
+        sample = 1
         # print("sample:%d"%sample)
         # randomizing the start state of gripper
         if sample == 0 or self.test:

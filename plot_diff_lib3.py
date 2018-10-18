@@ -6,7 +6,7 @@ from sys import argv
 
 b, a = signal.butter(1, 0.15)
 
-agent_name_list = ['DDPG+HER', 'DDPG+HER+Skill Library 1','DDPG+HER+Skill Library 3']
+agent_name_list = ['HER', 'HER+Skill Set 1','HER+Skill Set 3']
 
 # putinb
 env_name = argv[1]
