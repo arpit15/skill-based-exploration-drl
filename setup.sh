@@ -8,12 +8,13 @@ sudo apt-get update -q \
     unzip \
     vim \
     virtualenv \
-    wget 
+    wget \
+    libosmesa6-dev \ 
 curl -o /usr/local/bin/patchelf https://s3-us-west-2.amazonaws.com/openai-sci-artifacts/manual-builds/patchelf_0.9_amd64.elf \
     && chmod +x /usr/local/bin/patchelf
-mkdir -p /root/.mujoco \
+mkdir -p ~/.mujoco \
     && wget https://www.roboti.us/download/mjpro150_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /root/.mujoco \
+    && unzip mujoco.zip -d ~/.mujoco \
     && rm mujoco.zip
 
 source ~/mjc15/bin/activate
