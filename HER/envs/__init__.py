@@ -181,13 +181,13 @@ register(
 register(
     id='pusher-v1',
     entry_point='HER.envs.close_pusher:BaxterEnv',
-    kwargs={'max_len':10}
+    kwargs={'max_len':20}
 )
 
 register(
     id='pusher-v2',
     entry_point='HER.envs.close_pusher_rel:BaxterEnv',
-    kwargs={'max_len':10}
+    kwargs={'max_len':20}
 )
 
 register(

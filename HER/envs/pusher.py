@@ -110,7 +110,7 @@ class BaxterEnv(reacher2d.BaxterEnv):
         target_pose = state[-self.space_dim:] 
         
         ## reward function definition
-        reward_reaching_goal = np.linalg.norm(obj_pose- target_pose) < 0.02
+        reward_reaching_goal = np.linalg.norm(obj_pose- target_pose) < 0.05
         total_reward = -1*(not reward_reaching_goal)
         return total_reward
 

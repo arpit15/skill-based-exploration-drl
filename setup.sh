@@ -22,7 +22,8 @@ source ~/mjc15/bin/activate
 cd ~/new_RL3
 wget https://github.com/openai/mujoco-py/archive/1.50.1.0.zip 
 unzip 1.50.1.0.zip
-cd ~/new_RL3/mujoco-py
+cd ~/new_RL3/mujoco-py-1.50.1.0
 pip install -r requirements.txt
 pip install -r requirements.dev.txt
 pip install -e .
+curl https://gist.githubusercontent.com/arpit15/d73b1ec5de5317672468b9c7044ab25a/raw/b5e6d37f0a4d2534de80d4688d4a694bcdb95ddc/builder.py > mujoco_py/builder.py

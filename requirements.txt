@@ -8,3 +8,4 @@ progressbar2
 cloudpickle
 click
 ipdb
+mpi4py

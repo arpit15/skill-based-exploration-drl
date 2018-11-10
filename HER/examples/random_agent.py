@@ -11,7 +11,7 @@ if __name__ == "__main__":
     print("Loading %s"%sys.argv[1])
     np.set_printoptions(precision=3)
     env = gym.make(sys.argv[1])
-    EVAL_EPISODE = 10
+    EVAL_EPISODE = 100
     reward_mat = []
 
     try:
@@ -57,19 +57,20 @@ if __name__ == "__main__":
                 
                 # action = np.array([(obj_x - ee_x)/0.05, (obj_y -ee_y)/0.05])
                 # action = [0.,0., 0.1,-1.]
-                # action = env.action_space.sample()
+                action = env.action_space.sample()
                 # action = [0.,0.,1.]
                 # for checking grasping
                 # action = [0., 0., 0.0, -1]
                 # action = [0]*7
                 # action[0] = 0.1
-                if(i<5):
-                    action = action3
-                elif(i>=5 and i<10):
-                    action = action1
-                else:
-                    action = action2
+                # if(i<5):
+                #     action = action3
+                # elif(i>=5 and i<10):
+                #     action = action1
+                # else:
+                #     action = action2
                 
+                sleep(0.1)
                 ob, reward, done, info = env.step(action)
                 # print(ob[9]-ob[10])
                 # print(i, action, ob, reward)
